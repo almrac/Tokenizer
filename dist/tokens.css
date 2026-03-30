@@ -1,0 +1,11 @@
+:root {
+  --nb-color-primary: #0d6efd;
+  --nb-color-secondary: #6c757d;
+  --nb-color-success: #198754;
+  --nb-color-danger: #dc3545;
+  --nb-color-brand: #7c4dff;
+  --nb-spacing-xs: 0.25rem;
+  --nb-spacing-sm: 0.5rem;
+  --nb-spacing-md: 1rem;
+  --nb-spacing-lg: 1.5rem;
+}

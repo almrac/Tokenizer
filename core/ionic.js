@@ -1,0 +1,100 @@
+const { buildRootBlock, getTokenGroups } = require('./naming');
+
+// Ionic is more useful when each color includes the companion variables its theme system expects.
+function clampChannel(value) {
+  if (value < 0) {
+    return 0;
+  }
+
+  if (value > 255) {
+    return 255;
+  }
+
+  return value;
+}
+
+function hexToRgb(hex) {
+  const normalized = String(hex).trim().replace(/^#/, '');
+
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+    return null;
+  }
+
+  return {
+    r: parseInt(normalized.slice(0, 2), 16),
+    g: parseInt(normalized.slice(2, 4), 16),
+    b: parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex(rgb) {
+  const parts = [rgb.r, rgb.g, rgb.b];
+  let value = '#';
+
+  for (let i = 0; i < parts.length; i += 1) {
+    const part = clampChannel(parts[i]).toString(16);
+    value += part.length === 1 ? '0' + part : part;
+  }
+
+  return value;
+}
+
+function shiftColor(rgb, amount) {
+  return {
+    r: clampChannel(Math.round(rgb.r + amount)),
+    g: clampChannel(Math.round(rgb.g + amount)),
+    b: clampChannel(Math.round(rgb.b + amount)),
+  };
+}
+
+function getContrastRgb(rgb) {
+  const brightness = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
+
+  if (brightness >= 186) {
+    return { r: 0, g: 0, b: 0 };
+  }
+
+  return { r: 255, g: 255, b: 255 };
+}
+
+function buildColorLines(name, value) {
+  const rgb = hexToRgb(value);
+
+  if (!rgb) {
+    return [
+      '  --ion-color-' + name + ': ' + value + ';',
+    ];
+  }
+
+  const contrast = getContrastRgb(rgb);
+  const shade = shiftColor(rgb, -18);
+  const tint = shiftColor(rgb, 18);
+
+  return [
+    '  --ion-color-' + name + ': ' + value + ';',
+    '  --ion-color-' + name + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
+    '  --ion-color-' + name + '-contrast: ' + rgbToHex(contrast) + ';',
+    '  --ion-color-' + name + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
+    '  --ion-color-' + name + '-shade: ' + rgbToHex(shade) + ';',
+    '  --ion-color-' + name + '-tint: ' + rgbToHex(tint) + ';',
+  ];
+}
+
+function generateIonic(tokens) {
+  const groups = getTokenGroups(tokens);
+  const colorKeys = Object.keys(groups.colors);
+  const lines = [];
+
+  for (let i = 0; i < colorKeys.length; i += 1) {
+    const key = colorKeys[i];
+    const colorLines = buildColorLines(key, groups.colors[key]);
+
+    for (let j = 0; j < colorLines.length; j += 1) {
+      lines.push(colorLines[j]);
+    }
+  }
+
+  return buildRootBlock(lines);
+}
+
+module.exports = generateIonic;
