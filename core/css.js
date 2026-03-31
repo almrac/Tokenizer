@@ -16,27 +16,50 @@ function generateCss(tokens, options) {
   const typographyEntries = flattenTokenEntries(groups.typography);
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
+  const sections = [];
 
-  for (let i = 0; i < colorKeys.length; i += 1) {
-    const key = colorKeys[i];
-    lines.push('  ' + buildCssVariableName(prefix, 'color', key) + ': ' + groups.colors[key] + ';');
+  function addSection(label, entries, formatter) {
+    if (!entries || entries.length === 0) {
+      return;
+    }
+
+    const sectionLines = ['  /* ' + label + ' */'];
+
+    for (let i = 0; i < entries.length; i += 1) {
+      sectionLines.push(formatter(entries[i]));
+    }
+
+    sections.push(sectionLines);
   }
 
-  for (let i = 0; i < spacingKeys.length; i += 1) {
-    const key = spacingKeys[i];
-    lines.push('  ' + buildCssVariableName(prefix, 'spacing', key) + ': ' + groups.spacing[key] + ';');
-  }
+  addSection('Colors', colorKeys, function (key) {
+    return '  ' + buildCssVariableName(prefix, 'color', key) + ': ' + groups.colors[key] + ';';
+  });
 
-  for (let i = 0; i < typographyEntries.length; i += 1) {
-    lines.push('  ' + buildCssVariableName(prefix, 'typography', typographyEntries[i].name) + ': ' + typographyEntries[i].value + ';');
-  }
+  addSection('Spacing', spacingKeys, function (key) {
+    return '  ' + buildCssVariableName(prefix, 'spacing', key) + ': ' + groups.spacing[key] + ';';
+  });
 
-  for (let i = 0; i < radiusEntries.length; i += 1) {
-    lines.push('  ' + buildCssVariableName(prefix, 'radius', radiusEntries[i].name) + ': ' + radiusEntries[i].value + ';');
-  }
+  addSection('Typography', typographyEntries, function (entry) {
+    return '  ' + buildCssVariableName(prefix, 'typography', entry.name) + ': ' + entry.value + ';';
+  });
 
-  for (let i = 0; i < shadowEntries.length; i += 1) {
-    lines.push('  ' + buildCssVariableName(prefix, 'shadow', shadowEntries[i].name) + ': ' + shadowEntries[i].value + ';');
+  addSection('Radius', radiusEntries, function (entry) {
+    return '  ' + buildCssVariableName(prefix, 'radius', entry.name) + ': ' + entry.value + ';';
+  });
+
+  addSection('Shadows', shadowEntries, function (entry) {
+    return '  ' + buildCssVariableName(prefix, 'shadow', entry.name) + ': ' + entry.value + ';';
+  });
+
+  for (let i = 0; i < sections.length; i += 1) {
+    if (i > 0) {
+      lines.push('');
+    }
+
+    for (let j = 0; j < sections[i].length; j += 1) {
+      lines.push(sections[i][j]);
+    }
   }
 
   return buildRootBlock(lines);
