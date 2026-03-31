@@ -54,7 +54,7 @@ The project also includes a browser-only static interface.
 Open it locally by opening this file directly in your browser:
 
 ```text
-web/index.html
+docs/index.html
 ```
 
 The web UI lets you:
@@ -66,11 +66,14 @@ The web UI lets you:
 - copy the output
 - download the generated file
 
-## GitHub Pages
+## GitHub Pages Deployment
 
-To publish the static interface with GitHub Pages, publish the contents of the `web/` folder.
+1. Go to `Settings -> Pages` in your GitHub repository.
+2. Under `Source`, choose `Deploy from a branch`.
+3. Select the `main` branch.
+4. Select the `/docs` folder.
 
-The page does not require a build step or server-side code.
+The static interface is ready to publish directly from `docs/` and does not require a build step or server-side code.
 
 ## Example tokens.json
 

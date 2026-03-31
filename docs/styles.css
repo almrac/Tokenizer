@@ -274,7 +274,7 @@ select {
 
 .actions button:first-child:hover:not(:disabled) {
   background: #e7edff;
-    min-height: 440px;
+  transform: translateY(-1px);
 }
 
 .actions button:last-child {
@@ -285,7 +285,7 @@ select {
 
 .actions button:last-child:hover:not(:disabled) {
   background: var(--accent-hover);
-    min-height: 440px;
+  transform: translateY(-1px);
 }
 
 .actions button:disabled {
