@@ -30,6 +30,27 @@ const TYPOGRAPHY_ALIASES = {
   letter_spacing: 'letterSpacing',
   letterspacing: 'letterSpacing',
 };
+const WRAPPER_KEYS = {
+  tokens: true,
+  global: true,
+  globals: true,
+  theme: true,
+  themes: true,
+  values: true,
+  collections: true,
+  collection: true,
+  primitives: true,
+  semantic: true,
+  semanticTokens: true,
+  designTokens: true,
+};
+const PREFERRED_ROOT_NAMES = {
+  global: true,
+  globals: true,
+  default: true,
+  defaults: true,
+  base: true,
+};
 
 const TARGET_GROUP_SUPPORT = {
   css: {
@@ -91,6 +112,127 @@ function getAliasTargetKey(key, aliases) {
   }
 
   return null;
+}
+
+function hasCanonicalGroupShape(value) {
+  if (!isObjectRecord(value)) {
+    return false;
+  }
+
+  for (let i = 0; i < SUPPORTED_GROUPS.length; i += 1) {
+    const key = SUPPORTED_GROUPS[i];
+
+    if (Object.prototype.hasOwnProperty.call(value, key) && isObjectRecord(value[key])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function countKnownGroupKeys(value) {
+  const keys = Object.keys(value || {});
+  let canonicalCount = 0;
+  let aliasCount = 0;
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+
+    if (SUPPORTED_GROUPS.indexOf(key) !== -1) {
+      canonicalCount += 1;
+      continue;
+    }
+
+    if (getAliasTargetKey(key, TOP_LEVEL_ALIASES)) {
+      aliasCount += 1;
+    }
+  }
+
+  return {
+    canonicalCount,
+    aliasCount,
+  };
+}
+
+function collectTokenRootCandidates(source, basePath, depth, candidates) {
+  if (!isObjectRecord(source) || depth > 3) {
+    return;
+  }
+
+  const keys = Object.keys(source);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    const value = source[key];
+    const path = basePath ? basePath + '.' + key : key;
+    const counts = countKnownGroupKeys(value);
+    const looksLikeRoot = isObjectRecord(value) && (counts.canonicalCount > 0 || counts.aliasCount > 0);
+    const shouldDive =
+      isObjectRecord(value) &&
+      (WRAPPER_KEYS[key] || WRAPPER_KEYS[String(key).toLowerCase()] || depth < 2);
+
+    if (looksLikeRoot) {
+      const pathParts = path.split('.');
+      const leaf = pathParts[pathParts.length - 1];
+      const leafLower = String(leaf).toLowerCase();
+      const wrapperHint = WRAPPER_KEYS[key] || WRAPPER_KEYS[String(key).toLowerCase()];
+      const preferredHint = PREFERRED_ROOT_NAMES[leaf] || PREFERRED_ROOT_NAMES[leafLower];
+
+      candidates.push({
+        path,
+        value,
+        canonicalCount: counts.canonicalCount,
+        aliasCount: counts.aliasCount,
+        score:
+          counts.canonicalCount * 4 +
+          counts.aliasCount * 2 +
+          (preferredHint ? 6 : 0) +
+          (wrapperHint ? 2 : 0),
+      });
+    }
+
+    if (shouldDive) {
+      collectTokenRootCandidates(value, path, depth + 1, candidates);
+    }
+  }
+}
+
+function pickTokenRoot(rawTokens, info, errors) {
+  if (!isObjectRecord(rawTokens)) {
+    return rawTokens;
+  }
+
+  if (hasCanonicalGroupShape(rawTokens)) {
+    return rawTokens;
+  }
+
+  const candidates = [];
+  collectTokenRootCandidates(rawTokens, '', 0, candidates);
+
+  if (candidates.length === 0) {
+    return rawTokens;
+  }
+
+  if (candidates.length === 1) {
+    info.push('Using token root from "' + candidates[0].path + '".');
+    return candidates[0].value;
+  }
+
+  const sorted = candidates.slice().sort((a, b) => b.score - a.score);
+  const bestScore = sorted[0].score;
+  const bestCandidates = sorted.filter((item) => item.score === bestScore);
+
+  if (bestCandidates.length > 1) {
+    errors.push(
+      'Se detectaron múltiples posibles raíces de tokens: ' +
+        bestCandidates.map((item) => '"' + item.path + '"').join(', ') +
+        '. Reduce la ambigüedad dejando una raíz clara (por ejemplo, "global" o "default").'
+    );
+    return rawTokens;
+  }
+
+  info.push('Multiple possible token roots found; using "' + sorted[0].path + '".');
+  return sorted[0].value;
 }
 
 function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
@@ -160,6 +302,7 @@ function normalizeTokenInput(rawTokens) {
   const info = [];
   const errors = [];
   let normalized = rawTokens;
+  let extractedRoot = rawTokens;
 
   if (!isObjectRecord(rawTokens)) {
     return {
@@ -169,12 +312,21 @@ function normalizeTokenInput(rawTokens) {
     };
   }
 
+  extractedRoot = pickTokenRoot(rawTokens, info, errors);
+  if (errors.length > 0) {
+    return {
+      normalized: rawTokens,
+      info: info,
+      errors: errors,
+    };
+  }
+
   normalized = {};
-  const keys = Object.keys(rawTokens);
+  const keys = Object.keys(extractedRoot);
 
   for (let i = 0; i < keys.length; i += 1) {
     const originalKey = keys[i];
-    const value = rawTokens[originalKey];
+    const value = extractedRoot[originalKey];
     const canonicalKey = getAliasTargetKey(originalKey, TOP_LEVEL_ALIASES) || originalKey;
     const isCanonical = SUPPORTED_GROUPS.indexOf(originalKey) !== -1;
     const normalizedValue =

@@ -164,6 +164,10 @@ function main() {
   const tokens = normalization.normalized;
   ensureDirExists(outputDir);
 
+  if (normalization.errors.length > 0) {
+    exitWithError(normalization.errors.join(' '));
+  }
+
   for (let i = 0; i < normalization.info.length; i += 1) {
     process.stderr.write('Info: ' + normalization.info[i] + '\n');
   }

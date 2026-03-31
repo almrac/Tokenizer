@@ -2,6 +2,21 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.5.1] - 2026-03-31
+
+### Added
+
+- Compatibilidad de importación para exports JSON envueltos en raíces comunes:
+  `tokens`, `global/globals`, `theme/themes`, `values`, `collection/collections`,
+  `primitives`, `semantic/semanticTokens`, `designTokens`.
+- Detección y extracción de raíz de tokens en estructuras anidadas simples cuando la intención es clara.
+- Mensajes informativos de extracción en CLI y web (`Using token root from ...`).
+
+### Changed
+
+- Regla de precedencia: si existen grupos canónicos top-level y también en wrappers, se usa top-level.
+- Manejo de ambigüedad reforzado: si hay múltiples posibles raíces sin preferencia clara, se devuelve error explícito.
+
 ## [v0.5.0] - 2026-03-31
 
 ### Added

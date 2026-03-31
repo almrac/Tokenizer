@@ -53,6 +53,34 @@ Reglas:
 - si hay conflicto entre clave canónica y alias, prevalece la canónica y se informa;
 - si tras normalizar la estructura sigue inválida, se devuelve error.
 
+## Compatibilidad con exports reales (v0.5.1)
+
+Además del formato canónico directo, Tokenizer puede recuperar grupos cuando vienen envueltos en estructuras comunes de exportación.
+
+Wrappers reconocidos cuando el contenido parece una raíz de tokens:
+
+- `tokens`
+- `global`, `globals`
+- `theme`, `themes`
+- `values`
+- `collection`, `collections`
+- `primitives`
+- `semantic`, `semanticTokens`
+- `designTokens`
+
+Comportamiento de extracción:
+
+- si hay grupos canónicos en top-level, se prioriza siempre top-level;
+- si no hay grupos canónicos en top-level, Tokenizer busca una raíz candidata clara en wrappers/niveles anidados;
+- si hay múltiples candidatos:
+  - intenta preferir nombres como `global`, `default` o `base`;
+  - si persiste la ambigüedad, devuelve error en lugar de adivinar.
+
+Feedback de extracción:
+
+- CLI: `Info: Using token root from "tokens"` o similar.
+- Web UI: se muestra en el bloque informativo ligero junto con otras normalizaciones.
+
 ## Validación y feedback (v0.3.4)
 
 - Se valida que la raíz del JSON sea un objeto.

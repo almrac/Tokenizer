@@ -62,6 +62,27 @@
     letter_spacing: 'letterSpacing',
     letterspacing: 'letterSpacing'
   };
+  var wrapperKeys = {
+    tokens: true,
+    global: true,
+    globals: true,
+    theme: true,
+    themes: true,
+    values: true,
+    collections: true,
+    collection: true,
+    primitives: true,
+    semantic: true,
+    semanticTokens: true,
+    designTokens: true
+  };
+  var preferredRootNames = {
+    global: true,
+    globals: true,
+    default: true,
+    defaults: true,
+    base: true
+  };
   var targetGroupSupport = {
     css: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
     ionic: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
@@ -165,6 +186,151 @@
     return null;
   }
 
+  function hasCanonicalGroupShape(value) {
+    var i;
+    var key;
+
+    if (!isPlainObject(value)) {
+      return false;
+    }
+
+    for (i = 0; i < supportedGroups.length; i += 1) {
+      key = supportedGroups[i];
+
+      if (Object.prototype.hasOwnProperty.call(value, key) && isPlainObject(value[key])) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function countKnownGroupKeys(value) {
+    var keys = Object.keys(value || {});
+    var canonicalCount = 0;
+    var aliasCount = 0;
+    var i;
+    var key;
+
+    for (i = 0; i < keys.length; i += 1) {
+      key = keys[i];
+
+      if (supportedGroups.indexOf(key) !== -1) {
+        canonicalCount += 1;
+        continue;
+      }
+
+      if (getAliasTargetKey(key, topLevelAliases)) {
+        aliasCount += 1;
+      }
+    }
+
+    return {
+      canonicalCount: canonicalCount,
+      aliasCount: aliasCount
+    };
+  }
+
+  function collectTokenRootCandidates(source, basePath, depth, candidates) {
+    var keys;
+    var i;
+    var key;
+    var value;
+    var path;
+    var counts;
+    var looksLikeRoot;
+    var shouldDive;
+    var pathParts;
+    var leaf;
+    var leafLower;
+    var wrapperHint;
+    var preferredHint;
+
+    if (!isPlainObject(source) || depth > 3) {
+      return;
+    }
+
+    keys = Object.keys(source);
+
+    for (i = 0; i < keys.length; i += 1) {
+      key = keys[i];
+      value = source[key];
+      path = basePath ? basePath + '.' + key : key;
+      counts = countKnownGroupKeys(value);
+      looksLikeRoot = isPlainObject(value) && (counts.canonicalCount > 0 || counts.aliasCount > 0);
+      shouldDive = isPlainObject(value) && (wrapperKeys[key] || wrapperKeys[String(key).toLowerCase()] || depth < 2);
+
+      if (looksLikeRoot) {
+        pathParts = path.split('.');
+        leaf = pathParts[pathParts.length - 1];
+        leafLower = String(leaf).toLowerCase();
+        wrapperHint = wrapperKeys[key] || wrapperKeys[String(key).toLowerCase()];
+        preferredHint = preferredRootNames[leaf] || preferredRootNames[leafLower];
+
+        candidates.push({
+          path: path,
+          value: value,
+          score:
+            counts.canonicalCount * 4 +
+            counts.aliasCount * 2 +
+            (preferredHint ? 6 : 0) +
+            (wrapperHint ? 2 : 0)
+        });
+      }
+
+      if (shouldDive) {
+        collectTokenRootCandidates(value, path, depth + 1, candidates);
+      }
+    }
+  }
+
+  function pickTokenRoot(rawTokens, info, errors) {
+    var candidates;
+    var sorted;
+    var bestScore;
+    var bestCandidates;
+
+    if (!isPlainObject(rawTokens)) {
+      return rawTokens;
+    }
+
+    if (hasCanonicalGroupShape(rawTokens)) {
+      return rawTokens;
+    }
+
+    candidates = [];
+    collectTokenRootCandidates(rawTokens, '', 0, candidates);
+
+    if (candidates.length === 0) {
+      return rawTokens;
+    }
+
+    if (candidates.length === 1) {
+      info.push('Using token root from "' + candidates[0].path + '".');
+      return candidates[0].value;
+    }
+
+    sorted = candidates.slice().sort(function (a, b) {
+      return b.score - a.score;
+    });
+    bestScore = sorted[0].score;
+    bestCandidates = sorted.filter(function (item) {
+      return item.score === bestScore;
+    });
+
+    if (bestCandidates.length > 1) {
+      errors.push(
+        'Se detectaron múltiples posibles raíces de tokens: ' +
+        bestCandidates.map(function (item) { return '"' + item.path + '"'; }).join(', ') +
+        '. Reduce la ambigüedad dejando una raíz clara (por ejemplo, "global" o "default").'
+      );
+      return rawTokens;
+    }
+
+    info.push('Multiple possible token roots found; using "' + sorted[0].path + '".');
+    return sorted[0].value;
+  }
+
   function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
     var merged = Object.assign({}, baseRecord);
     var keys = Object.keys(incomingRecord);
@@ -242,6 +408,7 @@
     var info = [];
     var errors = [];
     var normalized;
+    var extractedRoot;
     var keys;
     var i;
     var originalKey;
@@ -258,12 +425,21 @@
       };
     }
 
+    extractedRoot = pickTokenRoot(rawTokens, info, errors);
+    if (errors.length > 0) {
+      return {
+        normalized: rawTokens,
+        info: info,
+        errors: errors
+      };
+    }
+
     normalized = {};
-    keys = Object.keys(rawTokens);
+    keys = Object.keys(extractedRoot);
 
     for (i = 0; i < keys.length; i += 1) {
       originalKey = keys[i];
-      value = rawTokens[originalKey];
+      value = extractedRoot[originalKey];
       canonicalKey = getAliasTargetKey(originalKey, topLevelAliases) || originalKey;
       isCanonical = supportedGroups.indexOf(originalKey) !== -1;
       normalizedValue =
@@ -1379,6 +1555,16 @@
     normalization = normalizeTokenInput(rawTokens);
     parsedTokens = normalization.normalized;
     normalizationInfoText = normalization.info.join('\n');
+
+    if (normalization.errors.length > 0) {
+      setError(normalization.errors.join('\n'));
+      setInfo(normalizationInfoText);
+      setWarning('');
+      generatedOutputs = {};
+      updatePreviewSelector();
+      renderActivePreview();
+      return;
+    }
 
     for (i = 0; i < targets.length; i += 1) {
       target = targets[i];
