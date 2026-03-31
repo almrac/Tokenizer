@@ -50,7 +50,37 @@ function toKebabCase(value) {
 }
 
 function sortTokenKeys(keys) {
+  const scaleOrder = {
+    xxs: 0,
+    xs: 1,
+    sm: 2,
+    md: 3,
+    lg: 4,
+    xl: 5,
+    '2xl': 6,
+    '3xl': 7,
+    '4xl': 8,
+    '5xl': 9,
+  };
+
   return keys.slice().sort(function (a, b) {
+    const aLower = String(a).toLowerCase();
+    const bLower = String(b).toLowerCase();
+    const aRank = Object.prototype.hasOwnProperty.call(scaleOrder, aLower) ? scaleOrder[aLower] : null;
+    const bRank = Object.prototype.hasOwnProperty.call(scaleOrder, bLower) ? scaleOrder[bLower] : null;
+
+    if (aRank !== null && bRank !== null) {
+      return aRank - bRank;
+    }
+
+    if (aRank !== null) {
+      return -1;
+    }
+
+    if (bRank !== null) {
+      return 1;
+    }
+
     return String(a).localeCompare(String(b), undefined, {
       numeric: true,
       sensitivity: 'base',
