@@ -24,6 +24,35 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
 - `radius`
 - `shadows`
 
+## Validación y feedback (v0.3.4)
+
+- Se valida que la raíz del JSON sea un objeto.
+- Se valida que los grupos top-level soportados (`colors`, `spacing`, `typography`, `radius`, `shadows`) sean objetos.
+- Si hay grupos top-level no soportados, se muestran como advertencia y se ignoran.
+- Si el target ignora algún grupo presente, se avisa pero la generación continúa.
+- Para `bootstrap`, se advierte cuando hay colores no estándar que Bootstrap no aplica.
+- Si no hay grupos soportados con contenido, la generación se bloquea con error.
+
+Soporte por target:
+
+- `css`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
+- `ionic`: ignora `spacing`
+- `bootstrap`: usa todos los grupos, pero en `colors` solo aplica claves estándar de Bootstrap
+- `tailwind`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
+
+Reglas de comportamiento:
+
+- JSON inválido (sintaxis): error y no genera
+- JSON válido pero raíz no objeto: error y no genera
+- Objeto válido sin grupos soportados con contenido: error y no genera
+- Objeto válido con grupos soportados + no soportados: warning y genera
+- Objeto válido con grupos que el target ignora: warning y genera
+
+Feedback por entorno:
+
+- Web UI: muestra errores y advertencias en bloques separados bajo los controles
+- CLI: imprime `Error:` para bloqueos y `Warning:` para avisos no bloqueantes
+
 ## Formato esperado de `tokens.json`
 
 ```json

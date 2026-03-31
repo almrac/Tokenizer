@@ -15,6 +15,7 @@ const generateCss = require('../core/css');
 const generateIonic = require('../core/ionic');
 const generateBootstrap = require('../core/bootstrap');
 const generateTailwind = require('../core/tailwind');
+const { validateTokenInput } = require('../core/validation');
 const { cleanOutputDir, ensureDirExists, writeFile } = require('../utils/file');
 
 const SUPPORTED_OPTIONS = {
@@ -139,6 +140,16 @@ function main() {
   const outputDir = path.resolve(args.output || './dist');
   const selectedTarget = SUPPORTED_TARGETS[target];
   const tokens = readTokens(inputPath);
+  const validation = validateTokenInput(tokens, target);
+
+  if (validation.errors.length > 0) {
+    exitWithError(validation.errors.join(' '));
+  }
+
+  for (let i = 0; i < validation.warnings.length; i += 1) {
+    process.stderr.write('Warning: ' + validation.warnings[i] + '\n');
+  }
+
   const content = selectedTarget.generator(tokens, {
     prefix: args.prefix,
   });

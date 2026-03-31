@@ -357,6 +357,18 @@ select {
   color: var(--color-on-error-container);
   font-size: 0.88rem;
   font-weight: 600;
+  white-space: pre-line;
+}
+
+.warning {
+  border: 1px solid rgba(189, 143, 0, 0.26);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: rgba(255, 244, 204, 0.9);
+  color: #6f5200;
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: pre-line;
 }
 
 .btn {

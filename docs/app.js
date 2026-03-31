@@ -55,6 +55,13 @@
     light: true,
     dark: true
   };
+  var supportedGroups = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
+  var targetGroupSupport = {
+    css: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
+    ionic: { colors: true, spacing: false, typography: true, radius: true, shadows: true },
+    bootstrap: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
+    tailwind: { colors: true, spacing: true, typography: true, radius: true, shadows: true }
+  };
 
   var tokensInput = document.querySelector('[data-ui="tokens-input"]');
   var fileInput = document.querySelector('[data-ui="file-input"]');
@@ -64,6 +71,7 @@
   var filename = document.querySelector('[data-ui="filename"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
+  var warningMessage = document.querySelector('[data-ui="warning-message"]');
   var copyButton = document.querySelector('[data-ui="copy-button"]');
   var downloadButton = document.querySelector('[data-ui="download-button"]');
   var statusBadge = document.querySelector('[data-ui="status-badge"]');
@@ -108,6 +116,128 @@
       typography: typography,
       radius: radius,
       shadows: shadows
+    };
+  }
+
+  function joinQuoted(values) {
+    return values.map(function (value) {
+      return '"' + value + '"';
+    }).join(', ');
+  }
+
+  function groupHasValues(tokens, groupName) {
+    if (!isPlainObject(tokens) || !isPlainObject(tokens[groupName])) {
+      return false;
+    }
+
+    return Object.keys(tokens[groupName]).length > 0;
+  }
+
+  function validateTokenInput(tokens, target) {
+    var errors = [];
+    var warnings = [];
+    var support = targetGroupSupport[target] || targetGroupSupport.css;
+    var topLevelKeys;
+    var unsupportedTopLevel;
+    var supportedPresentGroups;
+    var ignoredGroups;
+    var colorKeys;
+    var ignoredColorKeys;
+    var i;
+    var groupName;
+
+    if (!isPlainObject(tokens)) {
+      errors.push('La raíz del JSON debe ser un objeto con grupos de tokens (por ejemplo: colors, spacing).');
+      return {
+        errors: errors,
+        warnings: warnings,
+        supportedGroups: [],
+        unsupportedGroups: [],
+        ignoredGroups: []
+      };
+    }
+
+    topLevelKeys = Object.keys(tokens);
+    unsupportedTopLevel = topLevelKeys.filter(function (key) {
+      return supportedGroups.indexOf(key) === -1;
+    });
+
+    if (unsupportedTopLevel.length > 0) {
+      warnings.push('Grupos no soportados: ' + joinQuoted(unsupportedTopLevel) + '. Se ignorarán en la generación.');
+    }
+
+    for (i = 0; i < supportedGroups.length; i += 1) {
+      groupName = supportedGroups[i];
+
+      if (Object.prototype.hasOwnProperty.call(tokens, groupName) && !isPlainObject(tokens[groupName])) {
+        errors.push('El grupo "' + groupName + '" debe ser un objeto.');
+      }
+    }
+
+    if (errors.length > 0) {
+      return {
+        errors: errors,
+        warnings: warnings,
+        supportedGroups: [],
+        unsupportedGroups: unsupportedTopLevel,
+        ignoredGroups: []
+      };
+    }
+
+    supportedPresentGroups = supportedGroups.filter(function (name) {
+      return groupHasValues(tokens, name);
+    });
+    ignoredGroups = supportedPresentGroups.filter(function (name) {
+      return !support[name];
+    });
+
+    if (supportedPresentGroups.length === 0) {
+      if (unsupportedTopLevel.length > 0) {
+        errors.push(
+          'No hay grupos soportados con contenido para generar. Grupos soportados: ' +
+          joinQuoted(supportedGroups) +
+          '. Detectados no soportados: ' +
+          joinQuoted(unsupportedTopLevel) +
+          '.'
+        );
+      } else {
+        errors.push(
+          'No se detectaron grupos soportados con contenido para generar. Añade al menos uno de: ' +
+          joinQuoted(supportedGroups) +
+          '.'
+        );
+      }
+
+      return {
+        errors: errors,
+        warnings: warnings,
+        supportedGroups: supportedPresentGroups,
+        unsupportedGroups: unsupportedTopLevel,
+        ignoredGroups: ignoredGroups
+      };
+    }
+
+    if (ignoredGroups.length > 0) {
+      warnings.push('El target "' + target + '" ignora los grupos: ' + joinQuoted(ignoredGroups) + '.');
+    }
+
+    if (target === 'bootstrap' && isPlainObject(tokens.colors)) {
+      colorKeys = Object.keys(tokens.colors);
+      ignoredColorKeys = colorKeys.filter(function (key) {
+        return !bootstrapColorNames[key];
+      });
+
+      if (ignoredColorKeys.length > 0) {
+        warnings.push('Bootstrap solo aplica colores estándar. Se ignorarán: ' + joinQuoted(ignoredColorKeys) + '.');
+      }
+    }
+
+    return {
+      errors: errors,
+      warnings: warnings,
+      supportedGroups: supportedPresentGroups,
+      unsupportedGroups: unsupportedTopLevel,
+      ignoredGroups: ignoredGroups
     };
   }
 
@@ -685,6 +815,17 @@
     errorMessage.textContent = message;
   }
 
+  function setWarning(message) {
+    if (!message) {
+      warningMessage.hidden = true;
+      warningMessage.textContent = '';
+      return;
+    }
+
+    warningMessage.hidden = false;
+    warningMessage.textContent = message;
+  }
+
   function getCurrentFileName() {
     return outputFiles[targetSelect.value];
   }
@@ -723,6 +864,7 @@
     var target = targetSelect.value;
     var generator;
     var parsedTokens;
+    var validation;
     var output;
 
     updatePrefixVisibility();
@@ -732,6 +874,18 @@
     } catch (error) {
       output = '';
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
+      setWarning('');
+      outputPreview.value = output;
+      updateActionState(output);
+      return;
+    }
+
+    validation = validateTokenInput(parsedTokens, target);
+
+    if (validation.errors.length > 0) {
+      output = '';
+      setError(validation.errors.join('\n'));
+      setWarning(validation.warnings.join('\n'));
       outputPreview.value = output;
       updateActionState(output);
       return;
@@ -743,9 +897,11 @@
         prefix: prefixInput.value
       });
       setError('');
+      setWarning(validation.warnings.join('\n'));
     } catch (error) {
       output = '';
       setError('No se pudo generar la salida para este target. Revisa el contenido de los tokens e inténtalo de nuevo.');
+      setWarning(validation.warnings.join('\n'));
     }
 
     outputPreview.value = output;
@@ -804,6 +960,7 @@
     tokensInput.value = sampleTokens;
     fileInput.value = '';
     setError('');
+    setWarning('');
     renderOutput();
   }
 
@@ -813,6 +970,7 @@
     prefixInput.value = '';
     fileInput.value = '';
     setError('');
+    setWarning('');
     renderOutput();
   }
 
