@@ -47,6 +47,31 @@ Generated files:
 - `bootstrap` -> `bootstrap-overrides.scss`
 - `tailwind` -> `tailwind.tokens.js`
 
+## Web UI
+
+The project also includes a browser-only static interface.
+
+Open it locally by opening this file directly in your browser:
+
+```text
+web/index.html
+```
+
+The web UI lets you:
+- paste `tokens.json`
+- upload a `.json` file
+- choose a target
+- set a prefix for the `css` target
+- preview the generated output
+- copy the output
+- download the generated file
+
+## GitHub Pages
+
+To publish the static interface with GitHub Pages, publish the contents of the `web/` folder.
+
+The page does not require a build step or server-side code.
+
 ## Example tokens.json
 
 ```json

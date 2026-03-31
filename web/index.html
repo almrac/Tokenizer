@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokenizer</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <h1>Tokenizer</h1>
+      <p>Pega o sube tus design tokens, elige un formato de salida y genera el resultado en el navegador.</p>
+    </header>
+
+    <section class="layout">
+      <div class="panel">
+        <h2>Entrada</h2>
+
+        <label class="field" for="tokens-input">
+          <span>tokens.json</span>
+          <textarea id="tokens-input" spellcheck="false"></textarea>
+        </label>
+
+        <label class="field" for="file-input">
+          <span>Subir archivo JSON</span>
+          <input id="file-input" type="file" accept=".json,application/json">
+        </label>
+
+        <label class="field" for="target-select">
+          <span>Formato de salida</span>
+          <select id="target-select">
+            <option value="css">css</option>
+            <option value="ionic">ionic</option>
+            <option value="bootstrap">bootstrap</option>
+            <option value="tailwind">tailwind</option>
+          </select>
+        </label>
+
+        <label class="field" id="prefix-field" for="prefix-input">
+          <span>Prefijo CSS</span>
+          <input id="prefix-input" type="text" placeholder="nb">
+          <small class="hint">Solo se usa para el formato css. Ejemplo: nb -> --nb-color-primary</small>
+        </label>
+
+        <p id="error-message" class="error" aria-live="polite" hidden></p>
+      </div>
+
+      <div class="panel">
+        <div class="output-header">
+          <div>
+            <h2>Salida</h2>
+            <p id="filename" class="filename"></p>
+          </div>
+          <div class="actions">
+            <button id="copy-button" type="button">Copiar</button>
+            <button id="download-button" type="button">Descargar</button>
+          </div>
+        </div>
+
+        <label class="field" for="output-preview">
+          <span>Vista previa</span>
+          <textarea id="output-preview" readonly spellcheck="false"></textarea>
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
