@@ -2,6 +2,24 @@
 
 Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos listos para distintos targets de frontend. Incluye una CLI para generar archivos en local y una interfaz web estática en `docs/`, preparada para publicarse con GitHub Pages.
 
+## Versionado (fuente de verdad)
+
+El archivo `VERSION` es la fuente de verdad de la versión actual.
+
+Para actualizar versión de forma consistente:
+
+```bash
+node scripts/bump-version.js 0.7.1
+```
+
+Este comando actualiza:
+
+- `VERSION`
+- etiqueta visible en `docs/index.html` (`vX.Y.Z`)
+
+`CHANGELOG.md` se mantiene manual para evitar inserciones frágiles.  
+Al publicar una versión nueva, actualiza juntos: `VERSION`, `CHANGELOG.md` y etiqueta visible web.
+
 ## Qué hace
 
 - Convierte tokens hacia `css`, `ionic`, `bootstrap` y `tailwind`
