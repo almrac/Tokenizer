@@ -563,6 +563,12 @@ function validateTokenInput(tokens, target) {
         'El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.'
       );
     }
+
+    if (target === 'bootstrap' && Object.keys(buckets.letterSpacing).length > 0) {
+      warnings.push(
+        'Bootstrap no tiene una variable global equivalente para "letterSpacing"; estos tokens se omiten.'
+      );
+    }
   }
 
   return {

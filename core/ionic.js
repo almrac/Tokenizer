@@ -3,6 +3,7 @@ const {
   buildRootBlock,
   bucketToEntries,
   flattenTokenEntries,
+  getSortedKeys,
   getTokenGroups,
   getTypographyBuckets,
   normalizeCssPrefix,
@@ -91,7 +92,7 @@ function buildColorLines(name, value) {
 function generateIonic(tokens, options) {
   const groups = getTokenGroups(tokens);
   const prefix = normalizeCssPrefix(options && options.prefix);
-  const colorKeys = Object.keys(groups.colors);
+  const colorKeys = getSortedKeys(groups.colors);
   const spacingEntries = flattenTokenEntries(groups.spacing);
   const typographyBuckets = getTypographyBuckets(groups.typography);
   const typographyEntries = []

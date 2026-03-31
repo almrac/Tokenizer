@@ -3,6 +3,7 @@ const {
   buildRootBlock,
   bucketToEntries,
   flattenTokenEntries,
+  getSortedKeys,
   getTokenGroups,
   getTypographyBuckets,
   normalizeCssPrefix,
@@ -13,8 +14,8 @@ function generateCss(tokens, options) {
   const groups = getTokenGroups(tokens);
   const prefix = normalizeCssPrefix(options && options.prefix);
   const lines = [];
-  const colorKeys = Object.keys(groups.colors);
-  const spacingKeys = Object.keys(groups.spacing);
+  const colorKeys = getSortedKeys(groups.colors);
+  const spacingKeys = getSortedKeys(groups.spacing);
   const typographyBuckets = getTypographyBuckets(groups.typography);
   const typographyEntries = []
     .concat(bucketToEntries(typographyBuckets.fontFamily).map((entry) => ({ group: 'font-family', entry })))

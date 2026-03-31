@@ -106,6 +106,24 @@ Mensajes de importación:
 - cuando hay múltiples candidatas y una gana claramente, se informa el motivo resumido;
 - `Import summary` con raíz usada y grupos detectados.
 
+## Calidad de salida (v0.7.0)
+
+Tokenizer aplica reglas de formato consistentes para que los archivos generados sean más útiles en proyectos reales:
+
+- orden estable de secciones: `colors`, `spacing`, `typography`, `radius`, `shadows`;
+- comentarios por sección;
+- separación con líneas en blanco entre secciones;
+- omisión automática de secciones vacías;
+- orden estable de claves para mejorar diff/revisión en git.
+
+Notas por target:
+
+- `css`: variables custom con naming consistente para tipografía (`font-family`, `font-size`, `font-weight`, `line-height`, `letter-spacing`), radius y shadows.
+- `ionic`: mantiene variables nativas `--ion-color-*` para colores y usa fallback custom con prefijo para grupos no nativos.
+- `bootstrap`: prioriza overrides SCSS prácticos (colores estándar, `$spacers`, tipografía base/mapas, radius, shadows).  
+  `letterSpacing` se omite con warning por no tener variable global nativa equivalente.
+- `tailwind`: salida limpia bajo `theme.extend` con `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
+
 ## Inspector ligero de entrada (v0.6.1)
 
 La UI web muestra un resumen compacto de interpretación de entrada para reducir el efecto “caja negra”.

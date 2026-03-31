@@ -49,14 +49,27 @@ function toKebabCase(value) {
     .toLowerCase();
 }
 
+function sortTokenKeys(keys) {
+  return keys.slice().sort(function (a, b) {
+    return String(a).localeCompare(String(b), undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  });
+}
+
+function getSortedKeys(source) {
+  return sortTokenKeys(Object.keys(source || {}));
+}
+
 function flattenTokenEntries(groupTokens) {
   const source = isPlainObject(groupTokens) ? groupTokens : {};
   const entries = [];
-  const keys = Object.keys(source);
+  const keys = getSortedKeys(source);
 
   function pushEntries(baseKey, value) {
     if (isPlainObject(value)) {
-      const nestedKeys = Object.keys(value);
+      const nestedKeys = getSortedKeys(value);
 
       for (let i = 0; i < nestedKeys.length; i += 1) {
         pushEntries(baseKey + '-' + toKebabCase(nestedKeys[i]), value[nestedKeys[i]]);
@@ -123,7 +136,7 @@ function getTypographyBuckets(typographyTokens) {
     lineHeight: {},
     letterSpacing: {},
   };
-  const topKeys = Object.keys(source);
+  const topKeys = getSortedKeys(source);
 
   for (let i = 0; i < topKeys.length; i += 1) {
     const topKey = topKeys[i];
@@ -132,7 +145,7 @@ function getTypographyBuckets(typographyTokens) {
 
     if (topCategoryIndex !== -1) {
       if (isPlainObject(topValue)) {
-        const variantKeys = Object.keys(topValue);
+        const variantKeys = getSortedKeys(topValue);
 
         for (let j = 0; j < variantKeys.length; j += 1) {
           const variantName = toKebabCase(variantKeys[j]);
@@ -177,7 +190,7 @@ function getTypographyBuckets(typographyTokens) {
 
 function bucketToEntries(bucket) {
   const entries = [];
-  const keys = Object.keys(bucket);
+  const keys = getSortedKeys(bucket);
 
   for (let i = 0; i < keys.length; i += 1) {
     entries.push({
@@ -204,7 +217,9 @@ module.exports = {
   flattenTokenEntries: flattenTokenEntries,
   getTokenGroups: getTokenGroups,
   getTypographyBuckets: getTypographyBuckets,
+  getSortedKeys: getSortedKeys,
   isPlainObject: isPlainObject,
   normalizeCssPrefix: normalizeCssPrefix,
+  sortTokenKeys: sortTokenKeys,
   toKebabCase: toKebabCase,
 };

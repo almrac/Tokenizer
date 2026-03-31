@@ -86,7 +86,7 @@ textarea {
   min-height: 64px;
   padding: 0 28px;
   border-bottom: 1px solid rgba(169, 180, 185, 0.18);
-  background: rgba(248, 249, 251, 0.96);
+  background: var(--color-surface);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
   backdrop-filter: blur(10px);
 }

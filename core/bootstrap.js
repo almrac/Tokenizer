@@ -1,4 +1,4 @@
-const { flattenTokenEntries, getTokenGroups, getTypographyBuckets } = require('./naming');
+const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -10,13 +10,13 @@ const BOOTSTRAP_COLOR_NAMES = {
   light: true,
   dark: true,
 };
+const BOOTSTRAP_COLOR_ORDER = ['primary', 'secondary', 'success', 'info', 'warning', 'danger', 'light', 'dark'];
 
 // Bootstrap output is limited to recognized color overrides plus the spacers map.
 function generateBootstrap(tokens) {
   const groups = getTokenGroups(tokens);
   const lines = [];
-  const colorKeys = Object.keys(groups.colors);
-  const spacingKeys = Object.keys(groups.spacing);
+  const spacingKeys = getSortedKeys(groups.spacing);
   const typographyBuckets = getTypographyBuckets(groups.typography);
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
@@ -32,7 +32,7 @@ function generateBootstrap(tokens) {
       return bucket.body;
     }
 
-    const keys = Object.keys(bucket);
+    const keys = getSortedKeys(bucket);
     if (keys.length === 0) {
       return null;
     }
@@ -41,7 +41,7 @@ function generateBootstrap(tokens) {
   }
 
   function buildScssMap(variableName, bucket) {
-    const keys = Object.keys(bucket);
+    const keys = getSortedKeys(bucket);
     if (keys.length === 0) {
       return null;
     }
@@ -54,8 +54,12 @@ function generateBootstrap(tokens) {
     return lines;
   }
 
-  for (let i = 0; i < colorKeys.length; i += 1) {
-    const key = colorKeys[i];
+  for (let i = 0; i < BOOTSTRAP_COLOR_ORDER.length; i += 1) {
+    const key = BOOTSTRAP_COLOR_ORDER[i];
+
+    if (!Object.prototype.hasOwnProperty.call(groups.colors, key)) {
+      continue;
+    }
 
     if (BOOTSTRAP_COLOR_NAMES[key]) {
       colorEntries.push('$' + key + ': ' + groups.colors[key] + ';');

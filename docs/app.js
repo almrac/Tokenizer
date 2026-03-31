@@ -31,6 +31,7 @@
     light: true,
     dark: true
   };
+  var bootstrapColorOrder = ['primary', 'secondary', 'success', 'info', 'warning', 'danger', 'light', 'dark'];
   var supportedGroups = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
   var topLevelAliases = {
     color: 'colors',
@@ -662,7 +663,7 @@
     }
 
     if (target === 'bootstrap' && isPlainObject(tokens.colors)) {
-      colorKeys = Object.keys(tokens.colors);
+      colorKeys = getSortedKeys(tokens.colors);
       ignoredColorKeys = colorKeys.filter(function (key) {
         return !bootstrapColorNames[key];
       });
@@ -684,6 +685,12 @@
       if (!hasTypographyMappings && groupHasValues(tokens, 'typography')) {
         warnings.push(
           'El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.'
+        );
+      }
+
+      if (target === 'bootstrap' && Object.keys(typographyBuckets.letterSpacing).length > 0) {
+        warnings.push(
+          'Bootstrap no tiene una variable global equivalente para "letterSpacing"; estos tokens se omiten.'
         );
       }
     }
@@ -711,9 +718,22 @@
       .toLowerCase();
   }
 
+  function sortTokenKeys(keys) {
+    return keys.slice().sort(function (a, b) {
+      return String(a).localeCompare(String(b), undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    });
+  }
+
+  function getSortedKeys(source) {
+    return sortTokenKeys(Object.keys(source || {}));
+  }
+
   function flattenTokenEntries(groupTokens) {
     var source = isPlainObject(groupTokens) ? groupTokens : {};
-    var keys = Object.keys(source);
+    var keys = getSortedKeys(source);
     var entries = [];
 
     function pushEntries(baseKey, value) {
@@ -721,7 +741,7 @@
       var i;
 
       if (isPlainObject(value)) {
-        nestedKeys = Object.keys(value);
+        nestedKeys = getSortedKeys(value);
 
         for (i = 0; i < nestedKeys.length; i += 1) {
           pushEntries(baseKey + '-' + toKebabCase(nestedKeys[i]), value[nestedKeys[i]]);
@@ -788,7 +808,7 @@
       lineHeight: {},
       letterSpacing: {}
     };
-    var topKeys = Object.keys(source);
+    var topKeys = getSortedKeys(source);
     var i;
     var j;
     var topKey;
@@ -805,7 +825,7 @@
 
       if (typographyCategories.indexOf(topKey) !== -1) {
         if (isPlainObject(topValue)) {
-          variantKeys = Object.keys(topValue);
+          variantKeys = getSortedKeys(topValue);
 
           for (j = 0; j < variantKeys.length; j += 1) {
             variantName = toKebabCase(variantKeys[j]);
@@ -850,7 +870,7 @@
 
   function bucketToEntries(bucket) {
     var entries = [];
-    var keys = Object.keys(bucket);
+    var keys = getSortedKeys(bucket);
     var i;
 
     for (i = 0; i < keys.length; i += 1) {
@@ -940,8 +960,8 @@
     var groups = getTokenGroups(tokens);
     var prefix = normalizeCssPrefix(options && options.prefix);
     var lines = [];
-    var colorKeys = Object.keys(groups.colors);
-    var spacingKeys = Object.keys(groups.spacing);
+    var colorKeys = getSortedKeys(groups.colors);
+    var spacingKeys = getSortedKeys(groups.spacing);
     var typographyBuckets = getTypographyBuckets(groups.typography);
     var typographyEntries = []
       .concat(bucketToEntries(typographyBuckets.fontFamily).map(function (entry) { return { group: 'font-family', entry: entry }; }))
@@ -1030,7 +1050,7 @@
   function generateIonic(tokens, options) {
     var groups = getTokenGroups(tokens);
     var prefix = normalizeCssPrefix(options && options.prefix);
-    var keys = Object.keys(groups.colors);
+    var keys = getSortedKeys(groups.colors);
     var spacingEntries = flattenTokenEntries(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
@@ -1108,8 +1128,7 @@
   function generateBootstrap(tokens) {
     var groups = getTokenGroups(tokens);
     var lines = [];
-    var colorKeys = Object.keys(groups.colors);
-    var spacingKeys = Object.keys(groups.spacing);
+    var spacingKeys = getSortedKeys(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
     var typographyBuckets = getTypographyBuckets(groups.typography);
@@ -1128,12 +1147,12 @@
       if (bucket.body) {
         return bucket.body;
       }
-      keys = Object.keys(bucket);
+      keys = getSortedKeys(bucket);
       return keys.length > 0 ? bucket[keys[0]] : null;
     }
 
     function buildScssMap(variableName, bucket) {
-      var keys = Object.keys(bucket);
+      var keys = getSortedKeys(bucket);
       var mapLines = [];
       var j;
 
@@ -1149,9 +1168,13 @@
       return mapLines;
     }
 
-    for (i = 0; i < colorKeys.length; i += 1) {
-      if (bootstrapColorNames[colorKeys[i]]) {
-        colorEntries.push('$' + colorKeys[i] + ': ' + groups.colors[colorKeys[i]] + ';');
+    for (i = 0; i < bootstrapColorOrder.length; i += 1) {
+      var colorName = bootstrapColorOrder[i];
+      if (!Object.prototype.hasOwnProperty.call(groups.colors, colorName)) {
+        continue;
+      }
+      if (bootstrapColorNames[colorName]) {
+        colorEntries.push('$' + colorName + ': ' + groups.colors[colorName] + ';');
       }
     }
 
@@ -1259,7 +1282,7 @@
   }
 
   function buildObjectSection(indent, label, source, comment) {
-    var keys = Object.keys(source);
+    var keys = getSortedKeys(source);
     var lines = [];
     var i;
 
@@ -1334,8 +1357,8 @@
 
   function generateTailwind(tokens) {
     var groups = getTokenGroups(tokens);
-    var colorKeys = Object.keys(groups.colors);
-    var spacingKeys = Object.keys(groups.spacing);
+    var colorKeys = getSortedKeys(groups.colors);
+    var spacingKeys = getSortedKeys(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
     var typographyBuckets = getTypographyBuckets(groups.typography);

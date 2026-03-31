@@ -1,7 +1,7 @@
-const { flattenTokenEntries, getTokenGroups, getTypographyBuckets } = require('./naming');
+const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
 
 function buildObjectSection(indent, label, source, comment) {
-  const keys = Object.keys(source);
+  const keys = getSortedKeys(source);
 
   if (keys.length === 0) {
     return null;
@@ -67,8 +67,8 @@ function pushSections(lines, sections) {
 // Tailwind consumes a CommonJS config fragment with colors and spacing under theme.extend.
 function generateTailwind(tokens) {
   const groups = getTokenGroups(tokens);
-  const colorKeys = Object.keys(groups.colors);
-  const spacingKeys = Object.keys(groups.spacing);
+  const colorKeys = getSortedKeys(groups.colors);
+  const spacingKeys = getSortedKeys(groups.spacing);
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
   const typographyBuckets = getTypographyBuckets(groups.typography);

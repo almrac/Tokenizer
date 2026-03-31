@@ -2,6 +2,16 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.7.0] - 2026-04-01
+
+### Changed
+
+- Pass de calidad y consistencia de outputs en generadores `css`, `ionic`, `bootstrap` y `tailwind`.
+- Orden estable de claves y secciones para mejorar legibilidad y diffs en archivos generados.
+- Ajuste de mapeo Bootstrap para colores en orden canónico (`primary`, `secondary`, `success`, `info`, `warning`, `danger`, `light`, `dark`).
+- Mejora de warnings de omisión: `letterSpacing` en Bootstrap ahora se reporta explícitamente y se omite de forma intencional.
+- Alineación del generador web (`docs/app.js`) con las mismas reglas de formato/orden para previews consistentes con CLI.
+
 ## [v0.6.1] - 2026-03-31
 
 ### Added
