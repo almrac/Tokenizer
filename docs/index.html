@@ -26,28 +26,28 @@
           <header class="section-heading">
             <h2>Archivo de origen</h2>
             <div class="section-tools">
-              <button id="example-button" type="button">Cargar ejemplo</button>
-              <button id="clear-button" type="button">Limpiar</button>
+              <button class="btn btn-tertiary" data-ui="example-button" type="button">Cargar ejemplo</button>
+              <button class="btn btn-ghost" data-ui="clear-button" type="button">Limpiar</button>
             </div>
           </header>
 
-          <label class="upload-card" for="file-input">
+          <label class="upload-card">
             <span class="upload-card-icon" aria-hidden="true">↑</span>
             <span class="upload-card-title">Sube tu archivo JSON aquí</span>
             <span class="upload-card-copy">O haz clic para explorarlo desde tu equipo</span>
-            <input id="file-input" type="file" accept=".json,application/json">
+            <input class="file-input" data-ui="file-input" type="file" accept=".json,application/json">
           </label>
 
-          <label class="field field-editor" for="tokens-input">
+          <label class="field field-editor">
             <span>Contenido de <code>tokens.json</code></span>
-            <textarea id="tokens-input" spellcheck="false" placeholder="{&#10;  &quot;colors&quot;: {&#10;    &quot;primary&quot;: &quot;#0d6efd&quot;&#10;  }&#10;}"></textarea>
+            <textarea class="tokens-input" data-ui="tokens-input" spellcheck="false" placeholder="{&#10;  &quot;colors&quot;: {&#10;    &quot;primary&quot;: &quot;#0d6efd&quot;&#10;  }&#10;}"></textarea>
           </label>
         </section>
 
         <section class="config-section config-controls">
-          <label class="field" for="target-select">
+          <label class="field">
             <span>Formato de salida</span>
-            <select id="target-select">
+            <select class="target-select" data-ui="target-select">
               <option value="css">css</option>
               <option value="ionic">ionic</option>
               <option value="bootstrap">bootstrap</option>
@@ -55,14 +55,14 @@
             </select>
           </label>
 
-          <label class="field" id="prefix-field" for="prefix-input">
+          <label class="field prefix-field" data-ui="prefix-field">
             <span>Prefijo de variables</span>
-            <input id="prefix-input" type="text" placeholder="nb">
-            <small class="hint">Solo se aplica al formato <code>css</code>. Si escribes <code>nb</code>, se generarán variables como <code>--nb-color-primary</code>.</small>
+            <input class="prefix-input" data-ui="prefix-input" type="text" placeholder="nb">
+            <small class="hint">Solo aplica al formato <code>css</code>. Si escribes <code>nb</code>, se generan variables como <code>--nb-color-primary</code>.</small>
           </label>
         </section>
 
-        <p id="error-message" class="error" aria-live="polite" hidden></p>
+        <p class="error" data-ui="error-message" aria-live="polite" hidden></p>
       </aside>
 
       <section class="workspace-result">
@@ -70,29 +70,29 @@
           <div class="result-meta">
             <div class="result-title-row">
               <span class="result-icon" aria-hidden="true">{ }</span>
-              <h2 id="filename" class="filename"></h2>
-              <span id="status-badge" class="status-badge" hidden>Generated</span>
+              <h2 class="filename" data-ui="filename"></h2>
+              <span class="status-badge" data-ui="status-badge" hidden>Generado</span>
             </div>
           </div>
           <div class="result-actions">
-            <button id="copy-button" type="button">Copy</button>
-            <button id="download-button" type="button">Download</button>
+            <button class="btn btn-secondary" data-ui="copy-button" type="button">Copiar</button>
+            <button class="btn btn-primary" data-ui="download-button" type="button">Descargar</button>
           </div>
         </header>
 
         <section class="editor-shell">
           <div class="editor-topbar">
             <span class="editor-dots" aria-hidden="true"></span>
-            <span class="editor-label">Preview Mode</span>
+            <span class="editor-label">Vista previa</span>
           </div>
 
           <div class="editor-body">
             <div class="editor-canvas">
-              <label class="field output-field" for="output-preview">
-                <textarea id="output-preview" readonly spellcheck="false"></textarea>
+              <label class="field output-field">
+                <textarea class="output-preview" data-ui="output-preview" readonly spellcheck="false"></textarea>
               </label>
 
-              <div id="empty-state" class="empty-state" hidden>
+              <div class="empty-state" data-ui="empty-state" hidden>
                 <h3>Sin salida todavía</h3>
                 <p>Escribe o carga un <code>tokens.json</code> válido para ver aquí el archivo generado.</p>
               </div>

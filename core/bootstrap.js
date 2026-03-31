@@ -1,4 +1,4 @@
-const { getTokenGroups } = require('./naming');
+const { flattenTokenEntries, getTokenGroups } = require('./naming');
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -17,6 +17,9 @@ function generateBootstrap(tokens) {
   const lines = [];
   const colorKeys = Object.keys(groups.colors);
   const spacingKeys = Object.keys(groups.spacing);
+  const typographyEntries = flattenTokenEntries(groups.typography);
+  const radiusEntries = flattenTokenEntries(groups.radius);
+  const shadowEntries = flattenTokenEntries(groups.shadows);
 
   for (let i = 0; i < colorKeys.length; i += 1) {
     const key = colorKeys[i];
@@ -34,6 +37,18 @@ function generateBootstrap(tokens) {
   }
 
   lines.push(');');
+
+  for (let i = 0; i < radiusEntries.length; i += 1) {
+    lines.push('$border-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+  }
+
+  for (let i = 0; i < shadowEntries.length; i += 1) {
+    lines.push('$box-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+  }
+
+  for (let i = 0; i < typographyEntries.length; i += 1) {
+    lines.push('$typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+  }
 
   return lines.join('\n') + '\n';
 }

@@ -12,6 +12,29 @@
     '    "sm": "0.5rem",\n' +
     '    "md": "1rem",\n' +
     '    "lg": "1.5rem"\n' +
+    '  },\n' +
+    '  "typography": {\n' +
+    '    "body": {\n' +
+    '      "fontFamily": "Inter, sans-serif",\n' +
+    '      "fontSize": "1rem",\n' +
+    '      "fontWeight": "400",\n' +
+    '      "lineHeight": "1.5"\n' +
+    '    },\n' +
+    '    "title": {\n' +
+    '      "fontFamily": "Inter, sans-serif",\n' +
+    '      "fontSize": "1.5rem",\n' +
+    '      "fontWeight": "700",\n' +
+    '      "lineHeight": "1.2"\n' +
+    '    }\n' +
+    '  },\n' +
+    '  "radius": {\n' +
+    '    "sm": "4px",\n' +
+    '    "md": "8px",\n' +
+    '    "lg": "12px"\n' +
+    '  },\n' +
+    '  "shadows": {\n' +
+    '    "sm": "0 1px 2px rgba(0, 0, 0, 0.12)",\n' +
+    '    "md": "0 4px 12px rgba(0, 0, 0, 0.16)"\n' +
     '  }\n' +
     '}';
 
@@ -33,21 +56,21 @@
     dark: true
   };
 
-  var tokensInput = document.getElementById('tokens-input');
-  var fileInput = document.getElementById('file-input');
-  var targetSelect = document.getElementById('target-select');
-  var prefixField = document.getElementById('prefix-field');
-  var prefixInput = document.getElementById('prefix-input');
-  var filename = document.getElementById('filename');
-  var outputPreview = document.getElementById('output-preview');
-  var errorMessage = document.getElementById('error-message');
-  var copyButton = document.getElementById('copy-button');
-  var downloadButton = document.getElementById('download-button');
-  var statusBadge = document.getElementById('status-badge');
-  var exampleButton = document.getElementById('example-button');
-  var clearButton = document.getElementById('clear-button');
-  var emptyState = document.getElementById('empty-state');
-  var defaultCopyLabel = 'Copy';
+  var tokensInput = document.querySelector('[data-ui="tokens-input"]');
+  var fileInput = document.querySelector('[data-ui="file-input"]');
+  var targetSelect = document.querySelector('[data-ui="target-select"]');
+  var prefixField = document.querySelector('[data-ui="prefix-field"]');
+  var prefixInput = document.querySelector('[data-ui="prefix-input"]');
+  var filename = document.querySelector('[data-ui="filename"]');
+  var outputPreview = document.querySelector('[data-ui="output-preview"]');
+  var errorMessage = document.querySelector('[data-ui="error-message"]');
+  var copyButton = document.querySelector('[data-ui="copy-button"]');
+  var downloadButton = document.querySelector('[data-ui="download-button"]');
+  var statusBadge = document.querySelector('[data-ui="status-badge"]');
+  var exampleButton = document.querySelector('[data-ui="example-button"]');
+  var clearButton = document.querySelector('[data-ui="clear-button"]');
+  var emptyState = document.querySelector('[data-ui="empty-state"]');
+  var defaultCopyLabel = 'Copiar';
   var copyResetTimer = 0;
 
   function normalizeCssPrefix(prefix) {
@@ -75,11 +98,81 @@
     var safeTokens = tokens && typeof tokens === 'object' ? tokens : {};
     var colors = safeTokens.colors && typeof safeTokens.colors === 'object' ? safeTokens.colors : {};
     var spacing = safeTokens.spacing && typeof safeTokens.spacing === 'object' ? safeTokens.spacing : {};
+    var typography = safeTokens.typography && typeof safeTokens.typography === 'object' ? safeTokens.typography : {};
+    var radius = safeTokens.radius && typeof safeTokens.radius === 'object' ? safeTokens.radius : {};
+    var shadows = safeTokens.shadows && typeof safeTokens.shadows === 'object' ? safeTokens.shadows : {};
 
     return {
       colors: colors,
-      spacing: spacing
+      spacing: spacing,
+      typography: typography,
+      radius: radius,
+      shadows: shadows
     };
+  }
+
+  function isPlainObject(value) {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function toKebabCase(value) {
+    return String(value)
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .replace(/[\s_]+/g, '-')
+      .replace(/[^a-zA-Z0-9-]/g, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
+  }
+
+  function flattenTokenEntries(groupTokens) {
+    var source = isPlainObject(groupTokens) ? groupTokens : {};
+    var keys = Object.keys(source);
+    var entries = [];
+
+    function pushEntries(baseKey, value) {
+      var nestedKeys;
+      var i;
+
+      if (isPlainObject(value)) {
+        nestedKeys = Object.keys(value);
+
+        for (i = 0; i < nestedKeys.length; i += 1) {
+          pushEntries(baseKey + '-' + toKebabCase(nestedKeys[i]), value[nestedKeys[i]]);
+        }
+
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        entries.push({
+          name: baseKey,
+          value: value.join(', ')
+        });
+        return;
+      }
+
+      if (value === null || typeof value === 'undefined') {
+        return;
+      }
+
+      entries.push({
+        name: baseKey,
+        value: String(value)
+      });
+    }
+
+    for (var i = 0; i < keys.length; i += 1) {
+      var key = toKebabCase(keys[i]);
+
+      if (!key) {
+        continue;
+      }
+
+      pushEntries(key, source[keys[i]]);
+    }
+
+    return entries;
   }
 
   function buildRootBlock(lines) {
@@ -161,6 +254,9 @@
     var lines = [];
     var colorKeys = Object.keys(groups.colors);
     var spacingKeys = Object.keys(groups.spacing);
+    var typographyEntries = flattenTokenEntries(groups.typography);
+    var radiusEntries = flattenTokenEntries(groups.radius);
+    var shadowEntries = flattenTokenEntries(groups.shadows);
     var i;
 
     for (i = 0; i < colorKeys.length; i += 1) {
@@ -169,6 +265,18 @@
 
     for (i = 0; i < spacingKeys.length; i += 1) {
       lines.push('  ' + buildCssVariableName(prefix, 'spacing', spacingKeys[i]) + ': ' + groups.spacing[spacingKeys[i]] + ';');
+    }
+
+    for (i = 0; i < typographyEntries.length; i += 1) {
+      lines.push('  ' + buildCssVariableName(prefix, 'typography', typographyEntries[i].name) + ': ' + typographyEntries[i].value + ';');
+    }
+
+    for (i = 0; i < radiusEntries.length; i += 1) {
+      lines.push('  ' + buildCssVariableName(prefix, 'radius', radiusEntries[i].name) + ': ' + radiusEntries[i].value + ';');
+    }
+
+    for (i = 0; i < shadowEntries.length; i += 1) {
+      lines.push('  ' + buildCssVariableName(prefix, 'shadow', shadowEntries[i].name) + ': ' + shadowEntries[i].value + ';');
     }
 
     return buildRootBlock(lines);
@@ -200,6 +308,9 @@
   function generateIonic(tokens) {
     var groups = getTokenGroups(tokens);
     var keys = Object.keys(groups.colors);
+    var radiusEntries = flattenTokenEntries(groups.radius);
+    var shadowEntries = flattenTokenEntries(groups.shadows);
+    var typographyEntries = flattenTokenEntries(groups.typography);
     var lines = [];
     var i;
     var j;
@@ -213,6 +324,18 @@
       }
     }
 
+    for (i = 0; i < radiusEntries.length; i += 1) {
+      lines.push('  --ion-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+    }
+
+    for (i = 0; i < shadowEntries.length; i += 1) {
+      lines.push('  --ion-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+    }
+
+    for (i = 0; i < typographyEntries.length; i += 1) {
+      lines.push('  --ion-typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+    }
+
     return buildRootBlock(lines);
   }
 
@@ -221,6 +344,9 @@
     var lines = [];
     var colorKeys = Object.keys(groups.colors);
     var spacingKeys = Object.keys(groups.spacing);
+    var radiusEntries = flattenTokenEntries(groups.radius);
+    var shadowEntries = flattenTokenEntries(groups.shadows);
+    var typographyEntries = flattenTokenEntries(groups.typography);
     var i;
 
     for (i = 0; i < colorKeys.length; i += 1) {
@@ -237,33 +363,169 @@
 
     lines.push(');');
 
+    for (i = 0; i < radiusEntries.length; i += 1) {
+      lines.push('$border-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+    }
+
+    for (i = 0; i < shadowEntries.length; i += 1) {
+      lines.push('$box-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+    }
+
+    for (i = 0; i < typographyEntries.length; i += 1) {
+      lines.push('$typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+    }
+
     return lines.join('\n') + '\n';
+  }
+
+  function createTypographyBuckets() {
+    return {
+      fontFamily: {},
+      fontSize: {},
+      fontWeight: {},
+      lineHeight: {},
+      letterSpacing: {}
+    };
+  }
+
+  function fillTypographyBuckets(typography, buckets) {
+    var source = isPlainObject(typography) ? typography : {};
+    var keys = Object.keys(source);
+    var i;
+    var tokenName;
+    var tokenValue;
+
+    for (i = 0; i < keys.length; i += 1) {
+      tokenName = toKebabCase(keys[i]);
+      tokenValue = source[keys[i]];
+
+      if (!tokenName || !isPlainObject(tokenValue)) {
+        continue;
+      }
+
+      if (tokenValue.fontFamily) {
+        buckets.fontFamily[tokenName] = tokenValue.fontFamily;
+      }
+
+      if (tokenValue.fontSize) {
+        buckets.fontSize[tokenName] = tokenValue.fontSize;
+      }
+
+      if (tokenValue.fontWeight) {
+        buckets.fontWeight[tokenName] = String(tokenValue.fontWeight);
+      }
+
+      if (tokenValue.lineHeight) {
+        buckets.lineHeight[tokenName] = String(tokenValue.lineHeight);
+      }
+
+      if (tokenValue.letterSpacing) {
+        buckets.letterSpacing[tokenName] = String(tokenValue.letterSpacing);
+      }
+    }
+  }
+
+  function buildObjectSection(indent, label, source) {
+    var keys = Object.keys(source);
+    var lines = [];
+    var i;
+
+    if (keys.length === 0) {
+      return null;
+    }
+
+    lines.push(indent + label + ': {');
+
+    for (i = 0; i < keys.length; i += 1) {
+      lines.push(indent + '  ' + JSON.stringify(keys[i]) + ': ' + JSON.stringify(source[keys[i]]) + ',');
+    }
+
+    lines.push(indent + '}');
+    return lines;
+  }
+
+  function buildEntrySection(indent, label, entries) {
+    var lines = [];
+    var i;
+
+    if (!entries || entries.length === 0) {
+      return null;
+    }
+
+    lines.push(indent + label + ': {');
+
+    for (i = 0; i < entries.length; i += 1) {
+      lines.push(indent + '  ' + JSON.stringify(entries[i].name) + ': ' + JSON.stringify(entries[i].value) + ',');
+    }
+
+    lines.push(indent + '}');
+    return lines;
+  }
+
+  function pushSections(lines, sections) {
+    var validSections = [];
+    var i;
+    var j;
+    var section;
+    var isLastLine;
+    var shouldComma;
+
+    for (i = 0; i < sections.length; i += 1) {
+      if (sections[i]) {
+        validSections.push(sections[i]);
+      }
+    }
+
+    for (i = 0; i < validSections.length; i += 1) {
+      section = validSections[i];
+
+      for (j = 0; j < section.length; j += 1) {
+        isLastLine = j === section.length - 1;
+        shouldComma = i < validSections.length - 1 && isLastLine;
+        lines.push(shouldComma ? section[j] + ',' : section[j]);
+      }
+    }
   }
 
   function generateTailwind(tokens) {
     var groups = getTokenGroups(tokens);
     var colorKeys = Object.keys(groups.colors);
     var spacingKeys = Object.keys(groups.spacing);
+    var radiusEntries = flattenTokenEntries(groups.radius);
+    var shadowEntries = flattenTokenEntries(groups.shadows);
+    var typographyBuckets = createTypographyBuckets();
+    var sections = [];
     var lines = [];
     var i;
+
+    fillTypographyBuckets(groups.typography, typographyBuckets);
 
     lines.push('module.exports = {');
     lines.push('  theme: {');
     lines.push('    extend: {');
-    lines.push('      colors: {');
 
+    sections.push(['      colors: {']);
     for (i = 0; i < colorKeys.length; i += 1) {
-      lines.push('        ' + JSON.stringify(colorKeys[i]) + ': ' + JSON.stringify(groups.colors[colorKeys[i]]) + ',');
+      sections[sections.length - 1].push('        ' + JSON.stringify(colorKeys[i]) + ': ' + JSON.stringify(groups.colors[colorKeys[i]]) + ',');
     }
+    sections[sections.length - 1].push('      }');
 
-    lines.push('      },');
-    lines.push('      spacing: {');
-
+    sections.push(['      spacing: {']);
     for (i = 0; i < spacingKeys.length; i += 1) {
-      lines.push('        ' + JSON.stringify(spacingKeys[i]) + ': ' + JSON.stringify(groups.spacing[spacingKeys[i]]) + ',');
+      sections[sections.length - 1].push('        ' + JSON.stringify(spacingKeys[i]) + ': ' + JSON.stringify(groups.spacing[spacingKeys[i]]) + ',');
     }
+    sections[sections.length - 1].push('      }');
 
-    lines.push('      }');
+    sections.push(buildEntrySection('      ', 'borderRadius', radiusEntries));
+    sections.push(buildEntrySection('      ', 'boxShadow', shadowEntries));
+    sections.push(buildObjectSection('      ', 'fontFamily', typographyBuckets.fontFamily));
+    sections.push(buildObjectSection('      ', 'fontSize', typographyBuckets.fontSize));
+    sections.push(buildObjectSection('      ', 'fontWeight', typographyBuckets.fontWeight));
+    sections.push(buildObjectSection('      ', 'lineHeight', typographyBuckets.lineHeight));
+    sections.push(buildObjectSection('      ', 'letterSpacing', typographyBuckets.letterSpacing));
+
+    pushSections(lines, sections);
+
     lines.push('    }');
     lines.push('  }');
     lines.push('};');
@@ -399,10 +661,10 @@
     }
 
     navigator.clipboard.writeText(outputPreview.value).then(function () {
-      setCopyButtonLabel('Copied');
+      setCopyButtonLabel('Copiado');
       resetCopyButtonLabel(1200);
     }).catch(function () {
-      setCopyButtonLabel('Manual copy');
+      setCopyButtonLabel('Copia manual');
       resetCopyButtonLabel(1800);
       setError('No se pudo copiar automáticamente. El navegador bloqueó el portapapeles; puedes copiar el contenido manualmente desde la vista previa.');
     });

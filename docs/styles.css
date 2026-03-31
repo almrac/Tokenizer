@@ -61,23 +61,17 @@ input,
 select,
 textarea {
   font: inherit;
-}
-
-code,
-textarea {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-}
-
-button,
-input,
-select,
-textarea {
   transition:
     background-color 0.16s ease,
     border-color 0.16s ease,
     color 0.16s ease,
     box-shadow 0.16s ease,
     transform 0.16s ease;
+}
+
+code,
+textarea {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .app-shell {
@@ -183,7 +177,7 @@ textarea {
 .config-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .config-controls {
@@ -218,7 +212,7 @@ textarea {
 .result-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .upload-card {
@@ -230,7 +224,7 @@ textarea {
   gap: 8px;
   min-height: 146px;
   border: 1px dashed rgba(114, 124, 130, 0.36);
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   padding: 22px 18px;
   background: linear-gradient(180deg, #e5edf5, #dbe6ef);
   text-align: center;
@@ -279,7 +273,7 @@ textarea {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
 }
 
 .field span {
@@ -292,7 +286,7 @@ textarea {
 
 .hint {
   color: var(--color-on-surface-variant);
-  font-size: 0.71rem;
+  font-size: 0.72rem;
   line-height: 1.45;
 }
 
@@ -318,7 +312,7 @@ textarea {
   resize: vertical;
 }
 
-#tokens-input {
+.tokens-input {
   min-height: 250px;
   line-height: 1.58;
 }
@@ -365,7 +359,7 @@ select {
   font-weight: 600;
 }
 
-button {
+.btn {
   min-height: 40px;
   border: 0;
   border-radius: var(--radius-sm);
@@ -376,51 +370,51 @@ button {
   cursor: pointer;
 }
 
-#download-button {
+.btn-primary {
   background: linear-gradient(180deg, var(--color-primary), var(--color-primary-dim));
   color: var(--color-on-primary);
   box-shadow: var(--shadow-2);
 }
 
-#download-button:hover:not(:disabled) {
+.btn-primary:hover:not(:disabled) {
   background: linear-gradient(180deg, #0052ae, #00468f);
   transform: translateY(-1px);
 }
 
-#copy-button {
+.btn-secondary {
   background: var(--color-primary-container);
   color: var(--color-on-primary-container);
   box-shadow: inset 0 0 0 1px rgba(0, 91, 192, 0.1);
 }
 
-#copy-button:hover:not(:disabled) {
+.btn-secondary:hover:not(:disabled) {
   background: #c5d5ff;
   box-shadow:
     inset 0 0 0 1px rgba(0, 91, 192, 0.14),
     0 2px 8px rgba(0, 91, 192, 0.08);
 }
 
-#example-button {
+.btn-tertiary {
   border: 1px solid rgba(0, 91, 192, 0.22);
   background: transparent;
   color: var(--color-primary);
 }
 
-#example-button:hover:not(:disabled) {
+.btn-tertiary:hover:not(:disabled) {
   background: rgba(0, 91, 192, 0.08);
 }
 
-#clear-button {
+.btn-ghost {
   background: transparent;
   color: var(--color-on-surface-variant);
 }
 
-#clear-button:hover:not(:disabled) {
+.btn-ghost:hover:not(:disabled) {
   background: rgba(70, 80, 92, 0.08);
   color: var(--color-on-surface);
 }
 
-button:disabled {
+.btn:disabled {
   border-color: transparent;
   background: #e2e5eb;
   color: #88919d;
@@ -451,7 +445,7 @@ button:disabled {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: rgba(0, 91, 192, 0.16);
   color: var(--color-primary);
   font-size: 0.92rem;
@@ -472,7 +466,7 @@ button:disabled {
   align-items: center;
   min-height: 24px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: linear-gradient(180deg, var(--color-primary-container), #cedcff);
   color: var(--color-on-primary-container);
   font-size: 0.62rem;
@@ -488,7 +482,7 @@ button:disabled {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(169, 180, 185, 0.16);
-  border-radius: 22px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(180deg, #d4e0eb, #ccd9e6);
   box-shadow: var(--shadow-2);
 }
@@ -544,7 +538,7 @@ button:disabled {
   gap: 0;
 }
 
-#output-preview {
+.output-preview {
   min-height: 100%;
   height: 100%;
   border: 0;
@@ -566,7 +560,7 @@ button:disabled {
   justify-content: center;
   gap: 10px;
   border: 1px dashed rgba(114, 124, 130, 0.28);
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   padding: 22px;
   background: rgba(248, 249, 251, 0.82);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);

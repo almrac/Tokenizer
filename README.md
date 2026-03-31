@@ -20,6 +20,9 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
 
 - `colors`
 - `spacing`
+- `typography`
+- `radius`
+- `shadows`
 
 ## Formato esperado de `tokens.json`
 
@@ -37,6 +40,29 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
     "sm": "0.5rem",
     "md": "1rem",
     "lg": "1.5rem"
+  },
+  "typography": {
+    "body": {
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "1rem",
+      "fontWeight": "400",
+      "lineHeight": "1.5"
+    },
+    "title": {
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "1.5rem",
+      "fontWeight": "700",
+      "lineHeight": "1.2"
+    }
+  },
+  "radius": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "12px"
+  },
+  "shadows": {
+    "sm": "0 1px 2px rgba(0, 0, 0, 0.12)",
+    "md": "0 4px 12px rgba(0, 0, 0, 0.16)"
   }
 }
 ```

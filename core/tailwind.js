@@ -1,31 +1,143 @@
-const { getTokenGroups } = require('./naming');
+const { flattenTokenEntries, getTokenGroups, isPlainObject, toKebabCase } = require('./naming');
+
+function createTypographyBuckets() {
+  return {
+    fontFamily: {},
+    fontSize: {},
+    fontWeight: {},
+    lineHeight: {},
+    letterSpacing: {},
+  };
+}
+
+function fillTypographyBuckets(typography, buckets) {
+  const source = isPlainObject(typography) ? typography : {};
+  const keys = Object.keys(source);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const tokenName = toKebabCase(keys[i]);
+    const tokenValue = source[keys[i]];
+
+    if (!tokenName || !isPlainObject(tokenValue)) {
+      continue;
+    }
+
+    if (tokenValue.fontFamily) {
+      buckets.fontFamily[tokenName] = tokenValue.fontFamily;
+    }
+
+    if (tokenValue.fontSize) {
+      buckets.fontSize[tokenName] = tokenValue.fontSize;
+    }
+
+    if (tokenValue.fontWeight) {
+      buckets.fontWeight[tokenName] = String(tokenValue.fontWeight);
+    }
+
+    if (tokenValue.lineHeight) {
+      buckets.lineHeight[tokenName] = String(tokenValue.lineHeight);
+    }
+
+    if (tokenValue.letterSpacing) {
+      buckets.letterSpacing[tokenName] = String(tokenValue.letterSpacing);
+    }
+  }
+}
+
+function buildObjectSection(indent, label, source) {
+  const keys = Object.keys(source);
+
+  if (keys.length === 0) {
+    return null;
+  }
+
+  const lines = [];
+  lines.push(indent + label + ': {');
+
+  for (let i = 0; i < keys.length; i += 1) {
+    lines.push(indent + '  ' + JSON.stringify(keys[i]) + ': ' + JSON.stringify(source[keys[i]]) + ',');
+  }
+
+  lines.push(indent + '}');
+  return lines;
+}
+
+function buildEntrySection(indent, label, entries) {
+  if (!entries || entries.length === 0) {
+    return null;
+  }
+
+  const lines = [];
+  lines.push(indent + label + ': {');
+
+  for (let i = 0; i < entries.length; i += 1) {
+    lines.push(indent + '  ' + JSON.stringify(entries[i].name) + ': ' + JSON.stringify(entries[i].value) + ',');
+  }
+
+  lines.push(indent + '}');
+  return lines;
+}
+
+function pushSections(lines, sections) {
+  const validSections = [];
+
+  for (let i = 0; i < sections.length; i += 1) {
+    if (sections[i]) {
+      validSections.push(sections[i]);
+    }
+  }
+
+  for (let i = 0; i < validSections.length; i += 1) {
+    const section = validSections[i];
+
+    for (let j = 0; j < section.length; j += 1) {
+      const isLastLine = j === section.length - 1;
+      const shouldComma = i < validSections.length - 1 && isLastLine;
+      lines.push(shouldComma ? section[j] + ',' : section[j]);
+    }
+  }
+}
 
 // Tailwind consumes a CommonJS config fragment with colors and spacing under theme.extend.
 function generateTailwind(tokens) {
   const groups = getTokenGroups(tokens);
   const colorKeys = Object.keys(groups.colors);
   const spacingKeys = Object.keys(groups.spacing);
+  const radiusEntries = flattenTokenEntries(groups.radius);
+  const shadowEntries = flattenTokenEntries(groups.shadows);
+  const typographyBuckets = createTypographyBuckets();
+  const sections = [];
   const lines = [];
+
+  fillTypographyBuckets(groups.typography, typographyBuckets);
 
   lines.push('module.exports = {');
   lines.push('  theme: {');
   lines.push('    extend: {');
-  lines.push('      colors: {');
-
+  sections.push(['      colors: {']);
   for (let i = 0; i < colorKeys.length; i += 1) {
     const key = colorKeys[i];
-    lines.push('        ' + JSON.stringify(key) + ': ' + JSON.stringify(groups.colors[key]) + ',');
+    sections[sections.length - 1].push('        ' + JSON.stringify(key) + ': ' + JSON.stringify(groups.colors[key]) + ',');
   }
+  sections[sections.length - 1].push('      }');
 
-  lines.push('      },');
-  lines.push('      spacing: {');
-
+  sections.push(['      spacing: {']);
   for (let i = 0; i < spacingKeys.length; i += 1) {
     const key = spacingKeys[i];
-    lines.push('        ' + JSON.stringify(key) + ': ' + JSON.stringify(groups.spacing[key]) + ',');
+    sections[sections.length - 1].push('        ' + JSON.stringify(key) + ': ' + JSON.stringify(groups.spacing[key]) + ',');
   }
+  sections[sections.length - 1].push('      }');
 
-  lines.push('      }');
+  sections.push(buildEntrySection('      ', 'borderRadius', radiusEntries));
+  sections.push(buildEntrySection('      ', 'boxShadow', shadowEntries));
+  sections.push(buildObjectSection('      ', 'fontFamily', typographyBuckets.fontFamily));
+  sections.push(buildObjectSection('      ', 'fontSize', typographyBuckets.fontSize));
+  sections.push(buildObjectSection('      ', 'fontWeight', typographyBuckets.fontWeight));
+  sections.push(buildObjectSection('      ', 'lineHeight', typographyBuckets.lineHeight));
+  sections.push(buildObjectSection('      ', 'letterSpacing', typographyBuckets.letterSpacing));
+
+  pushSections(lines, sections);
+
   lines.push('    }');
   lines.push('  }');
   lines.push('};');

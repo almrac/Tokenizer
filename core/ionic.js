@@ -1,4 +1,4 @@
-const { buildRootBlock, getTokenGroups } = require('./naming');
+const { buildRootBlock, flattenTokenEntries, getTokenGroups } = require('./naming');
 
 // Ionic is more useful when each color includes the companion variables its theme system expects.
 function clampChannel(value) {
@@ -83,6 +83,9 @@ function buildColorLines(name, value) {
 function generateIonic(tokens) {
   const groups = getTokenGroups(tokens);
   const colorKeys = Object.keys(groups.colors);
+  const typographyEntries = flattenTokenEntries(groups.typography);
+  const radiusEntries = flattenTokenEntries(groups.radius);
+  const shadowEntries = flattenTokenEntries(groups.shadows);
   const lines = [];
 
   for (let i = 0; i < colorKeys.length; i += 1) {
@@ -92,6 +95,18 @@ function generateIonic(tokens) {
     for (let j = 0; j < colorLines.length; j += 1) {
       lines.push(colorLines[j]);
     }
+  }
+
+  for (let i = 0; i < radiusEntries.length; i += 1) {
+    lines.push('  --ion-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+  }
+
+  for (let i = 0; i < shadowEntries.length; i += 1) {
+    lines.push('  --ion-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+  }
+
+  for (let i = 0; i < typographyEntries.length; i += 1) {
+    lines.push('  --ion-typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
   }
 
   return buildRootBlock(lines);
