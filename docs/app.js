@@ -14,17 +14,21 @@
     '    "lg": "1.5rem"\n' +
     '  },\n' +
     '  "typography": {\n' +
-    '    "body": {\n' +
-    '      "fontFamily": "Inter, sans-serif",\n' +
-    '      "fontSize": "1rem",\n' +
-    '      "fontWeight": "400",\n' +
-    '      "lineHeight": "1.5"\n' +
+    '    "fontFamily": {\n' +
+    '      "base": "Inter, sans-serif",\n' +
+    '      "mono": "\\"Fira Code\\", monospace"\n' +
     '    },\n' +
-    '    "title": {\n' +
-    '      "fontFamily": "Inter, sans-serif",\n' +
-    '      "fontSize": "1.5rem",\n' +
-    '      "fontWeight": "700",\n' +
-    '      "lineHeight": "1.2"\n' +
+    '    "fontSize": {\n' +
+    '      "body": "0.875rem",\n' +
+    '      "title": "1.25rem"\n' +
+    '    },\n' +
+    '    "fontWeight": {\n' +
+    '      "regular": "400",\n' +
+    '      "semibold": "600"\n' +
+    '    },\n' +
+    '    "lineHeight": {\n' +
+    '      "body": "1.5",\n' +
+    '      "title": "1.2"\n' +
     '    }\n' +
     '  },\n' +
     '  "radius": {\n' +
@@ -232,6 +236,22 @@
       }
     }
 
+    if (isPlainObject(tokens.typography)) {
+      var typographyBuckets = getTypographyBuckets(tokens.typography);
+      var hasTypographyMappings =
+        Object.keys(typographyBuckets.fontFamily).length > 0 ||
+        Object.keys(typographyBuckets.fontSize).length > 0 ||
+        Object.keys(typographyBuckets.fontWeight).length > 0 ||
+        Object.keys(typographyBuckets.lineHeight).length > 0 ||
+        Object.keys(typographyBuckets.letterSpacing).length > 0;
+
+      if (!hasTypographyMappings && groupHasValues(tokens, 'typography')) {
+        warnings.push(
+          'El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.'
+        );
+      }
+    }
+
     return {
       errors: errors,
       warnings: warnings,
@@ -300,6 +320,108 @@
       }
 
       pushEntries(key, source[keys[i]]);
+    }
+
+    return entries;
+  }
+
+  var typographyCategories = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'];
+
+  function normalizeTokenValue(value) {
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+
+    if (value === null || typeof value === 'undefined') {
+      return null;
+    }
+
+    if (isPlainObject(value)) {
+      return null;
+    }
+
+    return String(value);
+  }
+
+  function getTypographyBuckets(typographyTokens) {
+    var source = isPlainObject(typographyTokens) ? typographyTokens : {};
+    var buckets = {
+      fontFamily: {},
+      fontSize: {},
+      fontWeight: {},
+      lineHeight: {},
+      letterSpacing: {}
+    };
+    var topKeys = Object.keys(source);
+    var i;
+    var j;
+    var topKey;
+    var topValue;
+    var styleName;
+    var variantKeys;
+    var variantName;
+    var normalized;
+    var category;
+
+    for (i = 0; i < topKeys.length; i += 1) {
+      topKey = topKeys[i];
+      topValue = source[topKey];
+
+      if (typographyCategories.indexOf(topKey) !== -1) {
+        if (isPlainObject(topValue)) {
+          variantKeys = Object.keys(topValue);
+
+          for (j = 0; j < variantKeys.length; j += 1) {
+            variantName = toKebabCase(variantKeys[j]);
+            normalized = normalizeTokenValue(topValue[variantKeys[j]]);
+
+            if (variantName && normalized !== null) {
+              buckets[topKey][variantName] = normalized;
+            }
+          }
+        } else {
+          normalized = normalizeTokenValue(topValue);
+
+          if (normalized !== null) {
+            buckets[topKey].base = normalized;
+          }
+        }
+
+        continue;
+      }
+
+      if (!isPlainObject(topValue)) {
+        continue;
+      }
+
+      styleName = toKebabCase(topKey);
+      if (!styleName) {
+        continue;
+      }
+
+      for (j = 0; j < typographyCategories.length; j += 1) {
+        category = typographyCategories[j];
+        normalized = normalizeTokenValue(topValue[category]);
+
+        if (normalized !== null) {
+          buckets[category][styleName] = normalized;
+        }
+      }
+    }
+
+    return buckets;
+  }
+
+  function bucketToEntries(bucket) {
+    var entries = [];
+    var keys = Object.keys(bucket);
+    var i;
+
+    for (i = 0; i < keys.length; i += 1) {
+      entries.push({
+        name: keys[i],
+        value: bucket[keys[i]]
+      });
     }
 
     return entries;
@@ -384,7 +506,13 @@
     var lines = [];
     var colorKeys = Object.keys(groups.colors);
     var spacingKeys = Object.keys(groups.spacing);
-    var typographyEntries = flattenTokenEntries(groups.typography);
+    var typographyBuckets = getTypographyBuckets(groups.typography);
+    var typographyEntries = []
+      .concat(bucketToEntries(typographyBuckets.fontFamily).map(function (entry) { return { group: 'font-family', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.fontSize).map(function (entry) { return { group: 'font-size', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.fontWeight).map(function (entry) { return { group: 'font-weight', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.lineHeight).map(function (entry) { return { group: 'line-height', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.letterSpacing).map(function (entry) { return { group: 'letter-spacing', entry: entry }; }));
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
     var sections = [];
@@ -416,7 +544,7 @@
     });
 
     addSection('Typography', typographyEntries, function (entry) {
-      return '  ' + buildCssVariableName(prefix, 'typography', entry.name) + ': ' + entry.value + ';';
+      return '  ' + buildCssVariableName(prefix, entry.group, entry.entry.name) + ': ' + entry.entry.value + ';';
     });
 
     addSection('Radius', radiusEntries, function (entry) {
@@ -468,7 +596,13 @@
     var keys = Object.keys(groups.colors);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
-    var typographyEntries = flattenTokenEntries(groups.typography);
+    var typographyBuckets = getTypographyBuckets(groups.typography);
+    var typographyEntries = []
+      .concat(bucketToEntries(typographyBuckets.fontFamily).map(function (entry) { return { group: 'font-family', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.fontSize).map(function (entry) { return { group: 'font-size', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.fontWeight).map(function (entry) { return { group: 'font-weight', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.lineHeight).map(function (entry) { return { group: 'line-height', entry: entry }; }))
+      .concat(bucketToEntries(typographyBuckets.letterSpacing).map(function (entry) { return { group: 'letter-spacing', entry: entry }; }));
     var lines = [];
     var i;
     var j;
@@ -496,7 +630,7 @@
       }
       lines.push('  /* Typography */');
       for (i = 0; i < typographyEntries.length; i += 1) {
-        lines.push('  --ion-typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+        lines.push('  --ion-' + typographyEntries[i].group + '-' + typographyEntries[i].entry.name + ': ' + typographyEntries[i].entry.value + ';');
       }
     }
 
@@ -530,9 +664,42 @@
     var spacingKeys = Object.keys(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
-    var typographyEntries = flattenTokenEntries(groups.typography);
+    var typographyBuckets = getTypographyBuckets(groups.typography);
     var colorEntries = [];
+    var typographyBaseLines = [];
+    var typographyMapLines = [];
     var i;
+    var radiusMap = {};
+    var shadowMap = {};
+
+    function pickBaseValue(bucket) {
+      var keys;
+      if (bucket.base) {
+        return bucket.base;
+      }
+      if (bucket.body) {
+        return bucket.body;
+      }
+      keys = Object.keys(bucket);
+      return keys.length > 0 ? bucket[keys[0]] : null;
+    }
+
+    function buildScssMap(variableName, bucket) {
+      var keys = Object.keys(bucket);
+      var mapLines = [];
+      var j;
+
+      if (keys.length === 0) {
+        return null;
+      }
+
+      mapLines.push(variableName + ': (');
+      for (j = 0; j < keys.length; j += 1) {
+        mapLines.push('  "' + keys[j] + '": ' + bucket[keys[j]] + ',');
+      }
+      mapLines.push(');');
+      return mapLines;
+    }
 
     for (i = 0; i < colorKeys.length; i += 1) {
       if (bootstrapColorNames[colorKeys[i]]) {
@@ -559,13 +726,54 @@
       lines.push(');');
     }
 
-    if (typographyEntries.length > 0) {
+    var fontFamilyBase = pickBaseValue(typographyBuckets.fontFamily);
+    var fontSizeBase = pickBaseValue(typographyBuckets.fontSize);
+    var fontWeightBase = pickBaseValue(typographyBuckets.fontWeight);
+    var lineHeightBase = pickBaseValue(typographyBuckets.lineHeight);
+
+    if (fontFamilyBase) {
+      typographyBaseLines.push('$font-family-base: ' + fontFamilyBase + ';');
+    }
+    if (fontSizeBase) {
+      typographyBaseLines.push('$font-size-base: ' + fontSizeBase + ';');
+    }
+    if (fontWeightBase) {
+      typographyBaseLines.push('$font-weight-base: ' + fontWeightBase + ';');
+    }
+    if (lineHeightBase) {
+      typographyBaseLines.push('$line-height-base: ' + lineHeightBase + ';');
+    }
+
+    var fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize);
+    var fontWeightsMap = buildScssMap('$font-weights', typographyBuckets.fontWeight);
+    var lineHeightsMap = buildScssMap('$line-heights', typographyBuckets.lineHeight);
+
+    if (fontSizesMap) {
+      typographyMapLines = typographyMapLines.concat(fontSizesMap);
+    }
+    if (fontWeightsMap) {
+      typographyMapLines = typographyMapLines.concat(fontWeightsMap);
+    }
+    if (lineHeightsMap) {
+      typographyMapLines = typographyMapLines.concat(lineHeightsMap);
+    }
+
+    if (typographyBaseLines.length > 0 || typographyMapLines.length > 0) {
       if (lines.length > 0) {
         lines.push('');
       }
       lines.push('/* Typography */');
-      for (i = 0; i < typographyEntries.length; i += 1) {
-        lines.push('$typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+      for (i = 0; i < typographyBaseLines.length; i += 1) {
+        lines.push(typographyBaseLines[i]);
+      }
+
+      if (typographyMapLines.length > 0) {
+        if (typographyBaseLines.length > 0) {
+          lines.push('');
+        }
+        for (i = 0; i < typographyMapLines.length; i += 1) {
+          lines.push(typographyMapLines[i]);
+        }
       }
     }
 
@@ -576,6 +784,11 @@
       lines.push('/* Radius */');
       for (i = 0; i < radiusEntries.length; i += 1) {
         lines.push('$border-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+        radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
+      }
+
+      if (radiusMap.base || radiusMap.md) {
+        lines.push('$border-radius: ' + (radiusMap.base || radiusMap.md) + ';');
       }
     }
 
@@ -586,57 +799,15 @@
       lines.push('/* Shadows */');
       for (i = 0; i < shadowEntries.length; i += 1) {
         lines.push('$box-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+        shadowMap[shadowEntries[i].name] = shadowEntries[i].value;
+      }
+
+      if (shadowMap.base || shadowMap.md) {
+        lines.push('$box-shadow: ' + (shadowMap.base || shadowMap.md) + ';');
       }
     }
 
     return lines.join('\n') + '\n';
-  }
-
-  function createTypographyBuckets() {
-    return {
-      fontFamily: {},
-      fontSize: {},
-      fontWeight: {},
-      lineHeight: {},
-      letterSpacing: {}
-    };
-  }
-
-  function fillTypographyBuckets(typography, buckets) {
-    var source = isPlainObject(typography) ? typography : {};
-    var keys = Object.keys(source);
-    var i;
-    var tokenName;
-    var tokenValue;
-
-    for (i = 0; i < keys.length; i += 1) {
-      tokenName = toKebabCase(keys[i]);
-      tokenValue = source[keys[i]];
-
-      if (!tokenName || !isPlainObject(tokenValue)) {
-        continue;
-      }
-
-      if (tokenValue.fontFamily) {
-        buckets.fontFamily[tokenName] = tokenValue.fontFamily;
-      }
-
-      if (tokenValue.fontSize) {
-        buckets.fontSize[tokenName] = tokenValue.fontSize;
-      }
-
-      if (tokenValue.fontWeight) {
-        buckets.fontWeight[tokenName] = String(tokenValue.fontWeight);
-      }
-
-      if (tokenValue.lineHeight) {
-        buckets.lineHeight[tokenName] = String(tokenValue.lineHeight);
-      }
-
-      if (tokenValue.letterSpacing) {
-        buckets.letterSpacing[tokenName] = String(tokenValue.letterSpacing);
-      }
-    }
   }
 
   function buildObjectSection(indent, label, source, comment) {
@@ -719,13 +890,11 @@
     var spacingKeys = Object.keys(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
-    var typographyBuckets = createTypographyBuckets();
+    var typographyBuckets = getTypographyBuckets(groups.typography);
     var typographySections = [];
     var sections = [];
     var lines = [];
     var i;
-
-    fillTypographyBuckets(groups.typography, typographyBuckets);
 
     lines.push('module.exports = {');
     lines.push('  theme: {');

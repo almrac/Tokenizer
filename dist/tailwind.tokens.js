@@ -20,18 +20,18 @@ module.exports = {
 
       /* Typography */
       fontFamily: {
-        "body": "Inter, sans-serif",
-        "title": "Inter, sans-serif",
+        "base": "Inter, sans-serif",
+        "mono": "\"Fira Code\", monospace",
       },
 
       fontSize: {
-        "body": "1rem",
-        "title": "1.5rem",
+        "body": "0.875rem",
+        "title": "1.25rem",
       },
 
       fontWeight: {
-        "body": "400",
-        "title": "700",
+        "regular": "400",
+        "semibold": "600",
       },
 
       lineHeight: {

@@ -1,4 +1,4 @@
-const { buildRootBlock, flattenTokenEntries, getTokenGroups } = require('./naming');
+const { buildRootBlock, bucketToEntries, flattenTokenEntries, getTokenGroups, getTypographyBuckets } = require('./naming');
 
 // Ionic is more useful when each color includes the companion variables its theme system expects.
 function clampChannel(value) {
@@ -83,7 +83,13 @@ function buildColorLines(name, value) {
 function generateIonic(tokens) {
   const groups = getTokenGroups(tokens);
   const colorKeys = Object.keys(groups.colors);
-  const typographyEntries = flattenTokenEntries(groups.typography);
+  const typographyBuckets = getTypographyBuckets(groups.typography);
+  const typographyEntries = []
+    .concat(bucketToEntries(typographyBuckets.fontFamily).map((entry) => ({ group: 'font-family', entry })))
+    .concat(bucketToEntries(typographyBuckets.fontSize).map((entry) => ({ group: 'font-size', entry })))
+    .concat(bucketToEntries(typographyBuckets.fontWeight).map((entry) => ({ group: 'font-weight', entry })))
+    .concat(bucketToEntries(typographyBuckets.lineHeight).map((entry) => ({ group: 'line-height', entry })))
+    .concat(bucketToEntries(typographyBuckets.letterSpacing).map((entry) => ({ group: 'letter-spacing', entry })));
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
   const lines = [];
@@ -111,7 +117,15 @@ function generateIonic(tokens) {
     }
     lines.push('  /* Typography */');
     for (let i = 0; i < typographyEntries.length; i += 1) {
-      lines.push('  --ion-typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+      lines.push(
+        '  --ion-' +
+        typographyEntries[i].group +
+        '-' +
+        typographyEntries[i].entry.name +
+        ': ' +
+        typographyEntries[i].entry.value +
+        ';'
+      );
     }
   }
 

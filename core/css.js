@@ -1,8 +1,10 @@
 const {
   buildCssVariableName,
   buildRootBlock,
+  bucketToEntries,
   flattenTokenEntries,
   getTokenGroups,
+  getTypographyBuckets,
   normalizeCssPrefix,
 } = require('./naming');
 
@@ -13,7 +15,13 @@ function generateCss(tokens, options) {
   const lines = [];
   const colorKeys = Object.keys(groups.colors);
   const spacingKeys = Object.keys(groups.spacing);
-  const typographyEntries = flattenTokenEntries(groups.typography);
+  const typographyBuckets = getTypographyBuckets(groups.typography);
+  const typographyEntries = []
+    .concat(bucketToEntries(typographyBuckets.fontFamily).map((entry) => ({ group: 'font-family', entry })))
+    .concat(bucketToEntries(typographyBuckets.fontSize).map((entry) => ({ group: 'font-size', entry })))
+    .concat(bucketToEntries(typographyBuckets.fontWeight).map((entry) => ({ group: 'font-weight', entry })))
+    .concat(bucketToEntries(typographyBuckets.lineHeight).map((entry) => ({ group: 'line-height', entry })))
+    .concat(bucketToEntries(typographyBuckets.letterSpacing).map((entry) => ({ group: 'letter-spacing', entry })));
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
   const sections = [];
@@ -41,7 +49,7 @@ function generateCss(tokens, options) {
   });
 
   addSection('Typography', typographyEntries, function (entry) {
-    return '  ' + buildCssVariableName(prefix, 'typography', entry.name) + ': ' + entry.value + ';';
+    return '  ' + buildCssVariableName(prefix, entry.group, entry.entry.name) + ': ' + entry.entry.value + ';';
   });
 
   addSection('Radius', radiusEntries, function (entry) {

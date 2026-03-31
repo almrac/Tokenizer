@@ -1,4 +1,4 @@
-const { flattenTokenEntries, getTokenGroups } = require('./naming');
+const { flattenTokenEntries, getTokenGroups, getTypographyBuckets } = require('./naming');
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -17,10 +17,42 @@ function generateBootstrap(tokens) {
   const lines = [];
   const colorKeys = Object.keys(groups.colors);
   const spacingKeys = Object.keys(groups.spacing);
-  const typographyEntries = flattenTokenEntries(groups.typography);
+  const typographyBuckets = getTypographyBuckets(groups.typography);
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
   const colorEntries = [];
+  const typographyBaseLines = [];
+  const typographyMapLines = [];
+
+  function pickBaseValue(bucket) {
+    if (bucket.base) {
+      return bucket.base;
+    }
+    if (bucket.body) {
+      return bucket.body;
+    }
+
+    const keys = Object.keys(bucket);
+    if (keys.length === 0) {
+      return null;
+    }
+
+    return bucket[keys[0]];
+  }
+
+  function buildScssMap(variableName, bucket) {
+    const keys = Object.keys(bucket);
+    if (keys.length === 0) {
+      return null;
+    }
+
+    const lines = [variableName + ': ('];
+    for (let i = 0; i < keys.length; i += 1) {
+      lines.push('  "' + keys[i] + '": ' + bucket[keys[i]] + ',');
+    }
+    lines.push(');');
+    return lines;
+  }
 
   for (let i = 0; i < colorKeys.length; i += 1) {
     const key = colorKeys[i];
@@ -50,13 +82,54 @@ function generateBootstrap(tokens) {
     lines.push(');');
   }
 
-  if (typographyEntries.length > 0) {
+  const fontFamilyBase = pickBaseValue(typographyBuckets.fontFamily);
+  const fontSizeBase = pickBaseValue(typographyBuckets.fontSize);
+  const fontWeightBase = pickBaseValue(typographyBuckets.fontWeight);
+  const lineHeightBase = pickBaseValue(typographyBuckets.lineHeight);
+
+  if (fontFamilyBase) {
+    typographyBaseLines.push('$font-family-base: ' + fontFamilyBase + ';');
+  }
+  if (fontSizeBase) {
+    typographyBaseLines.push('$font-size-base: ' + fontSizeBase + ';');
+  }
+  if (fontWeightBase) {
+    typographyBaseLines.push('$font-weight-base: ' + fontWeightBase + ';');
+  }
+  if (lineHeightBase) {
+    typographyBaseLines.push('$line-height-base: ' + lineHeightBase + ';');
+  }
+
+  const fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize);
+  const fontWeightsMap = buildScssMap('$font-weights', typographyBuckets.fontWeight);
+  const lineHeightsMap = buildScssMap('$line-heights', typographyBuckets.lineHeight);
+
+  if (fontSizesMap) {
+    typographyMapLines.push(...fontSizesMap);
+  }
+  if (fontWeightsMap) {
+    typographyMapLines.push(...fontWeightsMap);
+  }
+  if (lineHeightsMap) {
+    typographyMapLines.push(...lineHeightsMap);
+  }
+
+  if (typographyBaseLines.length > 0 || typographyMapLines.length > 0) {
     if (lines.length > 0) {
       lines.push('');
     }
     lines.push('/* Typography */');
-    for (let i = 0; i < typographyEntries.length; i += 1) {
-      lines.push('$typography-' + typographyEntries[i].name + ': ' + typographyEntries[i].value + ';');
+    for (let i = 0; i < typographyBaseLines.length; i += 1) {
+      lines.push(typographyBaseLines[i]);
+    }
+
+    if (typographyMapLines.length > 0) {
+      if (typographyBaseLines.length > 0) {
+        lines.push('');
+      }
+      for (let i = 0; i < typographyMapLines.length; i += 1) {
+        lines.push(typographyMapLines[i]);
+      }
     }
   }
 
@@ -68,6 +141,14 @@ function generateBootstrap(tokens) {
     for (let i = 0; i < radiusEntries.length; i += 1) {
       lines.push('$border-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
     }
+
+    const radiusMap = {};
+    for (let i = 0; i < radiusEntries.length; i += 1) {
+      radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
+    }
+    if (radiusMap.base || radiusMap.md) {
+      lines.push('$border-radius: ' + (radiusMap.base || radiusMap.md) + ';');
+    }
   }
 
   if (shadowEntries.length > 0) {
@@ -77,6 +158,14 @@ function generateBootstrap(tokens) {
     lines.push('/* Shadows */');
     for (let i = 0; i < shadowEntries.length; i += 1) {
       lines.push('$box-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+    }
+
+    const shadowMap = {};
+    for (let i = 0; i < shadowEntries.length; i += 1) {
+      shadowMap[shadowEntries[i].name] = shadowEntries[i].value;
+    }
+    if (shadowMap.base || shadowMap.md) {
+      lines.push('$box-shadow: ' + (shadowMap.base || shadowMap.md) + ';');
     }
   }
 

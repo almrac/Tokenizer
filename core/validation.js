@@ -1,4 +1,5 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
+const { getTypographyBuckets } = require('./naming');
 
 const TARGET_GROUP_SUPPORT = {
   css: {
@@ -140,6 +141,22 @@ function validateTokenInput(tokens, target) {
 
     if (ignoredColorKeys.length > 0) {
       warnings.push('Bootstrap solo aplica colores estándar. Se ignorarán: ' + joinList(ignoredColorKeys) + '.');
+    }
+  }
+
+  if (isObjectRecord(tokens.typography)) {
+    const buckets = getTypographyBuckets(tokens.typography);
+    const hasTypographyMappings =
+      Object.keys(buckets.fontFamily).length > 0 ||
+      Object.keys(buckets.fontSize).length > 0 ||
+      Object.keys(buckets.fontWeight).length > 0 ||
+      Object.keys(buckets.lineHeight).length > 0 ||
+      Object.keys(buckets.letterSpacing).length > 0;
+
+    if (!hasTypographyMappings && groupHasValues(tokens, 'typography')) {
+      warnings.push(
+        'El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.'
+      );
     }
   }
 

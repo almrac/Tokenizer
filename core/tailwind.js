@@ -1,48 +1,4 @@
-const { flattenTokenEntries, getTokenGroups, isPlainObject, toKebabCase } = require('./naming');
-
-function createTypographyBuckets() {
-  return {
-    fontFamily: {},
-    fontSize: {},
-    fontWeight: {},
-    lineHeight: {},
-    letterSpacing: {},
-  };
-}
-
-function fillTypographyBuckets(typography, buckets) {
-  const source = isPlainObject(typography) ? typography : {};
-  const keys = Object.keys(source);
-
-  for (let i = 0; i < keys.length; i += 1) {
-    const tokenName = toKebabCase(keys[i]);
-    const tokenValue = source[keys[i]];
-
-    if (!tokenName || !isPlainObject(tokenValue)) {
-      continue;
-    }
-
-    if (tokenValue.fontFamily) {
-      buckets.fontFamily[tokenName] = tokenValue.fontFamily;
-    }
-
-    if (tokenValue.fontSize) {
-      buckets.fontSize[tokenName] = tokenValue.fontSize;
-    }
-
-    if (tokenValue.fontWeight) {
-      buckets.fontWeight[tokenName] = String(tokenValue.fontWeight);
-    }
-
-    if (tokenValue.lineHeight) {
-      buckets.lineHeight[tokenName] = String(tokenValue.lineHeight);
-    }
-
-    if (tokenValue.letterSpacing) {
-      buckets.letterSpacing[tokenName] = String(tokenValue.letterSpacing);
-    }
-  }
-}
+const { flattenTokenEntries, getTokenGroups, getTypographyBuckets } = require('./naming');
 
 function buildObjectSection(indent, label, source, comment) {
   const keys = Object.keys(source);
@@ -115,12 +71,10 @@ function generateTailwind(tokens) {
   const spacingKeys = Object.keys(groups.spacing);
   const radiusEntries = flattenTokenEntries(groups.radius);
   const shadowEntries = flattenTokenEntries(groups.shadows);
-  const typographyBuckets = createTypographyBuckets();
+  const typographyBuckets = getTypographyBuckets(groups.typography);
   const typographySections = [];
   const sections = [];
   const lines = [];
-
-  fillTypographyBuckets(groups.typography, typographyBuckets);
 
   lines.push('module.exports = {');
   lines.push('  theme: {');

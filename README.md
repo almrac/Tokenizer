@@ -53,6 +53,19 @@ Feedback por entorno:
 - Web UI: muestra errores y advertencias en bloques separados bajo los controles
 - CLI: imprime `Error:` para bloqueos y `Warning:` para avisos no bloqueantes
 
+## Notas por target (v0.4.0)
+
+- `css`:
+  usa `colors`, `spacing`, `typography`, `radius`, `shadows` como custom properties.
+- `ionic`:
+  mantiene el mapeo completo de `colors` y además expone `typography`, `radius` y `shadows` como variables custom.
+  `spacing` se ignora y se avisa.
+- `bootstrap`:
+  mapea `colors` estándar de Bootstrap, `$spacers`, variables de tipografía base (`$font-family-base`, `$font-size-base`, `$font-weight-base`, `$line-height-base`), mapas tipográficos (`$font-sizes`, `$font-weights`, `$line-heights`), `radius` y `shadows`.
+  Colores no estándar se ignoran con warning.
+- `tailwind`:
+  mapea a `theme.extend` en `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
+
 ## Formato esperado de `tokens.json`
 
 ```json
@@ -71,17 +84,21 @@ Feedback por entorno:
     "lg": "1.5rem"
   },
   "typography": {
-    "body": {
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "1rem",
-      "fontWeight": "400",
-      "lineHeight": "1.5"
+    "fontFamily": {
+      "base": "Inter, sans-serif",
+      "mono": "\"Fira Code\", monospace"
     },
-    "title": {
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "1.5rem",
-      "fontWeight": "700",
-      "lineHeight": "1.2"
+    "fontSize": {
+      "body": "0.875rem",
+      "title": "1.25rem"
+    },
+    "fontWeight": {
+      "regular": "400",
+      "semibold": "600"
+    },
+    "lineHeight": {
+      "body": "1.5",
+      "title": "1.2"
     }
   },
   "radius": {

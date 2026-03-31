@@ -96,6 +96,99 @@ function flattenTokenEntries(groupTokens) {
   return entries;
 }
 
+const TYPOGRAPHY_CATEGORIES = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'];
+
+function normalizeTokenValue(value) {
+  if (Array.isArray(value)) {
+    return value.join(', ');
+  }
+
+  if (value === null || typeof value === 'undefined') {
+    return null;
+  }
+
+  if (isPlainObject(value)) {
+    return null;
+  }
+
+  return String(value);
+}
+
+function getTypographyBuckets(typographyTokens) {
+  const source = isPlainObject(typographyTokens) ? typographyTokens : {};
+  const buckets = {
+    fontFamily: {},
+    fontSize: {},
+    fontWeight: {},
+    lineHeight: {},
+    letterSpacing: {},
+  };
+  const topKeys = Object.keys(source);
+
+  for (let i = 0; i < topKeys.length; i += 1) {
+    const topKey = topKeys[i];
+    const topValue = source[topKey];
+    const topCategoryIndex = TYPOGRAPHY_CATEGORIES.indexOf(topKey);
+
+    if (topCategoryIndex !== -1) {
+      if (isPlainObject(topValue)) {
+        const variantKeys = Object.keys(topValue);
+
+        for (let j = 0; j < variantKeys.length; j += 1) {
+          const variantName = toKebabCase(variantKeys[j]);
+          const normalized = normalizeTokenValue(topValue[variantKeys[j]]);
+
+          if (variantName && normalized !== null) {
+            buckets[topKey][variantName] = normalized;
+          }
+        }
+      } else {
+        const normalized = normalizeTokenValue(topValue);
+
+        if (normalized !== null) {
+          buckets[topKey].base = normalized;
+        }
+      }
+
+      continue;
+    }
+
+    if (!isPlainObject(topValue)) {
+      continue;
+    }
+
+    const styleName = toKebabCase(topKey);
+    if (!styleName) {
+      continue;
+    }
+
+    for (let j = 0; j < TYPOGRAPHY_CATEGORIES.length; j += 1) {
+      const category = TYPOGRAPHY_CATEGORIES[j];
+      const normalized = normalizeTokenValue(topValue[category]);
+
+      if (normalized !== null) {
+        buckets[category][styleName] = normalized;
+      }
+    }
+  }
+
+  return buckets;
+}
+
+function bucketToEntries(bucket) {
+  const entries = [];
+  const keys = Object.keys(bucket);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    entries.push({
+      name: keys[i],
+      value: bucket[keys[i]],
+    });
+  }
+
+  return entries;
+}
+
 function buildRootBlock(lines) {
   if (lines.length === 0) {
     return ':root {\n}\n';
@@ -107,8 +200,10 @@ function buildRootBlock(lines) {
 module.exports = {
   buildCssVariableName: buildCssVariableName,
   buildRootBlock: buildRootBlock,
+  bucketToEntries: bucketToEntries,
   flattenTokenEntries: flattenTokenEntries,
   getTokenGroups: getTokenGroups,
+  getTypographyBuckets: getTypographyBuckets,
   isPlainObject: isPlainObject,
   normalizeCssPrefix: normalizeCssPrefix,
   toKebabCase: toKebabCase,
