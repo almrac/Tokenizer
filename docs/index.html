@@ -16,7 +16,7 @@
         <h1>Tokenizer</h1>
         <span class="topbar-divider" aria-hidden="true"></span>
         <p>Herramienta de conversión de tokens de diseño para desarrolladores</p>
-        <span class="version-label" aria-label="Versión actual">v0.4.3</span>
+        <span class="version-label" aria-label="Versión actual">v0.4.4</span>
       </div>
     </header>
 
@@ -46,14 +46,28 @@
 
         <section class="config-section config-controls">
           <label class="field">
-            <span>Targets de salida</span>
-            <div class="target-grid" data-ui="target-group">
-              <label class="target-item"><input type="checkbox" data-ui="target-option" value="css" checked> css</label>
+            <span>Target principal</span>
+            <select class="target-select" data-ui="target-select">
+              <option value="css">css</option>
+              <option value="ionic">ionic</option>
+              <option value="bootstrap">bootstrap</option>
+              <option value="tailwind">tailwind</option>
+            </select>
+            <small class="hint">Flujo principal: selecciona un target y previsualiza ese archivo al instante.</small>
+          </label>
+
+          <label class="field multi-export-field">
+            <span class="multi-export-toggle">
+              <input type="checkbox" data-ui="multi-export-toggle">
+              Modo multi-export (opcional)
+            </span>
+            <div class="target-grid multi-export-panel" data-ui="target-group" hidden>
+              <label class="target-item"><input type="checkbox" data-ui="target-option" value="css"> css</label>
               <label class="target-item"><input type="checkbox" data-ui="target-option" value="ionic"> ionic</label>
               <label class="target-item"><input type="checkbox" data-ui="target-option" value="bootstrap"> bootstrap</label>
               <label class="target-item"><input type="checkbox" data-ui="target-option" value="tailwind"> tailwind</label>
             </div>
-            <small class="hint">Puedes seleccionar uno o varios targets. Si eliges varios, la vista previa usa el target activo.</small>
+            <small class="hint">Cuando está activo, puedes generar y descargar varios targets en una sola acción.</small>
           </label>
 
           <label class="field prefix-field" data-ui="prefix-field">
@@ -76,8 +90,8 @@
               <span class="status-badge" data-ui="status-badge" hidden>Generado</span>
             </div>
             <div class="preview-switch" data-ui="preview-switch" hidden>
-              <label class="preview-switch-label" for="preview-target-select">Vista activa</label>
-              <select id="preview-target-select" class="preview-target-select" data-ui="preview-target-select"></select>
+              <span class="preview-switch-label">Vista activa</span>
+              <div class="preview-tabs" data-ui="preview-tabs"></div>
             </div>
           </div>
           <div class="result-actions">

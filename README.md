@@ -162,13 +162,14 @@ Desde la interfaz puedes:
 
 - pegar el contenido de `tokens.json`
 - subir un archivo `.json`
-- elegir uno o varios targets de salida
+- elegir un target principal de salida (flujo por defecto)
+- activar opcionalmente el modo multi-export para seleccionar varios targets
 - indicar un prefijo para `css`
 - cargar un ejemplo rápido
 - limpiar el formulario
-- previsualizar el archivo generado (con selector de vista activa si hay varios outputs)
+- previsualizar el archivo generado (si hay varios outputs, el selector de vista activa aparece en el panel derecho)
 - copiar el output activo
-- descargar el output activo o descargar varios archivos en secuencia si hay multi-target
+- descargar el output activo o descargar varios archivos en secuencia en modo multi-export
 
 Ejemplo en la UI:
 
@@ -182,10 +183,12 @@ Nota sobre prefijo:
 
 Modo multi-export:
 
-- Si seleccionas un solo target, el comportamiento es el tradicional (preview + descarga de un archivo).
-- Si seleccionas múltiples targets:
+- Flujo normal: el `target principal` controla directamente la vista previa y la exportación de un único archivo.
+- Flujo opcional: activa `Modo multi-export` para marcar varios targets.
+- En multi-export:
   - Tokenizer genera un archivo por target.
-  - puedes cambiar la vista activa desde el selector de preview.
+  - eliges los targets de exportación en el panel izquierdo.
+  - cambias la vista activa en el panel de salida (derecha), sin alterar la selección de exportación.
   - la acción `Copiar` copia solo la vista activa.
   - la acción `Descargar` usa fallback sin dependencias: descarga secuencial de los archivos generados (no ZIP).
 

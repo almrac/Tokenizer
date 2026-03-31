@@ -2,6 +2,16 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.4.4] - 2026-03-31
+
+### Changed
+
+- Refinamiento UX single-target-first:
+  - el selector `Target principal` vuelve a ser el flujo principal y controla directamente la vista previa.
+  - `Modo multi-export` se mantiene, pero queda como opción secundaria.
+- La selección de vista activa se mantiene en el panel derecho y solo aparece cuando existen múltiples outputs.
+- Se redujo la confusión entre selección de exportación y vista previa manteniendo compatibilidad con multi-export.
+
 ## [v0.4.3] - 2026-03-31
 
 ### Changed

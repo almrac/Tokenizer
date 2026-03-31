@@ -41,9 +41,12 @@
 
   var tokensInput = document.querySelector('[data-ui="tokens-input"]');
   var fileInput = document.querySelector('[data-ui="file-input"]');
+  var targetSelect = document.querySelector('[data-ui="target-select"]');
+  var multiExportToggle = document.querySelector('[data-ui="multi-export-toggle"]');
+  var targetGroup = document.querySelector('[data-ui="target-group"]');
   var targetOptions = Array.prototype.slice.call(document.querySelectorAll('[data-ui="target-option"]'));
   var previewSwitch = document.querySelector('[data-ui="preview-switch"]');
-  var previewTargetSelect = document.querySelector('[data-ui="preview-target-select"]');
+  var previewTabs = document.querySelector('[data-ui="preview-tabs"]');
   var prefixField = document.querySelector('[data-ui="prefix-field"]');
   var prefixInput = document.querySelector('[data-ui="prefix-input"]');
   var filename = document.querySelector('[data-ui="filename"]');
@@ -60,6 +63,7 @@
   var copyResetTimer = 0;
   var generatedOutputs = {};
   var activePreviewTarget = 'css';
+  var preferredPreviewTarget = '';
 
   function normalizeCssPrefix(prefix) {
     if (!prefix) {
@@ -954,6 +958,10 @@
   }
 
   function getSelectedTargets() {
+    if (!multiExportToggle || !multiExportToggle.checked) {
+      return [targetSelect && targetSelect.value ? targetSelect.value : 'css'];
+    }
+
     var selected = [];
     var i;
 
@@ -980,15 +988,37 @@
   }
 
   function ensureAtLeastOneTarget(changedOption) {
+    if (!multiExportToggle || !multiExportToggle.checked) {
+      return;
+    }
+
     if (getSelectedTargets().length > 0) {
       return;
     }
 
     if (changedOption) {
       changedOption.checked = true;
+    } else if (targetSelect && targetSelect.value) {
+      setSelectedTargets([targetSelect.value]);
     } else if (targetOptions.length > 0) {
       targetOptions[0].checked = true;
     }
+  }
+
+  function updateMultiExportVisibility() {
+    if (!targetGroup) {
+      return;
+    }
+
+    targetGroup.hidden = !multiExportToggle || !multiExportToggle.checked;
+  }
+
+  function syncSelectedTargetsWithPrimaryTarget() {
+    if (!targetSelect || targetOptions.length === 0) {
+      return;
+    }
+
+    setSelectedTargets([targetSelect.value]);
   }
 
   function updatePrefixVisibility() {
@@ -1043,24 +1073,37 @@
   function updatePreviewSelector() {
     var targets = Object.keys(generatedOutputs);
     var i;
-    var option;
+    var tab;
 
-    previewTargetSelect.textContent = '';
+    previewTabs.textContent = '';
 
     for (i = 0; i < targets.length; i += 1) {
-      option = document.createElement('option');
-      option.value = targets[i];
-      option.textContent = targets[i];
-      previewTargetSelect.appendChild(option);
+      tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'preview-tab';
+      tab.textContent = targets[i];
+      tab.setAttribute('data-target', targets[i]);
+      previewTabs.appendChild(tab);
     }
 
     previewSwitch.hidden = targets.length <= 1;
 
     if (targets.length > 0) {
-      if (targets.indexOf(activePreviewTarget) === -1) {
+      if (targets.length === 1) {
+        activePreviewTarget = targets[0];
+      } else if (preferredPreviewTarget && targets.indexOf(preferredPreviewTarget) !== -1) {
+        activePreviewTarget = preferredPreviewTarget;
+      } else if (targets.indexOf(activePreviewTarget) === -1) {
         activePreviewTarget = targets[0];
       }
-      previewTargetSelect.value = activePreviewTarget;
+
+      for (i = 0; i < previewTabs.children.length; i += 1) {
+        if (previewTabs.children[i].getAttribute('data-target') === activePreviewTarget) {
+          previewTabs.children[i].classList.add('is-active');
+        } else {
+          previewTabs.children[i].classList.remove('is-active');
+        }
+      }
     }
   }
 
@@ -1117,6 +1160,7 @@
     var newOutputs = {};
     var validationWarning;
 
+    updateMultiExportVisibility();
     updatePrefixVisibility();
     ensureAtLeastOneTarget();
     targets = getSelectedTargets();
@@ -1270,19 +1314,60 @@
   }
 
   tokensInput.value = '';
-  updateActionState('', 'css');
+  if (targetSelect) {
+    targetSelect.value = targetSelect.value || 'css';
+  }
+  syncSelectedTargetsWithPrimaryTarget();
+  if (multiExportToggle) {
+    multiExportToggle.checked = false;
+  }
+  updateMultiExportVisibility();
+  updateActionState('', targetSelect && targetSelect.value ? targetSelect.value : 'css');
 
   tokensInput.addEventListener('input', renderOutput);
+  if (targetSelect) {
+    targetSelect.addEventListener('change', function () {
+      preferredPreviewTarget = targetSelect.value;
+      if (!multiExportToggle || !multiExportToggle.checked) {
+        syncSelectedTargetsWithPrimaryTarget();
+      }
+      renderOutput();
+    });
+  }
+  if (multiExportToggle) {
+    multiExportToggle.addEventListener('change', function () {
+      if (multiExportToggle.checked) {
+        ensureAtLeastOneTarget();
+      } else {
+        syncSelectedTargetsWithPrimaryTarget();
+        preferredPreviewTarget = targetSelect && targetSelect.value ? targetSelect.value : 'css';
+      }
+      renderOutput();
+    });
+  }
   for (var i = 0; i < targetOptions.length; i += 1) {
     (function (option) {
       option.addEventListener('change', function () {
+        if (!multiExportToggle || !multiExportToggle.checked) {
+          return;
+        }
         ensureAtLeastOneTarget(option);
+        if (option.checked) {
+          preferredPreviewTarget = option.value;
+        }
         renderOutput();
       });
     }(targetOptions[i]));
   }
-  previewTargetSelect.addEventListener('change', function () {
-    activePreviewTarget = previewTargetSelect.value;
+  previewTabs.addEventListener('click', function (event) {
+    var target = event.target && event.target.getAttribute('data-target');
+
+    if (!target) {
+      return;
+    }
+
+    activePreviewTarget = target;
+    preferredPreviewTarget = target;
     renderActivePreview();
   });
   prefixInput.addEventListener('input', renderOutput);
