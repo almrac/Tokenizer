@@ -416,17 +416,6 @@ select {
   white-space: pre-line;
 }
 
-.info {
-  border: 1px solid rgba(0, 91, 192, 0.2);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  background: rgba(216, 226, 255, 0.62);
-  color: var(--color-on-primary-container);
-  font-size: 0.79rem;
-  font-weight: 600;
-  white-space: pre-line;
-}
-
 .inspector {
   border: 1px solid rgba(169, 180, 185, 0.24);
   border-radius: var(--radius-sm);

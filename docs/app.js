@@ -106,7 +106,6 @@
   var filename = document.querySelector('[data-ui="filename"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
-  var infoMessage = document.querySelector('[data-ui="info-message"]');
   var warningMessage = document.querySelector('[data-ui="warning-message"]');
   var inspector = document.querySelector('[data-ui="inspector"]');
   var inspectorRoot = document.querySelector('[data-ui="inspector-root"]');
@@ -115,6 +114,8 @@
   var inspectorIgnored = document.querySelector('[data-ui="inspector-ignored"]');
   var inspectorNormalizationRow = document.querySelector('[data-ui="inspector-normalization-row"]');
   var inspectorNormalization = document.querySelector('[data-ui="inspector-normalization"]');
+  var inspectorImportRow = document.querySelector('[data-ui="inspector-import-row"]');
+  var inspectorImport = document.querySelector('[data-ui="inspector-import"]');
   var inspectorWarningState = document.querySelector('[data-ui="inspector-warning-state"]');
   var copyButton = document.querySelector('[data-ui="copy-button"]');
   var downloadButton = document.querySelector('[data-ui="download-button"]');
@@ -1532,17 +1533,6 @@
     warningMessage.textContent = message;
   }
 
-  function setInfo(message) {
-    if (!message) {
-      infoMessage.hidden = true;
-      infoMessage.textContent = '';
-      return;
-    }
-
-    infoMessage.hidden = false;
-    infoMessage.textContent = message;
-  }
-
   function hideInspector() {
     inspector.hidden = true;
     inspectorRoot.textContent = '-';
@@ -1551,6 +1541,8 @@
     inspectorIgnored.textContent = '-';
     inspectorNormalizationRow.hidden = true;
     inspectorNormalization.textContent = '-';
+    inspectorImportRow.hidden = true;
+    inspectorImport.textContent = '-';
     inspectorWarningState.textContent = 'Sin advertencias';
   }
 
@@ -1559,13 +1551,27 @@
     var supported = details && details.supportedGroups ? details.supportedGroups : [];
     var ignored = details && details.ignoredGroups ? details.ignoredGroups : [];
     var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
+    var importNotes = details && details.importNotes ? details.importNotes : [];
     var warningCount = details && details.warningCount ? details.warningCount : 0;
+    var meaningfulImportNotes = importNotes.filter(function (note) {
+      return note.indexOf('Import summary:') !== 0;
+    });
+    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || normalizationNotes.length > 0 || meaningfulImportNotes.length > 0;
+    var status = 'Sin advertencias';
+
+    if (warningCount > 0) {
+      status = 'Con advertencias';
+    } else if (normalizationNotes.length > 0) {
+      status = 'Normalizado';
+    } else if (meaningfulImportNotes.length > 0) {
+      status = 'Importación ajustada';
+    }
 
     inspector.hidden = false;
-    inspectorRoot.textContent = rootUsed === 'top-level' ? 'Top-level' : rootUsed;
+    inspectorRoot.textContent = rootUsed === 'top-level' ? 'nivel principal' : rootUsed;
     inspectorSupported.textContent = supported.length > 0 ? supported.join(', ') : 'Ninguno';
 
-    if (ignored.length > 0) {
+    if (hasMeaningfulDetails && ignored.length > 0) {
       inspectorIgnoredRow.hidden = false;
       inspectorIgnored.textContent = ignored.join(', ');
     } else {
@@ -1573,7 +1579,7 @@
       inspectorIgnored.textContent = '-';
     }
 
-    if (normalizationNotes.length > 0) {
+    if (hasMeaningfulDetails && normalizationNotes.length > 0) {
       inspectorNormalizationRow.hidden = false;
       inspectorNormalization.textContent =
         normalizationNotes.length > 4 ?
@@ -1584,7 +1590,15 @@
       inspectorNormalization.textContent = '-';
     }
 
-    inspectorWarningState.textContent = warningCount > 0 ? 'Advertencias activas (' + warningCount + ')' : 'Sin advertencias';
+    if (hasMeaningfulDetails && meaningfulImportNotes.length > 0) {
+      inspectorImportRow.hidden = false;
+      inspectorImport.textContent = meaningfulImportNotes.length > 2 ? meaningfulImportNotes.slice(0, 2).join(' | ') : meaningfulImportNotes.join(' | ');
+    } else {
+      inspectorImportRow.hidden = true;
+      inspectorImport.textContent = '-';
+    }
+
+    inspectorWarningState.textContent = status;
   }
 
   function getCurrentFileName(target) {
@@ -1683,7 +1697,6 @@
     var rawTokens;
     var parsedTokens;
     var normalization;
-    var normalizationInfoText;
     var validation;
     var warnings = [];
     var warningsMap = {};
@@ -1712,7 +1725,6 @@
       rawTokens = JSON.parse(tokensInput.value);
     } catch (error) {
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
-      setInfo('');
       setWarning('');
       generatedOutputs = {};
       updatePreviewSelector();
@@ -1731,11 +1743,9 @@
 
     normalization = normalizeTokenInput(rawTokens);
     parsedTokens = normalization.normalized;
-    normalizationInfoText = normalization.info.join('\n');
 
     if (normalization.errors.length > 0) {
       setError(normalization.errors.join('\n'));
-      setInfo(normalizationInfoText);
       setWarning('');
       generatedOutputs = {};
       updatePreviewSelector();
@@ -1745,6 +1755,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: [],
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        importNotes: normalization.summary && normalization.summary.importNotes,
         warningCount: 0
       });
       return;
@@ -1791,7 +1802,6 @@
         }
       }
       setError(errors.join('\n'));
-      setInfo(normalizationInfoText);
       setWarning(warnings.join('\n'));
       generatedOutputs = {};
       updatePreviewSelector();
@@ -1801,6 +1811,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        importNotes: normalization.summary && normalization.summary.importNotes,
         warningCount: warningCount
       });
       return;
@@ -1816,11 +1827,9 @@
         newOutputs[target] = output;
       }
       setError('');
-      setInfo(normalizationInfoText);
       setWarning(warnings.join('\n'));
     } catch (error) {
       setError('No se pudo generar la salida para alguno de los targets seleccionados. Revisa el contenido de los tokens e inténtalo de nuevo.');
-      setInfo(normalizationInfoText);
       setWarning(warnings.join('\n'));
       generatedOutputs = {};
       updatePreviewSelector();
@@ -1830,6 +1839,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        importNotes: normalization.summary && normalization.summary.importNotes,
         warningCount: warningCount
       });
       return;
@@ -1844,6 +1854,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        importNotes: normalization.summary && normalization.summary.importNotes,
         warningCount: warningCount
       });
     }
@@ -1859,7 +1870,6 @@
     file.text().then(function (text) {
       tokensInput.value = text;
       setError('');
-      setInfo('');
       renderOutput();
     }).catch(function () {
       setError('No se pudo leer el archivo seleccionado. Comprueba que sea un JSON de texto válido.');
@@ -1907,7 +1917,6 @@
     tokensInput.value = JSON.stringify(basicExampleTokens, null, 2);
     fileInput.value = '';
     setError('');
-    setInfo('');
     setWarning('');
     renderOutput();
   }
@@ -1919,7 +1928,6 @@
     fileInput.value = '';
     generatedOutputs = {};
     setError('');
-    setInfo('');
     setWarning('');
     renderOutput();
   }
