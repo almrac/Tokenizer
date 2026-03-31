@@ -32,6 +32,36 @@
     dark: true
   };
   var supportedGroups = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
+  var topLevelAliases = {
+    color: 'colors',
+    colours: 'colors',
+    space: 'spacing',
+    spaces: 'spacing',
+    radii: 'radius',
+    borderRadius: 'radius',
+    shadow: 'shadows',
+    boxShadow: 'shadows',
+    elevation: 'shadows',
+    type: 'typography',
+    text: 'typography'
+  };
+  var typographyAliases = {
+    'font-family': 'fontFamily',
+    font_family: 'fontFamily',
+    fontfamily: 'fontFamily',
+    'font-size': 'fontSize',
+    font_size: 'fontSize',
+    fontsize: 'fontSize',
+    'font-weight': 'fontWeight',
+    font_weight: 'fontWeight',
+    fontweight: 'fontWeight',
+    'line-height': 'lineHeight',
+    line_height: 'lineHeight',
+    lineheight: 'lineHeight',
+    'letter-spacing': 'letterSpacing',
+    letter_spacing: 'letterSpacing',
+    letterspacing: 'letterSpacing'
+  };
   var targetGroupSupport = {
     css: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
     ionic: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
@@ -52,6 +82,7 @@
   var filename = document.querySelector('[data-ui="filename"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
+  var infoMessage = document.querySelector('[data-ui="info-message"]');
   var warningMessage = document.querySelector('[data-ui="warning-message"]');
   var copyButton = document.querySelector('[data-ui="copy-button"]');
   var downloadButton = document.querySelector('[data-ui="download-button"]');
@@ -115,6 +146,160 @@
     }
 
     return Object.keys(tokens[groupName]).length > 0;
+  }
+
+  function getAliasTargetKey(key, aliases) {
+    var direct = aliases[key];
+    var lowered;
+
+    if (direct) {
+      return direct;
+    }
+
+    lowered = String(key).toLowerCase();
+
+    if (aliases[lowered]) {
+      return aliases[lowered];
+    }
+
+    return null;
+  }
+
+  function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
+    var merged = Object.assign({}, baseRecord);
+    var keys = Object.keys(incomingRecord);
+    var i;
+    var key;
+
+    for (i = 0; i < keys.length; i += 1) {
+      key = keys[i];
+
+      if (!Object.prototype.hasOwnProperty.call(merged, key)) {
+        merged[key] = incomingRecord[key];
+        continue;
+      }
+
+      if (isPlainObject(merged[key]) && isPlainObject(incomingRecord[key])) {
+        merged[key] = mergeObjectRecords(merged[key], incomingRecord[key], context + '.' + key, infoMessages);
+        continue;
+      }
+
+      infoMessages.push('Conflicto en "' + context + '.' + key + '": se mantiene el valor existente y se ignora el alias.');
+    }
+
+    return merged;
+  }
+
+  function normalizeTypographyGroup(typographySource, infoMessages) {
+    var normalized;
+    var keys;
+    var i;
+    var originalKey;
+    var value;
+    var mappedKey;
+    var normalizedValue;
+
+    if (!isPlainObject(typographySource)) {
+      return typographySource;
+    }
+
+    normalized = {};
+    keys = Object.keys(typographySource);
+
+    for (i = 0; i < keys.length; i += 1) {
+      originalKey = keys[i];
+      value = typographySource[originalKey];
+      mappedKey = getAliasTargetKey(originalKey, typographyAliases) || originalKey;
+      normalizedValue = isPlainObject(value) ? normalizeTypographyGroup(value, infoMessages) : value;
+
+      if (mappedKey !== originalKey) {
+        infoMessages.push('Clave de typography normalizada de "' + originalKey + '" a "' + mappedKey + '".');
+      }
+
+      if (Object.prototype.hasOwnProperty.call(normalized, mappedKey)) {
+        if (isPlainObject(normalized[mappedKey]) && isPlainObject(normalizedValue)) {
+          normalized[mappedKey] = mergeObjectRecords(
+            normalized[mappedKey],
+            normalizedValue,
+            'typography.' + mappedKey,
+            infoMessages
+          );
+        } else {
+          infoMessages.push(
+            'Conflicto en "typography.' + mappedKey + '": se mantiene el valor existente y se ignora la variante.'
+          );
+        }
+        continue;
+      }
+
+      normalized[mappedKey] = normalizedValue;
+    }
+
+    return normalized;
+  }
+
+  function normalizeTokenInput(rawTokens) {
+    var info = [];
+    var errors = [];
+    var normalized;
+    var keys;
+    var i;
+    var originalKey;
+    var value;
+    var canonicalKey;
+    var isCanonical;
+    var normalizedValue;
+
+    if (!isPlainObject(rawTokens)) {
+      return {
+        normalized: rawTokens,
+        info: info,
+        errors: errors
+      };
+    }
+
+    normalized = {};
+    keys = Object.keys(rawTokens);
+
+    for (i = 0; i < keys.length; i += 1) {
+      originalKey = keys[i];
+      value = rawTokens[originalKey];
+      canonicalKey = getAliasTargetKey(originalKey, topLevelAliases) || originalKey;
+      isCanonical = supportedGroups.indexOf(originalKey) !== -1;
+      normalizedValue =
+        canonicalKey === 'typography' && isPlainObject(value) ? normalizeTypographyGroup(value, info) : value;
+
+      if (canonicalKey !== originalKey) {
+        info.push('Grupo top-level normalizado de "' + originalKey + '" a "' + canonicalKey + '".');
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(normalized, canonicalKey)) {
+        normalized[canonicalKey] = normalizedValue;
+        continue;
+      }
+
+      if (isCanonical) {
+        info.push('Se mantiene el grupo canónico "' + canonicalKey + '" y se ignora la variante duplicada.');
+        continue;
+      }
+
+      if (isPlainObject(normalized[canonicalKey]) && isPlainObject(normalizedValue)) {
+        normalized[canonicalKey] = mergeObjectRecords(
+          normalized[canonicalKey],
+          normalizedValue,
+          canonicalKey,
+          info
+        );
+      } else {
+        info.push('Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.');
+      }
+    }
+
+    return {
+      normalized: normalized,
+      info: info,
+      errors: errors
+    };
   }
 
   function validateTokenInput(tokens, target) {
@@ -1053,6 +1238,17 @@
     warningMessage.textContent = message;
   }
 
+  function setInfo(message) {
+    if (!message) {
+      infoMessage.hidden = true;
+      infoMessage.textContent = '';
+      return;
+    }
+
+    infoMessage.hidden = false;
+    infoMessage.textContent = message;
+  }
+
   function getCurrentFileName(target) {
     return outputFiles[target];
   }
@@ -1146,7 +1342,10 @@
   function renderOutput() {
     var targets;
     var generator;
+    var rawTokens;
     var parsedTokens;
+    var normalization;
+    var normalizationInfoText;
     var validation;
     var warnings = [];
     var warningsMap = {};
@@ -1166,15 +1365,20 @@
     targets = getSelectedTargets();
 
     try {
-      parsedTokens = JSON.parse(tokensInput.value);
+      rawTokens = JSON.parse(tokensInput.value);
     } catch (error) {
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
+      setInfo('');
       setWarning('');
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
       return;
     }
+
+    normalization = normalizeTokenInput(rawTokens);
+    parsedTokens = normalization.normalized;
+    normalizationInfoText = normalization.info.join('\n');
 
     for (i = 0; i < targets.length; i += 1) {
       target = targets[i];
@@ -1208,6 +1412,7 @@
         }
       }
       setError(errors.join('\n'));
+      setInfo(normalizationInfoText);
       setWarning(warnings.join('\n'));
       generatedOutputs = {};
       updatePreviewSelector();
@@ -1225,9 +1430,11 @@
         newOutputs[target] = output;
       }
       setError('');
+      setInfo(normalizationInfoText);
       setWarning(warnings.join('\n'));
     } catch (error) {
       setError('No se pudo generar la salida para alguno de los targets seleccionados. Revisa el contenido de los tokens e inténtalo de nuevo.');
+      setInfo(normalizationInfoText);
       setWarning(warnings.join('\n'));
       generatedOutputs = {};
       updatePreviewSelector();
@@ -1250,6 +1457,7 @@
     file.text().then(function (text) {
       tokensInput.value = text;
       setError('');
+      setInfo('');
       renderOutput();
     }).catch(function () {
       setError('No se pudo leer el archivo seleccionado. Comprueba que sea un JSON de texto válido.');
@@ -1297,6 +1505,7 @@
     tokensInput.value = JSON.stringify(basicExampleTokens, null, 2);
     fileInput.value = '';
     setError('');
+    setInfo('');
     setWarning('');
     renderOutput();
   }
@@ -1308,6 +1517,7 @@
     fileInput.value = '';
     generatedOutputs = {};
     setError('');
+    setInfo('');
     setWarning('');
     renderOutput();
   }

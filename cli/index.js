@@ -16,7 +16,7 @@ const generateCss = require('../core/css');
 const generateIonic = require('../core/ionic');
 const generateBootstrap = require('../core/bootstrap');
 const generateTailwind = require('../core/tailwind');
-const { validateTokenInput } = require('../core/validation');
+const { normalizeTokenInput, validateTokenInput } = require('../core/validation');
 const { cleanOutputDir, ensureDirExists, writeFile } = require('../utils/file');
 
 const SUPPORTED_OPTIONS = {
@@ -159,8 +159,14 @@ function main() {
 
   const inputPath = path.resolve(args.input || './tokens.json');
   const outputDir = path.resolve(args.output || './dist');
-  const tokens = readTokens(inputPath);
+  const rawTokens = readTokens(inputPath);
+  const normalization = normalizeTokenInput(rawTokens);
+  const tokens = normalization.normalized;
   ensureDirExists(outputDir);
+
+  for (let i = 0; i < normalization.info.length; i += 1) {
+    process.stderr.write('Info: ' + normalization.info[i] + '\n');
+  }
 
   for (let i = 0; i < targetList.length; i += 1) {
     const target = targetList[i];

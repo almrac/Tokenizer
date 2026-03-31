@@ -2,6 +2,25 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.5.0] - 2026-03-31
+
+### Added
+
+- Capa de normalización previa a validación/generación en CLI y web.
+- Soporte de aliases top-level para mejorar compatibilidad con JSON reales:
+  `color/colours`, `space/spaces`, `radii/borderRadius`, `shadow/boxShadow/elevation`, `type/text`.
+- Normalización de aliases comunes en `typography`:
+  `font-family/font_family`, `font-size/font_size`, `font-weight/font_weight`,
+  `line-height/line_height`, `letter-spacing/letter_spacing`.
+- Feedback de normalización:
+  - CLI: mensajes `Info: ...`
+  - Web UI: bloque de información no bloqueante.
+
+### Changed
+
+- El flujo ahora es: parseo JSON -> normalización -> validación -> generación.
+- En conflictos entre clave canónica y alias, prevalece la canónica y se informa.
+
 ## [v0.4.4] - 2026-03-31
 
 ### Changed

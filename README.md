@@ -25,6 +25,34 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
 - `radius`
 - `shadows`
 
+Tokenizer usa estos grupos como formato canónico interno.
+
+## Normalización de entrada (v0.5.0)
+
+Antes de validar y generar, Tokenizer intenta normalizar variaciones comunes del mundo real hacia el formato canónico.
+
+Aliases top-level soportados:
+
+- `color`, `colours` -> `colors`
+- `space`, `spaces` -> `spacing`
+- `radii`, `borderRadius` -> `radius`
+- `shadow`, `boxShadow`, `elevation` -> `shadows`
+- `type`, `text` -> `typography`
+
+Aliases comunes dentro de `typography`:
+
+- `font-family`, `font_family` -> `fontFamily`
+- `font-size`, `font_size` -> `fontSize`
+- `font-weight`, `font_weight` -> `fontWeight`
+- `line-height`, `line_height` -> `lineHeight`
+- `letter-spacing`, `letter_spacing` -> `letterSpacing`
+
+Reglas:
+
+- si puede normalizarse de forma segura, la generación continúa;
+- si hay conflicto entre clave canónica y alias, prevalece la canónica y se informa;
+- si tras normalizar la estructura sigue inválida, se devuelve error.
+
 ## Validación y feedback (v0.3.4)
 
 - Se valida que la raíz del JSON sea un objeto.
@@ -52,7 +80,8 @@ Reglas de comportamiento:
 Feedback por entorno:
 
 - Web UI: muestra errores y advertencias en bloques separados bajo los controles
-- CLI: imprime `Error:` para bloqueos y `Warning:` para avisos no bloqueantes
+- Web UI: también muestra información de normalización en un bloque `info` discreto cuando aplica
+- CLI: imprime `Error:` para bloqueos, `Warning:` para avisos no bloqueantes e `Info:` para normalizaciones aplicadas
 
 ## Notas por target (v0.4.0)
 
