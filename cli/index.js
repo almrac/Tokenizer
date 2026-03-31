@@ -162,6 +162,7 @@ function main() {
   const rawTokens = readTokens(inputPath);
   const normalization = normalizeTokenInput(rawTokens);
   const tokens = normalization.normalized;
+  const summary = normalization.summary || {};
   ensureDirExists(outputDir);
 
   if (normalization.errors.length > 0) {
@@ -172,6 +173,18 @@ function main() {
     process.stderr.write('Info: ' + normalization.info[i] + '\n');
   }
 
+  if (summary.rootUsed) {
+    process.stderr.write('Info: Root used: ' + summary.rootUsed + '\n');
+  }
+  if (summary.detectedGroups && summary.detectedGroups.length > 0) {
+    process.stderr.write('Info: Supported groups detected: ' + summary.detectedGroups.join(', ') + '\n');
+  }
+  if (summary.normalizationNotes && summary.normalizationNotes.length > 0) {
+    process.stderr.write('Info: Normalization applied: ' + summary.normalizationNotes.length + ' ajuste(s)\n');
+  }
+
+  let totalWarnings = 0;
+  let ignoredReported = false;
   for (let i = 0; i < targetList.length; i += 1) {
     const target = targetList[i];
     const selectedTarget = SUPPORTED_TARGETS[target];
@@ -182,11 +195,17 @@ function main() {
     }
 
     for (let j = 0; j < validation.warnings.length; j += 1) {
+      totalWarnings += 1;
       if (isMultiTarget) {
         process.stderr.write('Warning [' + target + ']: ' + validation.warnings[j] + '\n');
       } else {
         process.stderr.write('Warning: ' + validation.warnings[j] + '\n');
       }
+    }
+
+    if (!ignoredReported && validation.unsupportedGroups.length > 0) {
+      process.stderr.write('Info: Ignored groups: ' + validation.unsupportedGroups.join(', ') + '\n');
+      ignoredReported = true;
     }
 
     const content = selectedTarget.generator(tokens, {
@@ -199,6 +218,10 @@ function main() {
     }
     writeFile(outputPath, content);
     process.stdout.write('Generated ' + outputPath + '\n');
+  }
+
+  if (totalWarnings > 0) {
+    process.stderr.write('Info: Warnings emitted: ' + totalWarnings + '\n');
   }
 }
 

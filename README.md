@@ -106,6 +106,31 @@ Mensajes de importación:
 - cuando hay múltiples candidatas y una gana claramente, se informa el motivo resumido;
 - `Import summary` con raíz usada y grupos detectados.
 
+## Inspector ligero de entrada (v0.6.1)
+
+La UI web muestra un resumen compacto de interpretación de entrada para reducir el efecto “caja negra”.
+
+Incluye:
+
+- raíz usada para importar (`Top-level`, `tokens`, `theme`, etc.);
+- grupos canónicos detectados (`colors`, `spacing`, `typography`, `radius`, `shadows`);
+- grupos ignorados/no soportados (solo cuando aplica);
+- resumen de normalización (aliases y ajustes relevantes);
+- estado de advertencias activo/inactivo.
+
+Comportamiento:
+
+- aparece cuando hay entrada;
+- se actualiza al escribir, cargar ejemplo o limpiar;
+- mantiene peso visual bajo y no compite con el flujo principal.
+
+CLI (resumen ligero):
+
+- raíz usada;
+- grupos soportados detectados;
+- cantidad de ajustes de normalización;
+- grupos ignorados y recuento de warnings cuando aplica.
+
 ## Validación y feedback (v0.3.4)
 
 - Se valida que la raíz del JSON sea un objeto.

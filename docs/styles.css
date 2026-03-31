@@ -427,6 +427,38 @@ select {
   white-space: pre-line;
 }
 
+.inspector {
+  border: 1px solid rgba(169, 180, 185, 0.24);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.62);
+  padding: 12px 14px;
+}
+
+.inspector h3 {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+
+.inspector p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--color-on-surface-variant);
+}
+
+.inspector p + p {
+  margin-top: 4px;
+}
+
+.inspector strong {
+  color: var(--color-on-surface);
+  font-weight: 600;
+}
+
 .btn {
   min-height: 40px;
   border: 0;

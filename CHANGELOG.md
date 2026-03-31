@@ -2,6 +2,20 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.6.1] - 2026-03-31
+
+### Added
+
+- Inspector ligero en la UI web con resumen de interpretación de entrada:
+  raíz usada, grupos detectados, grupos ignorados, normalización y estado de advertencias.
+- Resumen adicional en CLI:
+  raíz usada, grupos detectados, ajustes de normalización y recuento de warnings.
+
+### Changed
+
+- `normalizeTokenInput` ahora expone un `summary` estructurado reutilizable por web y CLI.
+- Flujo de feedback más transparente sin añadir complejidad ni rediseñar la interfaz.
+
 ## [v0.6.0] - 2026-03-31
 
 ### Added

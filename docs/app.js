@@ -107,6 +107,14 @@
   var errorMessage = document.querySelector('[data-ui="error-message"]');
   var infoMessage = document.querySelector('[data-ui="info-message"]');
   var warningMessage = document.querySelector('[data-ui="warning-message"]');
+  var inspector = document.querySelector('[data-ui="inspector"]');
+  var inspectorRoot = document.querySelector('[data-ui="inspector-root"]');
+  var inspectorSupported = document.querySelector('[data-ui="inspector-supported"]');
+  var inspectorIgnoredRow = document.querySelector('[data-ui="inspector-ignored-row"]');
+  var inspectorIgnored = document.querySelector('[data-ui="inspector-ignored"]');
+  var inspectorNormalizationRow = document.querySelector('[data-ui="inspector-normalization-row"]');
+  var inspectorNormalization = document.querySelector('[data-ui="inspector-normalization"]');
+  var inspectorWarningState = document.querySelector('[data-ui="inspector-warning-state"]');
   var copyButton = document.querySelector('[data-ui="copy-button"]');
   var downloadButton = document.querySelector('[data-ui="download-button"]');
   var statusBadge = document.querySelector('[data-ui="status-badge"]');
@@ -382,7 +390,7 @@
     };
   }
 
-  function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
+  function mergeObjectRecords(baseRecord, incomingRecord, context, normalizationNotes) {
     var merged = Object.assign({}, baseRecord);
     var keys = Object.keys(incomingRecord);
     var i;
@@ -397,17 +405,17 @@
       }
 
       if (isPlainObject(merged[key]) && isPlainObject(incomingRecord[key])) {
-        merged[key] = mergeObjectRecords(merged[key], incomingRecord[key], context + '.' + key, infoMessages);
+        merged[key] = mergeObjectRecords(merged[key], incomingRecord[key], context + '.' + key, normalizationNotes);
         continue;
       }
 
-      infoMessages.push('Conflicto en "' + context + '.' + key + '": se mantiene el valor existente y se ignora el alias.');
+      normalizationNotes.push('Conflicto en "' + context + '.' + key + '": se mantiene el valor existente y se ignora el alias.');
     }
 
     return merged;
   }
 
-  function normalizeTypographyGroup(typographySource, infoMessages) {
+  function normalizeTypographyGroup(typographySource, normalizationNotes) {
     var normalized;
     var keys;
     var i;
@@ -427,10 +435,10 @@
       originalKey = keys[i];
       value = typographySource[originalKey];
       mappedKey = getAliasTargetKey(originalKey, typographyAliases) || originalKey;
-      normalizedValue = isPlainObject(value) ? normalizeTypographyGroup(value, infoMessages) : value;
+      normalizedValue = isPlainObject(value) ? normalizeTypographyGroup(value, normalizationNotes) : value;
 
       if (mappedKey !== originalKey) {
-        infoMessages.push('Clave de typography normalizada de "' + originalKey + '" a "' + mappedKey + '".');
+        normalizationNotes.push('Clave de typography normalizada de "' + originalKey + '" a "' + mappedKey + '".');
       }
 
       if (Object.prototype.hasOwnProperty.call(normalized, mappedKey)) {
@@ -439,10 +447,10 @@
             normalized[mappedKey],
             normalizedValue,
             'typography.' + mappedKey,
-            infoMessages
+            normalizationNotes
           );
         } else {
-          infoMessages.push(
+          normalizationNotes.push(
             'Conflicto en "typography.' + mappedKey + '": se mantiene el valor existente y se ignora la variante.'
           );
         }
@@ -456,6 +464,8 @@
   }
 
   function normalizeTokenInput(rawTokens) {
+    var importNotes = [];
+    var normalizationNotes = [];
     var info = [];
     var errors = [];
     var normalized;
@@ -474,16 +484,30 @@
       return {
         normalized: rawTokens,
         info: info,
+        summary: {
+          rootUsed: 'top-level',
+          detectedGroups: [],
+          normalizationNotes: normalizationNotes,
+          importNotes: importNotes
+        },
         errors: errors
       };
     }
 
-    rootSelection = pickTokenRoot(rawTokens, info, errors);
+    rootSelection = pickTokenRoot(rawTokens, importNotes, errors);
     extractedRoot = rootSelection.value;
     if (errors.length > 0) {
+      info.push.apply(info, importNotes);
+      info.push.apply(info, normalizationNotes);
       return {
         normalized: rawTokens,
         info: info,
+        summary: {
+          rootUsed: rootSelection.path,
+          detectedGroups: [],
+          normalizationNotes: normalizationNotes,
+          importNotes: importNotes
+        },
         errors: errors
       };
     }
@@ -497,10 +521,10 @@
       canonicalKey = getAliasTargetKey(originalKey, topLevelAliases) || originalKey;
       isCanonical = supportedGroups.indexOf(originalKey) !== -1;
       normalizedValue =
-        canonicalKey === 'typography' && isPlainObject(value) ? normalizeTypographyGroup(value, info) : value;
+        canonicalKey === 'typography' && isPlainObject(value) ? normalizeTypographyGroup(value, normalizationNotes) : value;
 
       if (canonicalKey !== originalKey) {
-        info.push('Grupo top-level normalizado de "' + originalKey + '" a "' + canonicalKey + '".');
+        normalizationNotes.push('Grupo top-level normalizado de "' + originalKey + '" a "' + canonicalKey + '".');
       }
 
       if (!Object.prototype.hasOwnProperty.call(normalized, canonicalKey)) {
@@ -509,7 +533,7 @@
       }
 
       if (isCanonical) {
-        info.push('Se mantiene el grupo canónico "' + canonicalKey + '" y se ignora la variante duplicada.');
+        normalizationNotes.push('Se mantiene el grupo canónico "' + canonicalKey + '" y se ignora la variante duplicada.');
         continue;
       }
 
@@ -518,10 +542,12 @@
           normalized[canonicalKey],
           normalizedValue,
           canonicalKey,
-          info
+          normalizationNotes
         );
       } else {
-        info.push('Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.');
+        normalizationNotes.push(
+          'Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.'
+        );
       }
     }
 
@@ -529,12 +555,20 @@
       return groupHasValues(normalized, groupName);
     });
     if (detectedGroups.length > 0) {
-      info.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
+      importNotes.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
     }
+    info.push.apply(info, importNotes);
+    info.push.apply(info, normalizationNotes);
 
     return {
       normalized: normalized,
       info: info,
+      summary: {
+        rootUsed: rootSelection.path,
+        detectedGroups: detectedGroups,
+        normalizationNotes: normalizationNotes,
+        importNotes: importNotes
+      },
       errors: errors
     };
   }
@@ -1486,6 +1520,50 @@
     infoMessage.textContent = message;
   }
 
+  function hideInspector() {
+    inspector.hidden = true;
+    inspectorRoot.textContent = '-';
+    inspectorSupported.textContent = '-';
+    inspectorIgnoredRow.hidden = true;
+    inspectorIgnored.textContent = '-';
+    inspectorNormalizationRow.hidden = true;
+    inspectorNormalization.textContent = '-';
+    inspectorWarningState.textContent = 'Sin advertencias';
+  }
+
+  function updateInspector(details) {
+    var rootUsed = details && details.rootUsed ? details.rootUsed : 'top-level';
+    var supported = details && details.supportedGroups ? details.supportedGroups : [];
+    var ignored = details && details.ignoredGroups ? details.ignoredGroups : [];
+    var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
+    var warningCount = details && details.warningCount ? details.warningCount : 0;
+
+    inspector.hidden = false;
+    inspectorRoot.textContent = rootUsed === 'top-level' ? 'Top-level' : rootUsed;
+    inspectorSupported.textContent = supported.length > 0 ? supported.join(', ') : 'Ninguno';
+
+    if (ignored.length > 0) {
+      inspectorIgnoredRow.hidden = false;
+      inspectorIgnored.textContent = ignored.join(', ');
+    } else {
+      inspectorIgnoredRow.hidden = true;
+      inspectorIgnored.textContent = '-';
+    }
+
+    if (normalizationNotes.length > 0) {
+      inspectorNormalizationRow.hidden = false;
+      inspectorNormalization.textContent =
+        normalizationNotes.length > 4 ?
+          normalizationNotes.slice(0, 4).join(' | ') + ' | +' + (normalizationNotes.length - 4) + ' más' :
+          normalizationNotes.join(' | ');
+    } else {
+      inspectorNormalizationRow.hidden = true;
+      inspectorNormalization.textContent = '-';
+    }
+
+    inspectorWarningState.textContent = warningCount > 0 ? 'Advertencias activas (' + warningCount + ')' : 'Sin advertencias';
+  }
+
   function getCurrentFileName(target) {
     return outputFiles[target];
   }
@@ -1587,6 +1665,8 @@
     var warnings = [];
     var warningsMap = {};
     var errorsMap = {};
+    var ignoredGroupMap = {};
+    var warningCount = 0;
     var i;
     var j;
     var key;
@@ -1601,6 +1681,10 @@
     ensureAtLeastOneTarget();
     targets = getSelectedTargets();
 
+    if (!tokensInput.value.trim()) {
+      hideInspector();
+    }
+
     try {
       rawTokens = JSON.parse(tokensInput.value);
     } catch (error) {
@@ -1610,6 +1694,15 @@
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
+      if (tokensInput.value.trim()) {
+        updateInspector({
+          rootUsed: 'top-level',
+          supportedGroups: [],
+          ignoredGroups: [],
+          normalizationNotes: [],
+          warningCount: 0
+        });
+      }
       return;
     }
 
@@ -1624,6 +1717,13 @@
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
+      updateInspector({
+        rootUsed: normalization.summary && normalization.summary.rootUsed,
+        supportedGroups: normalization.summary && normalization.summary.detectedGroups,
+        ignoredGroups: [],
+        normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        warningCount: 0
+      });
       return;
     }
 
@@ -1640,6 +1740,14 @@
         warningsMap[validationWarning] = true;
       }
 
+      for (j = 0; j < validation.unsupportedGroups.length; j += 1) {
+        ignoredGroupMap[validation.unsupportedGroups[j]] = true;
+      }
+
+      for (j = 0; j < validation.ignoredGroups.length; j += 1) {
+        ignoredGroupMap[validation.ignoredGroups[j]] = true;
+      }
+
       if (validation.errors.length > 0) {
         hasErrors = true;
       }
@@ -1648,6 +1756,7 @@
     for (key in warningsMap) {
       if (Object.prototype.hasOwnProperty.call(warningsMap, key)) {
         warnings.push(key);
+        warningCount += 1;
       }
     }
 
@@ -1664,6 +1773,13 @@
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
+      updateInspector({
+        rootUsed: normalization.summary && normalization.summary.rootUsed,
+        supportedGroups: normalization.summary && normalization.summary.detectedGroups,
+        ignoredGroups: Object.keys(ignoredGroupMap),
+        normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        warningCount: warningCount
+      });
       return;
     }
 
@@ -1686,12 +1802,28 @@
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
+      updateInspector({
+        rootUsed: normalization.summary && normalization.summary.rootUsed,
+        supportedGroups: normalization.summary && normalization.summary.detectedGroups,
+        ignoredGroups: Object.keys(ignoredGroupMap),
+        normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        warningCount: warningCount
+      });
       return;
     }
 
     generatedOutputs = newOutputs;
     updatePreviewSelector();
     renderActivePreview();
+    if (tokensInput.value.trim()) {
+      updateInspector({
+        rootUsed: normalization.summary && normalization.summary.rootUsed,
+        supportedGroups: normalization.summary && normalization.summary.detectedGroups,
+        ignoredGroups: Object.keys(ignoredGroupMap),
+        normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        warningCount: warningCount
+      });
+    }
   }
 
   function handleFileUpload(event) {
@@ -1770,6 +1902,7 @@
   }
 
   tokensInput.value = '';
+  hideInspector();
   if (targetSelect) {
     targetSelect.value = targetSelect.value || 'css';
   }

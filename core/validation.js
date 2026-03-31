@@ -285,7 +285,7 @@ function pickTokenRoot(rawTokens, info, errors) {
   };
 }
 
-function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
+function mergeObjectRecords(baseRecord, incomingRecord, context, normalizationNotes) {
   const merged = Object.assign({}, baseRecord);
   const keys = Object.keys(incomingRecord);
 
@@ -298,17 +298,19 @@ function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
     }
 
     if (isObjectRecord(merged[key]) && isObjectRecord(incomingRecord[key])) {
-      merged[key] = mergeObjectRecords(merged[key], incomingRecord[key], context + '.' + key, infoMessages);
+      merged[key] = mergeObjectRecords(merged[key], incomingRecord[key], context + '.' + key, normalizationNotes);
       continue;
     }
 
-    infoMessages.push('Conflicto en "' + context + '.' + key + '": se mantiene el valor existente y se ignora el alias.');
+    normalizationNotes.push(
+      'Conflicto en "' + context + '.' + key + '": se mantiene el valor existente y se ignora el alias.'
+    );
   }
 
   return merged;
 }
 
-function normalizeTypographyGroup(typographySource, infoMessages) {
+function normalizeTypographyGroup(typographySource, normalizationNotes) {
   if (!isObjectRecord(typographySource)) {
     return typographySource;
   }
@@ -320,22 +322,22 @@ function normalizeTypographyGroup(typographySource, infoMessages) {
     const originalKey = keys[i];
     const value = typographySource[originalKey];
     const mappedKey = getAliasTargetKey(originalKey, TYPOGRAPHY_ALIASES) || originalKey;
-    const normalizedValue = isObjectRecord(value) ? normalizeTypographyGroup(value, infoMessages) : value;
+    const normalizedValue = isObjectRecord(value) ? normalizeTypographyGroup(value, normalizationNotes) : value;
 
     if (mappedKey !== originalKey) {
-      infoMessages.push('Clave de typography normalizada de "' + originalKey + '" a "' + mappedKey + '".');
+      normalizationNotes.push('Clave de typography normalizada de "' + originalKey + '" a "' + mappedKey + '".');
     }
 
     if (Object.prototype.hasOwnProperty.call(normalized, mappedKey)) {
       if (isObjectRecord(normalized[mappedKey]) && isObjectRecord(normalizedValue)) {
-        normalized[mappedKey] = mergeObjectRecords(
-          normalized[mappedKey],
-          normalizedValue,
-          'typography.' + mappedKey,
-          infoMessages
-        );
+          normalized[mappedKey] = mergeObjectRecords(
+            normalized[mappedKey],
+            normalizedValue,
+            'typography.' + mappedKey,
+            normalizationNotes
+          );
       } else {
-        infoMessages.push(
+        normalizationNotes.push(
           'Conflicto en "typography.' + mappedKey + '": se mantiene el valor existente y se ignora la variante.'
         );
       }
@@ -349,25 +351,44 @@ function normalizeTypographyGroup(typographySource, infoMessages) {
 }
 
 function normalizeTokenInput(rawTokens) {
+  const importNotes = [];
+  const normalizationNotes = [];
   const info = [];
   const errors = [];
   let normalized = rawTokens;
   let extractedRoot = rawTokens;
+  let rootUsed = 'top-level';
+  let detectedGroups = [];
 
   if (!isObjectRecord(rawTokens)) {
     return {
       normalized: rawTokens,
       info: info,
+      summary: {
+        rootUsed,
+        detectedGroups,
+        normalizationNotes,
+        importNotes,
+      },
       errors: errors,
     };
   }
 
-  const rootSelection = pickTokenRoot(rawTokens, info, errors);
+  const rootSelection = pickTokenRoot(rawTokens, importNotes, errors);
   extractedRoot = rootSelection.value;
+  rootUsed = rootSelection.path;
   if (errors.length > 0) {
+    info.push.apply(info, importNotes);
+    info.push.apply(info, normalizationNotes);
     return {
       normalized: rawTokens,
       info: info,
+      summary: {
+        rootUsed,
+        detectedGroups,
+        normalizationNotes,
+        importNotes,
+      },
       errors: errors,
     };
   }
@@ -381,10 +402,10 @@ function normalizeTokenInput(rawTokens) {
     const canonicalKey = getAliasTargetKey(originalKey, TOP_LEVEL_ALIASES) || originalKey;
     const isCanonical = SUPPORTED_GROUPS.indexOf(originalKey) !== -1;
     const normalizedValue =
-      canonicalKey === 'typography' && isObjectRecord(value) ? normalizeTypographyGroup(value, info) : value;
+      canonicalKey === 'typography' && isObjectRecord(value) ? normalizeTypographyGroup(value, normalizationNotes) : value;
 
     if (canonicalKey !== originalKey) {
-      info.push('Grupo top-level normalizado de "' + originalKey + '" a "' + canonicalKey + '".');
+      normalizationNotes.push('Grupo top-level normalizado de "' + originalKey + '" a "' + canonicalKey + '".');
     }
 
     if (!Object.prototype.hasOwnProperty.call(normalized, canonicalKey)) {
@@ -393,7 +414,7 @@ function normalizeTokenInput(rawTokens) {
     }
 
     if (isCanonical) {
-      info.push('Se mantiene el grupo canónico "' + canonicalKey + '" y se ignora la variante duplicada.');
+      normalizationNotes.push('Se mantiene el grupo canónico "' + canonicalKey + '" y se ignora la variante duplicada.');
       continue;
     }
 
@@ -402,21 +423,31 @@ function normalizeTokenInput(rawTokens) {
         normalized[canonicalKey],
         normalizedValue,
         canonicalKey,
-        info
+        normalizationNotes
       );
     } else {
-      info.push('Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.');
+      normalizationNotes.push(
+        'Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.'
+      );
     }
   }
 
-  const detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));
+  detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));
   if (detectedGroups.length > 0) {
-    info.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
+    importNotes.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
   }
+  info.push.apply(info, importNotes);
+  info.push.apply(info, normalizationNotes);
 
   return {
     normalized: normalized,
     info: info,
+    summary: {
+      rootUsed: rootSelection.path,
+      detectedGroups: detectedGroups,
+      normalizationNotes: normalizationNotes,
+      importNotes: importNotes,
+    },
     errors: errors,
   };
 }
