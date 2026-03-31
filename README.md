@@ -1,81 +1,27 @@
 # Tokenizer
 
-Tokenizer is a small Node.js tool that reads `tokens.json` and generates one output file for a selected target. The token transformation logic lives in reusable pure functions under `core/`, and the CLI in `cli/` handles argument parsing and file output.
+Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos listos para distintos targets de frontend. Incluye una CLI para generar archivos en local y una interfaz web estática en `docs/`, preparada para publicarse con GitHub Pages.
 
-Supported targets:
-- `css`
-- `ionic`
-- `bootstrap`
-- `tailwind`
+## Qué hace
 
-Supported token groups:
-- `colors`
-- `spacing`
+- Convierte tokens hacia `css`, `ionic`, `bootstrap` y `tailwind`
+- Mantiene una estructura simple, sin dependencias ni build
+- Funciona tanto desde Node.js como directamente en el navegador
+- Genera nombres de archivo coherentes según el target seleccionado
 
-## How To Run
+## Targets soportados actualmente
 
-Use Node.js to run the CLI from the project root:
-
-```bash
-node index.js --target css
-```
-
-You can also run the CLI entrypoint directly:
-
-```bash
-node cli/index.js --target css
-```
-
-Defaults:
-- `--input` defaults to `./tokens.json`
-- `--output` defaults to `./dist`
-- `--prefix` only applies to the `css` target
-
-## Example Commands
-
-```bash
-node index.js --target css --prefix nb
-node index.js --target css --prefix --nb
-node index.js --target ionic --input ./tokens.json --output ./dist
-node index.js --target bootstrap
-node index.js --target tailwind --output ./dist
-```
-
-Generated files:
 - `css` -> `tokens.css`
 - `ionic` -> `variables.scss`
 - `bootstrap` -> `bootstrap-overrides.scss`
 - `tailwind` -> `tailwind.tokens.js`
 
-## Web UI
+## Grupos de tokens soportados actualmente
 
-The project also includes a browser-only static interface.
+- `colors`
+- `spacing`
 
-Open it locally by opening this file directly in your browser:
-
-```text
-docs/index.html
-```
-
-The web UI lets you:
-- paste `tokens.json`
-- upload a `.json` file
-- choose a target
-- set a prefix for the `css` target
-- preview the generated output
-- copy the output
-- download the generated file
-
-## GitHub Pages Deployment
-
-1. Go to `Settings -> Pages` in your GitHub repository.
-2. Under `Source`, choose `Deploy from a branch`.
-3. Select the `main` branch.
-4. Select the `/docs` folder.
-
-The static interface is ready to publish directly from `docs/` and does not require a build step or server-side code.
-
-## Example tokens.json
+## Formato esperado de `tokens.json`
 
 ```json
 {
@@ -94,3 +40,83 @@ The static interface is ready to publish directly from `docs/` and does not requ
   }
 }
 ```
+
+## Uso por CLI
+
+Ejecuta la herramienta desde la raíz del proyecto:
+
+```bash
+node index.js --target css
+```
+
+También puedes usar directamente el entrypoint de la CLI:
+
+```bash
+node cli/index.js --target css
+```
+
+Opciones disponibles:
+
+- `--target` obligatorio. Targets válidos: `css`, `ionic`, `bootstrap`, `tailwind`
+- `--input` opcional. Por defecto usa `./tokens.json`
+- `--output` opcional. Por defecto usa `./dist`
+- `--prefix` opcional. Solo aplica al target `css`
+
+Ejemplos:
+
+```bash
+node index.js --target css --prefix nb
+node index.js --target css --prefix --nb
+node index.js --target ionic --input ./tokens.json --output ./dist
+node index.js --target bootstrap
+node index.js --target tailwind --output ./dist
+```
+
+## Uso desde la web
+
+La interfaz web vive en `docs/` y funciona completamente en el navegador.
+
+Puedes abrirla localmente desde:
+
+```text
+docs/index.html
+```
+
+Desde la interfaz puedes:
+
+- pegar el contenido de `tokens.json`
+- subir un archivo `.json`
+- elegir el target de salida
+- indicar un prefijo para `css`
+- cargar un ejemplo rápido
+- limpiar el formulario
+- previsualizar el archivo generado
+- copiar o descargar el resultado
+
+## GitHub Pages
+
+El proyecto está pensado para publicar la web estática directamente desde `docs/`.
+
+1. Ve a `Settings -> Pages` en tu repositorio.
+2. En `Source`, selecciona `Deploy from a branch`.
+3. Elige la rama principal del proyecto.
+4. Selecciona la carpeta `/docs`.
+
+Notas:
+
+- No hace falta build.
+- No hace falta backend.
+- `.nojekyll` puede mantenerse en la raíz del repositorio.
+
+## Estructura del proyecto
+
+- `core/`: transformaciones puras por target
+- `cli/`: parsing de argumentos y escritura de archivos
+- `docs/`: interfaz web estática para demo y GitHub Pages
+- `dist/`: ejemplos de salida generada
+
+## Próximos pasos
+
+- ampliar validaciones y mensajes de error según el target
+- añadir más grupos de tokens manteniendo la misma simplicidad
+- mejorar la documentación con más ejemplos reales de entrada y salida

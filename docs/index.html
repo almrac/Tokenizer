@@ -1,70 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tokenizer</title>
+  <title>Tokenizer | Convierte design tokens a css, ionic, bootstrap y tailwind</title>
+  <meta name="description" content="Herramienta estática para convertir tokens.json en archivos listos para css, ionic, bootstrap y tailwind desde el navegador o la CLI.">
+  <meta name="theme-color" content="#3658df">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="app">
-    <header class="hero">
-      <h1>Tokenizer</h1>
-      <p>Pega o sube tus design tokens, elige un formato de salida y genera el resultado en el navegador.</p>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <h1>Tokenizer</h1>
+        <span class="topbar-divider" aria-hidden="true"></span>
+        <p>Herramienta de conversión de tokens de diseño para desarrolladores</p>
+      </div>
     </header>
 
-    <section class="layout">
-      <div class="panel">
-        <h2>Entrada</h2>
+    <main class="workspace">
+      <aside class="workspace-sidebar">
+        <section class="config-section">
+          <header class="section-heading">
+            <h2>Archivo de origen</h2>
+            <div class="section-tools">
+              <button id="example-button" type="button">Cargar ejemplo</button>
+              <button id="clear-button" type="button">Limpiar</button>
+            </div>
+          </header>
 
-        <label class="field" for="tokens-input">
-          <span>tokens.json</span>
-          <textarea id="tokens-input" spellcheck="false"></textarea>
-        </label>
+          <label class="upload-card" for="file-input">
+            <span class="upload-card-icon" aria-hidden="true">↑</span>
+            <span class="upload-card-title">Sube tu archivo JSON aquí</span>
+            <span class="upload-card-copy">O haz clic para explorarlo desde tu equipo</span>
+            <input id="file-input" type="file" accept=".json,application/json">
+          </label>
 
-        <label class="field" for="file-input">
-          <span>Subir archivo JSON</span>
-          <input id="file-input" type="file" accept=".json,application/json">
-        </label>
+          <label class="field field-editor" for="tokens-input">
+            <span>Contenido de <code>tokens.json</code></span>
+            <textarea id="tokens-input" spellcheck="false" placeholder="{&#10;  &quot;colors&quot;: {&#10;    &quot;primary&quot;: &quot;#0d6efd&quot;&#10;  }&#10;}"></textarea>
+          </label>
+        </section>
 
-        <label class="field" for="target-select">
-          <span>Formato de salida</span>
-          <select id="target-select">
-            <option value="css">css</option>
-            <option value="ionic">ionic</option>
-            <option value="bootstrap">bootstrap</option>
-            <option value="tailwind">tailwind</option>
-          </select>
-        </label>
+        <section class="config-section config-controls">
+          <label class="field" for="target-select">
+            <span>Formato de salida</span>
+            <select id="target-select">
+              <option value="css">css</option>
+              <option value="ionic">ionic</option>
+              <option value="bootstrap">bootstrap</option>
+              <option value="tailwind">tailwind</option>
+            </select>
+          </label>
 
-        <label class="field" id="prefix-field" for="prefix-input">
-          <span>Prefijo CSS</span>
-          <input id="prefix-input" type="text" placeholder="nb">
-          <small class="hint">Solo se usa para el formato css. Ejemplo: nb -> --nb-color-primary</small>
-        </label>
+          <label class="field" id="prefix-field" for="prefix-input">
+            <span>Prefijo de variables</span>
+            <input id="prefix-input" type="text" placeholder="nb">
+            <small class="hint">Solo se aplica al formato <code>css</code>. Si escribes <code>nb</code>, se generarán variables como <code>--nb-color-primary</code>.</small>
+          </label>
+        </section>
 
         <p id="error-message" class="error" aria-live="polite" hidden></p>
-      </div>
+      </aside>
 
-      <div class="panel">
-        <div class="output-header">
-          <div>
-            <h2>Salida</h2>
-            <p id="filename" class="filename"></p>
+      <section class="workspace-result">
+        <header class="result-header">
+          <div class="result-meta">
+            <div class="result-title-row">
+              <span class="result-icon" aria-hidden="true">{ }</span>
+              <h2 id="filename" class="filename"></h2>
+              <span id="status-badge" class="status-badge" hidden>Generated</span>
+            </div>
           </div>
-          <div class="actions">
-            <button id="copy-button" type="button">Copiar</button>
-            <button id="download-button" type="button">Descargar</button>
+          <div class="result-actions">
+            <button id="copy-button" type="button">Copy</button>
+            <button id="download-button" type="button">Download</button>
           </div>
-        </div>
+        </header>
 
-        <label class="field" for="output-preview">
-          <span>Vista previa</span>
-          <textarea id="output-preview" readonly spellcheck="false"></textarea>
-        </label>
-      </div>
-    </section>
-  </main>
+        <section class="editor-shell">
+          <div class="editor-topbar">
+            <span class="editor-dots" aria-hidden="true"></span>
+            <span class="editor-label">Preview Mode</span>
+          </div>
+
+          <div class="editor-body">
+            <div class="editor-gutter" aria-hidden="true"></div>
+            <div class="editor-canvas">
+              <label class="field output-field" for="output-preview">
+                <textarea id="output-preview" readonly spellcheck="false"></textarea>
+              </label>
+
+              <div id="empty-state" class="empty-state" hidden>
+                <h3>Sin salida todavía</h3>
+                <p>Escribe o carga un <code>tokens.json</code> válido para ver aquí el archivo generado.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
 
   <script src="./app.js"></script>
 </body>

@@ -43,6 +43,12 @@
   var errorMessage = document.getElementById('error-message');
   var copyButton = document.getElementById('copy-button');
   var downloadButton = document.getElementById('download-button');
+  var statusBadge = document.getElementById('status-badge');
+  var exampleButton = document.getElementById('example-button');
+  var clearButton = document.getElementById('clear-button');
+  var emptyState = document.getElementById('empty-state');
+  var defaultCopyLabel = 'Copy';
+  var copyResetTimer = 0;
 
   function normalizeCssPrefix(prefix) {
     if (!prefix) {
@@ -289,6 +295,10 @@
     prefixField.hidden = targetSelect.value !== 'css';
   }
 
+  function updateEmptyState(output) {
+    emptyState.hidden = !!output;
+  }
+
   function setError(message) {
     if (!message) {
       errorMessage.hidden = true;
@@ -304,23 +314,51 @@
     return outputFiles[targetSelect.value];
   }
 
+  function setCopyButtonLabel(label) {
+    if (copyResetTimer) {
+      window.clearTimeout(copyResetTimer);
+      copyResetTimer = 0;
+    }
+
+    copyButton.textContent = label;
+  }
+
+  function resetCopyButtonLabel(delay) {
+    copyResetTimer = window.setTimeout(function () {
+      copyButton.textContent = defaultCopyLabel;
+      copyResetTimer = 0;
+    }, delay || 1400);
+  }
+
+  function updateActionState(output) {
+    var hasOutput = !!output;
+
+    copyButton.disabled = !hasOutput;
+    downloadButton.disabled = !hasOutput;
+    updateEmptyState(output);
+    statusBadge.hidden = !hasOutput;
+    filename.textContent = hasOutput ? getCurrentFileName() : '';
+
+    if (!hasOutput) {
+      setCopyButtonLabel(defaultCopyLabel);
+    }
+  }
+
   function renderOutput() {
     var target = targetSelect.value;
     var generator;
     var parsedTokens;
     var output = '';
 
-    filename.textContent = 'Archivo generado: ' + getCurrentFileName();
     updatePrefixVisibility();
 
     try {
       parsedTokens = JSON.parse(tokensInput.value);
     } catch (error) {
       output = '';
-      setError('JSON inválido. Revisa el contenido e inténtalo de nuevo.');
+      setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
       outputPreview.value = output;
-      copyButton.disabled = true;
-      downloadButton.disabled = true;
+      updateActionState(output);
       return;
     }
 
@@ -332,12 +370,11 @@
       setError('');
     } catch (error) {
       output = '';
-      setError('Ocurrió un error al generar la salida.');
+      setError('No se pudo generar la salida para este target. Revisa el contenido de los tokens e inténtalo de nuevo.');
     }
 
     outputPreview.value = output;
-    copyButton.disabled = !output;
-    downloadButton.disabled = !output;
+    updateActionState(output);
   }
 
   function handleFileUpload(event) {
@@ -349,9 +386,10 @@
 
     file.text().then(function (text) {
       tokensInput.value = text;
+      setError('');
       renderOutput();
     }).catch(function () {
-      setError('No se pudo leer el archivo seleccionado.');
+      setError('No se pudo leer el archivo seleccionado. Comprueba que sea un JSON de texto válido.');
     });
   }
 
@@ -361,12 +399,12 @@
     }
 
     navigator.clipboard.writeText(outputPreview.value).then(function () {
-      copyButton.textContent = 'Copiado';
-      window.setTimeout(function () {
-        copyButton.textContent = 'Copiar';
-      }, 1200);
+      setCopyButtonLabel('Copied');
+      resetCopyButtonLabel(1200);
     }).catch(function () {
-      setError('No se pudo copiar. El navegador bloqueó el acceso al portapapeles.');
+      setCopyButtonLabel('Manual copy');
+      resetCopyButtonLabel(1800);
+      setError('No se pudo copiar automáticamente. El navegador bloqueó el portapapeles; puedes copiar el contenido manualmente desde la vista previa.');
     });
   }
 
@@ -387,9 +425,24 @@
     URL.revokeObjectURL(url);
   }
 
-  tokensInput.value = sampleTokens;
-  copyButton.disabled = true;
-  downloadButton.disabled = true;
+  function loadExample() {
+    tokensInput.value = sampleTokens;
+    fileInput.value = '';
+    setError('');
+    renderOutput();
+  }
+
+  function clearAll() {
+    tokensInput.value = '';
+    outputPreview.value = '';
+    prefixInput.value = '';
+    fileInput.value = '';
+    setError('');
+    renderOutput();
+  }
+
+  tokensInput.value = '';
+  updateActionState('');
 
   tokensInput.addEventListener('input', renderOutput);
   targetSelect.addEventListener('change', renderOutput);
@@ -397,6 +450,8 @@
   fileInput.addEventListener('change', handleFileUpload);
   copyButton.addEventListener('click', copyOutput);
   downloadButton.addEventListener('click', downloadOutput);
+  exampleButton.addEventListener('click', loadExample);
+  clearButton.addEventListener('click', clearAll);
 
   renderOutput();
 }());
