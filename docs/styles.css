@@ -1,32 +1,33 @@
 :root {
   color-scheme: light;
-  --color-primary: #405f90;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #d6e3ff;
-  --color-on-primary-container: #0f1c2b;
-  --color-secondary-container: #dae2f1;
-  --color-on-secondary-container: #263141;
-  --color-tertiary-container: #e6def8;
-  --color-on-tertiary-container: #352f49;
-  --color-surface: #f8f9ff;
-  --color-surface-container: #edf1f8;
-  --color-surface-container-high: #e2e8f1;
-  --color-surface-container-highest: #d7dee8;
-  --color-surface-variant: #dbe4f0;
-  --color-outline: #708090;
-  --color-outline-variant: #b8c3d2;
-  --color-on-surface: #1a1c20;
-  --color-on-surface-variant: #46505c;
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #410002;
-  --radius-xs: 8px;
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --shadow-1: 0 1px 2px rgba(19, 28, 45, 0.08), 0 8px 18px rgba(19, 28, 45, 0.06);
-  --shadow-2: 0 4px 10px rgba(19, 28, 45, 0.09), 0 24px 42px rgba(19, 28, 45, 0.1);
-  --shadow-3: 0 10px 24px rgba(19, 28, 45, 0.12), 0 32px 60px rgba(19, 28, 45, 0.12);
+  --color-primary: #005bc0;
+  --color-primary-dim: #004fa9;
+  --color-on-primary: #f7f7ff;
+  --color-primary-container: #d8e2ff;
+  --color-on-primary-container: #004fa8;
+  --color-secondary-container: #e2e2e9;
+  --color-on-secondary-container: #505257;
+  --color-surface: #f8f9fb;
+  --color-surface-container-low: #eef3f8;
+  --color-surface-container: #e3ebf2;
+  --color-surface-container-high: #dae4ed;
+  --color-surface-container-highest: #cfdbe6;
+  --color-surface-variant: #d4e0eb;
+  --color-surface-dim: #c3d2df;
+  --color-outline: #727c82;
+  --color-outline-variant: #a9b4b9;
+  --color-on-surface: #2a3439;
+  --color-on-surface-variant: #566166;
+  --color-error: #9f403d;
+  --color-error-container: #fe8983;
+  --color-on-error-container: #752121;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-1: 0 1px 2px rgba(11, 15, 16, 0.04), 0 8px 20px rgba(11, 15, 16, 0.05);
+  --shadow-2: 0 12px 32px -4px rgba(11, 15, 16, 0.07);
+  --shadow-3: 0 24px 56px -10px rgba(11, 15, 16, 0.12);
   font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
   background: var(--color-surface);
@@ -46,7 +47,7 @@ body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at top, rgba(64, 95, 144, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(0, 91, 192, 0.02), transparent 96px),
     var(--color-surface);
 }
 
@@ -90,8 +91,9 @@ textarea {
   align-items: center;
   min-height: 64px;
   padding: 0 28px;
-  border-bottom: 1px solid rgba(184, 195, 210, 0.6);
-  background: rgba(248, 249, 255, 0.84);
+  border-bottom: 1px solid rgba(169, 180, 185, 0.18);
+  background: rgba(248, 249, 251, 0.96);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
   backdrop-filter: blur(10px);
 }
 
@@ -106,21 +108,22 @@ textarea {
   margin: 0;
   font-size: 1.22rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
+  color: #202a33;
 }
 
 .topbar-divider {
   width: 1px;
   height: 18px;
-  background: var(--color-outline-variant);
+  background: rgba(169, 180, 185, 0.34);
 }
 
 .topbar-brand p {
   margin: 0;
-  color: var(--color-on-surface-variant);
-  font-size: 0.69rem;
+  color: #475463;
+  font-size: 0.73rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.088em;
   text-transform: uppercase;
 }
 
@@ -142,12 +145,14 @@ textarea {
 .workspace-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 24px;
   padding: 24px;
-  border: 1px solid rgba(184, 195, 210, 0.55);
+  border: 1px solid rgba(169, 180, 185, 0.14);
   border-radius: var(--radius-lg);
-  background: var(--color-surface-container);
-  box-shadow: var(--shadow-1);
+  background: linear-gradient(180deg, var(--color-surface-container-low), #e9eff6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 2px rgba(11, 15, 16, 0.035);
 }
 
 .workspace-result {
@@ -155,16 +160,16 @@ textarea {
   flex-direction: column;
   gap: 18px;
   padding: 24px;
-  border: 1px solid rgba(184, 195, 210, 0.55);
+  border: 1px solid rgba(169, 180, 185, 0.13);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(237, 241, 248, 0.96));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(227, 236, 245, 0.96));
   box-shadow: var(--shadow-3);
 }
 
 .config-section {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .config-controls {
@@ -191,7 +196,7 @@ textarea {
   color: var(--color-on-surface-variant);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -209,19 +214,22 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 140px;
-  border: 2px dashed var(--color-outline-variant);
-  border-radius: 20px;
+  min-height: 146px;
+  border: 1px dashed rgba(114, 124, 130, 0.36);
+  border-radius: 18px;
   padding: 22px 18px;
-  background: var(--color-surface-container-high);
+  background: linear-gradient(180deg, #e5edf5, #dbe6ef);
   text-align: center;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .upload-card:hover {
-  background: var(--color-surface-container-highest);
-  border-color: var(--color-outline);
+  background: #d9e5ef;
+  border-color: rgba(0, 91, 192, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 6px 18px rgba(0, 91, 192, 0.08);
 }
 
 .upload-card-icon {
@@ -230,10 +238,10 @@ textarea {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 14px;
-  background: rgba(64, 95, 144, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 91, 192, 0.16);
   color: var(--color-primary);
-  font-size: 1.35rem;
+  font-size: 1.45rem;
   font-weight: 700;
 }
 
@@ -257,20 +265,20 @@ textarea {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .field span {
   color: var(--color-on-surface-variant);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .hint {
   color: var(--color-on-surface-variant);
-  font-size: 0.72rem;
+  font-size: 0.71rem;
   line-height: 1.45;
 }
 
@@ -278,7 +286,7 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid var(--color-outline-variant);
+  border: 1px solid rgba(169, 180, 185, 0.34);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.92);
   color: var(--color-on-surface);
@@ -309,15 +317,15 @@ textarea::placeholder {
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: var(--color-outline);
+  border-color: rgba(114, 124, 130, 0.42);
 }
 
 input:focus,
 select:focus,
 textarea:focus,
 button:focus-visible {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(64, 95, 144, 0.14);
+  border-color: rgba(0, 91, 192, 0.42);
+  box-shadow: 0 0 0 4px rgba(0, 91, 192, 0.12);
 }
 
 select {
@@ -346,7 +354,7 @@ select {
 button {
   min-height: 40px;
   border: 0;
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   padding: 0 16px;
   font-size: 0.88rem;
   font-weight: 600;
@@ -355,34 +363,37 @@ button {
 }
 
 #download-button {
-  background: var(--color-primary);
+  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-dim));
   color: var(--color-on-primary);
   box-shadow: var(--shadow-2);
 }
 
 #download-button:hover:not(:disabled) {
-  background: var(--color-primary, #37527d);
+  background: linear-gradient(180deg, #0052ae, #00468f);
   transform: translateY(-1px);
 }
 
 #copy-button {
-  border: 1px solid rgba(64, 95, 144, 0.18);
   background: var(--color-primary-container);
   color: var(--color-on-primary-container);
+  box-shadow: inset 0 0 0 1px rgba(0, 91, 192, 0.1);
 }
 
 #copy-button:hover:not(:disabled) {
-  background: #c8d9fb;
+  background: #c5d5ff;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 91, 192, 0.14),
+    0 2px 8px rgba(0, 91, 192, 0.08);
 }
 
 #example-button {
-  border: 1px solid rgba(64, 95, 144, 0.24);
+  border: 1px solid rgba(0, 91, 192, 0.22);
   background: transparent;
   color: var(--color-primary);
 }
 
 #example-button:hover:not(:disabled) {
-  background: rgba(64, 95, 144, 0.08);
+  background: rgba(0, 91, 192, 0.08);
 }
 
 #clear-button {
@@ -426,8 +437,8 @@ button:disabled {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  background: rgba(64, 95, 144, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 91, 192, 0.16);
   color: var(--color-primary);
   font-size: 0.92rem;
   font-weight: 700;
@@ -435,10 +446,11 @@ button:disabled {
 
 .filename {
   min-width: 0;
-  font-size: 1.46rem;
+  font-size: 1.48rem;
   line-height: 1.12;
   font-weight: 700;
   letter-spacing: -0.03em;
+  color: var(--color-on-surface);
 }
 
 .status-badge {
@@ -447,7 +459,7 @@ button:disabled {
   min-height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: var(--color-primary-container);
+  background: linear-gradient(180deg, var(--color-primary-container), #cedcff);
   color: var(--color-on-primary-container);
   font-size: 0.62rem;
   font-weight: 700;
@@ -461,9 +473,9 @@ button:disabled {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(184, 195, 210, 0.6);
+  border: 1px solid rgba(169, 180, 185, 0.16);
   border-radius: 22px;
-  background: linear-gradient(180deg, var(--color-surface-variant), var(--color-surface-container-high));
+  background: linear-gradient(180deg, #d4e0eb, #ccd9e6);
   box-shadow: var(--shadow-2);
 }
 
@@ -473,8 +485,8 @@ button:disabled {
   gap: 10px;
   min-height: 48px;
   padding: 0 16px;
-  border-bottom: 1px solid rgba(184, 195, 210, 0.5);
-  background: rgba(215, 222, 232, 0.78);
+  border-bottom: 1px solid rgba(169, 180, 185, 0.16);
+  background: rgba(195, 210, 223, 0.86);
 }
 
 .editor-dots {
@@ -504,19 +516,13 @@ button:disabled {
   overflow: hidden;
 }
 
-.editor-gutter {
-  width: 56px;
-  flex: 0 0 56px;
-  border-right: 1px solid rgba(184, 195, 210, 0.4);
-  background: rgba(215, 222, 232, 0.45);
-}
 
 .editor-canvas {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
-  background: rgba(248, 249, 255, 0.4);
+  background: rgba(227, 236, 244, 0.72);
 }
 
 .output-field {
@@ -532,9 +538,10 @@ button:disabled {
   background: transparent;
   padding: 24px 24px 28px;
   line-height: 1.74;
-  font-size: 0.93rem;
-  color: var(--color-on-surface);
+  font-size: 0.94rem;
+  color: #253039;
   box-shadow: none;
+  opacity: 1;
 }
 
 .empty-state {
@@ -544,11 +551,11 @@ button:disabled {
   flex-direction: column;
   justify-content: center;
   gap: 10px;
-  border: 1px dashed rgba(112, 128, 144, 0.42);
+  border: 1px dashed rgba(114, 124, 130, 0.28);
   border-radius: 18px;
   padding: 22px;
-  background: rgba(248, 249, 255, 0.86);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+  background: rgba(248, 249, 251, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
 }
 
 .empty-state h3 {
