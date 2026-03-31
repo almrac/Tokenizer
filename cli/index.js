@@ -1,10 +1,11 @@
 /*
 Usage examples:
   node index.js --target css
-  node index.js --target css --prefix nb
+  node index.js --target css --prefix tk
   node index.js --target ionic --input ./tokens.json --output ./dist
   node index.js --target bootstrap --input ./tokens.json
   node index.js --target tailwind --output ./dist
+  node index.js --target css,tailwind --output ./dist
 */
 
 const fs = require('fs');
@@ -120,17 +121,37 @@ function validateOptionValue(name, value) {
   }
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const target = args.target;
+function parseTargetList(targetArg) {
+  const raw = String(targetArg || '').split(',');
+  const targets = [];
 
-  if (!target) {
+  for (let i = 0; i < raw.length; i += 1) {
+    const name = raw[i].trim();
+
+    if (!name) {
+      continue;
+    }
+
+    if (!SUPPORTED_TARGETS[name]) {
+      exitWithError('Invalid --target "' + name + '". Supported targets: css, ionic, bootstrap, tailwind.');
+    }
+
+    if (targets.indexOf(name) === -1) {
+      targets.push(name);
+    }
+  }
+
+  if (targets.length === 0) {
     exitWithError('Missing required --target. Supported targets: css, ionic, bootstrap, tailwind.');
   }
 
-  if (!SUPPORTED_TARGETS[target]) {
-    exitWithError('Invalid --target "' + target + '". Supported targets: css, ionic, bootstrap, tailwind.');
-  }
+  return targets;
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const targetList = parseTargetList(args.target);
+  const isMultiTarget = targetList.length > 1;
 
   validateOptionValue('input', args.input);
   validateOptionValue('output', args.output);
@@ -138,30 +159,37 @@ function main() {
 
   const inputPath = path.resolve(args.input || './tokens.json');
   const outputDir = path.resolve(args.output || './dist');
-  const selectedTarget = SUPPORTED_TARGETS[target];
   const tokens = readTokens(inputPath);
-  const validation = validateTokenInput(tokens, target);
-
-  if (validation.errors.length > 0) {
-    exitWithError(validation.errors.join(' '));
-  }
-
-  for (let i = 0; i < validation.warnings.length; i += 1) {
-    process.stderr.write('Warning: ' + validation.warnings[i] + '\n');
-  }
-
-  const content = selectedTarget.generator(tokens, {
-    prefix: args.prefix,
-  });
-  const outputPath = path.join(outputDir, selectedTarget.fileName);
-
   ensureDirExists(outputDir);
-  if (cleanOutputDir(outputDir, selectedTarget.fileName)) {
-    process.stdout.write('Overwriting existing file: ' + outputPath + '\n');
-  }
-  writeFile(outputPath, content);
 
-  process.stdout.write('Generated ' + outputPath + '\n');
+  for (let i = 0; i < targetList.length; i += 1) {
+    const target = targetList[i];
+    const selectedTarget = SUPPORTED_TARGETS[target];
+    const validation = validateTokenInput(tokens, target);
+
+    if (validation.errors.length > 0) {
+      exitWithError(validation.errors.join(' '));
+    }
+
+    for (let j = 0; j < validation.warnings.length; j += 1) {
+      if (isMultiTarget) {
+        process.stderr.write('Warning [' + target + ']: ' + validation.warnings[j] + '\n');
+      } else {
+        process.stderr.write('Warning: ' + validation.warnings[j] + '\n');
+      }
+    }
+
+    const content = selectedTarget.generator(tokens, {
+      prefix: args.prefix,
+    });
+    const outputPath = path.join(outputDir, selectedTarget.fileName);
+
+    if (cleanOutputDir(outputDir, selectedTarget.fileName)) {
+      process.stdout.write('Overwriting existing file: ' + outputPath + '\n');
+    }
+    writeFile(outputPath, content);
+    process.stdout.write('Generated ' + outputPath + '\n');
+  }
 }
 
 module.exports = {

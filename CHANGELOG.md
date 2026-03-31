@@ -2,6 +2,43 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.4.3] - 2026-03-31
+
+### Changed
+
+- Simplificación de carga de ejemplos en la UI web: se elimina el sistema de múltiples presets.
+- `Cargar ejemplo` ahora carga un único ejemplo básico (`colors` + `spacing`) para reducir confusión.
+- Se mantiene `Limpiar` y el estado inicial vacío al abrir la herramienta.
+- Sin cambios en el comportamiento multi-export de v0.4.2.
+
+## [v0.4.2] - 2026-03-31
+
+### Added
+
+- Multi-export en CLI con `--target` en formato lista (por ejemplo `--target css,tailwind`).
+- Selección multi-target en la UI web con generación simultánea por target.
+- Selector de preview activo cuando hay múltiples outputs.
+
+### Changed
+
+- Acción `Descargar` en modo multi-target usa fallback sin dependencias: descarga secuencial de archivos.
+- Acción `Copiar` en modo multi-target ahora copia únicamente el output activo.
+- Documentación ampliada para modo single-target y multi-target.
+
+## [v0.4.1] - 2026-03-31
+
+### Added
+
+- Sistema de presets en la UI web: `Basic`, `Full`, `Ionic-oriented`, `Tailwind-oriented`.
+- Selector compacto de presets y carga inmediata desde la UI.
+
+### Changed
+
+- Botón de ejemplo adaptado para cargar el preset seleccionado.
+- Prefijo de ejemplo actualizado de `nb` a `tk` en UI y documentación.
+- `ionic` ahora mantiene colores nativos `--ion-color-*` y usa fallback con prefijo configurable para grupos no nativos (`spacing`, `typography`, `radius`, `shadows`).
+- Validación de target actualizada para no marcar `spacing` como ignorado en `ionic`.
+
 ## [v0.4.0] - 2026-03-31
 
 ### Added

@@ -16,7 +16,7 @@
         <h1>Tokenizer</h1>
         <span class="topbar-divider" aria-hidden="true"></span>
         <p>Herramienta de conversión de tokens de diseño para desarrolladores</p>
-        <span class="version-label" aria-label="Versión actual">v0.4.0</span>
+        <span class="version-label" aria-label="Versión actual">v0.4.3</span>
       </div>
     </header>
 
@@ -46,19 +46,20 @@
 
         <section class="config-section config-controls">
           <label class="field">
-            <span>Formato de salida</span>
-            <select class="target-select" data-ui="target-select">
-              <option value="css">css</option>
-              <option value="ionic">ionic</option>
-              <option value="bootstrap">bootstrap</option>
-              <option value="tailwind">tailwind</option>
-            </select>
+            <span>Targets de salida</span>
+            <div class="target-grid" data-ui="target-group">
+              <label class="target-item"><input type="checkbox" data-ui="target-option" value="css" checked> css</label>
+              <label class="target-item"><input type="checkbox" data-ui="target-option" value="ionic"> ionic</label>
+              <label class="target-item"><input type="checkbox" data-ui="target-option" value="bootstrap"> bootstrap</label>
+              <label class="target-item"><input type="checkbox" data-ui="target-option" value="tailwind"> tailwind</label>
+            </div>
+            <small class="hint">Puedes seleccionar uno o varios targets. Si eliges varios, la vista previa usa el target activo.</small>
           </label>
 
           <label class="field prefix-field" data-ui="prefix-field">
             <span>Prefijo de variables</span>
-            <input class="prefix-input" data-ui="prefix-input" type="text" placeholder="nb">
-            <small class="hint">Solo aplica al formato <code>css</code>. Si escribes <code>nb</code>, se generan variables como <code>--nb-color-primary</code>.</small>
+            <input class="prefix-input" data-ui="prefix-input" type="text" placeholder="tk">
+            <small class="hint">Aplica a <code>css</code> y a variables personalizadas en <code>ionic</code>. Si escribes <code>tk</code>, se generan variables como <code>--tk-color-primary</code>.</small>
           </label>
         </section>
 
@@ -73,6 +74,10 @@
               <span class="result-icon" aria-hidden="true">{ }</span>
               <h2 class="filename" data-ui="filename"></h2>
               <span class="status-badge" data-ui="status-badge" hidden>Generado</span>
+            </div>
+            <div class="preview-switch" data-ui="preview-switch" hidden>
+              <label class="preview-switch-label" for="preview-target-select">Vista activa</label>
+              <select id="preview-target-select" class="preview-target-select" data-ui="preview-target-select"></select>
             </div>
           </div>
           <div class="result-actions">

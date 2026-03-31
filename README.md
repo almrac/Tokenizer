@@ -8,6 +8,7 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
 - Mantiene una estructura simple, sin dependencias ni build
 - Funciona tanto desde Node.js como directamente en el navegador
 - Genera nombres de archivo coherentes según el target seleccionado
+- Permite exportar uno o varios targets en una sola ejecución
 
 ## Targets soportados actualmente
 
@@ -36,7 +37,7 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
 Soporte por target:
 
 - `css`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
-- `ionic`: ignora `spacing`
+- `ionic`: usa `colors` nativos y fallback custom para `spacing`, `typography`, `radius`, `shadows`
 - `bootstrap`: usa todos los grupos, pero en `colors` solo aplica claves estándar de Bootstrap
 - `tailwind`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
 
@@ -58,8 +59,8 @@ Feedback por entorno:
 - `css`:
   usa `colors`, `spacing`, `typography`, `radius`, `shadows` como custom properties.
 - `ionic`:
-  mantiene el mapeo completo de `colors` y además expone `typography`, `radius` y `shadows` como variables custom.
-  `spacing` se ignora y se avisa.
+  mantiene el mapeo completo de `colors` con convención `--ion-color-*`.
+  para grupos no nativos (`spacing`, `typography`, `radius`, `shadows`) usa fallback de variables custom con prefijo configurable (por ejemplo `--tk-spacing-md`).
 - `bootstrap`:
   mapea `colors` estándar de Bootstrap, `$spacers`, variables de tipografía base (`$font-family-base`, `$font-size-base`, `$font-weight-base`, `$line-height-base`), mapas tipográficos (`$font-sizes`, `$font-weights`, `$line-heights`), `radius` y `shadows`.
   Colores no estándar se ignoran con warning.
@@ -130,18 +131,21 @@ node cli/index.js --target css
 Opciones disponibles:
 
 - `--target` obligatorio. Targets válidos: `css`, `ionic`, `bootstrap`, `tailwind`
+  también admite múltiples targets separados por coma, por ejemplo `css,tailwind`
 - `--input` opcional. Por defecto usa `./tokens.json`
 - `--output` opcional. Por defecto usa `./dist`
-- `--prefix` opcional. Solo aplica al target `css`
+- `--prefix` opcional. Aplica a `css` y a variables custom de fallback en `ionic`
 
 Ejemplos:
 
 ```bash
-node index.js --target css --prefix nb
-node index.js --target css --prefix --nb
+node index.js --target css --prefix tk
+node index.js --target css --prefix --tk
 node index.js --target ionic --input ./tokens.json --output ./dist
 node index.js --target bootstrap
 node index.js --target tailwind --output ./dist
+node index.js --target css,tailwind --output ./dist
+node index.js --target css,ionic,bootstrap --prefix tk
 ```
 
 ## Uso desde la web
@@ -158,12 +162,32 @@ Desde la interfaz puedes:
 
 - pegar el contenido de `tokens.json`
 - subir un archivo `.json`
-- elegir el target de salida
+- elegir uno o varios targets de salida
 - indicar un prefijo para `css`
 - cargar un ejemplo rápido
 - limpiar el formulario
-- previsualizar el archivo generado
-- copiar o descargar el resultado
+- previsualizar el archivo generado (con selector de vista activa si hay varios outputs)
+- copiar el output activo
+- descargar el output activo o descargar varios archivos en secuencia si hay multi-target
+
+Ejemplo en la UI:
+
+- `Cargar ejemplo` inserta un JSON básico y limpio (`colors` + `spacing`) para empezar rápido.
+- `Limpiar` restablece el estado vacío inicial.
+
+Nota sobre prefijo:
+
+- En la documentación y en la UI se usa `tk` como ejemplo genérico (`--tk-color-primary`).
+- Puedes configurar cualquier prefijo según tu proyecto.
+
+Modo multi-export:
+
+- Si seleccionas un solo target, el comportamiento es el tradicional (preview + descarga de un archivo).
+- Si seleccionas múltiples targets:
+  - Tokenizer genera un archivo por target.
+  - puedes cambiar la vista activa desde el selector de preview.
+  - la acción `Copiar` copia solo la vista activa.
+  - la acción `Descargar` usa fallback sin dependencias: descarga secuencial de los archivos generados (no ZIP).
 
 ## GitHub Pages
 

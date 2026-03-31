@@ -11,7 +11,7 @@ const TARGET_GROUP_SUPPORT = {
   },
   ionic: {
     colors: true,
-    spacing: false,
+    spacing: true,
     typography: true,
     radius: true,
     shadows: true,

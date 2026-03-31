@@ -1,4 +1,12 @@
-const { buildRootBlock, bucketToEntries, flattenTokenEntries, getTokenGroups, getTypographyBuckets } = require('./naming');
+const {
+  buildCssVariableName,
+  buildRootBlock,
+  bucketToEntries,
+  flattenTokenEntries,
+  getTokenGroups,
+  getTypographyBuckets,
+  normalizeCssPrefix,
+} = require('./naming');
 
 // Ionic is more useful when each color includes the companion variables its theme system expects.
 function clampChannel(value) {
@@ -80,9 +88,11 @@ function buildColorLines(name, value) {
   ];
 }
 
-function generateIonic(tokens) {
+function generateIonic(tokens, options) {
   const groups = getTokenGroups(tokens);
+  const prefix = normalizeCssPrefix(options && options.prefix);
   const colorKeys = Object.keys(groups.colors);
+  const spacingEntries = flattenTokenEntries(groups.spacing);
   const typographyBuckets = getTypographyBuckets(groups.typography);
   const typographyEntries = []
     .concat(bucketToEntries(typographyBuckets.fontFamily).map((entry) => ({ group: 'font-family', entry })))
@@ -111,21 +121,23 @@ function generateIonic(tokens) {
     }
   }
 
+  if (spacingEntries.length > 0) {
+    if (lines.length > 0) {
+      lines.push('');
+    }
+    lines.push('  /* Spacing */');
+    for (let i = 0; i < spacingEntries.length; i += 1) {
+      lines.push('  ' + buildCssVariableName(prefix, 'spacing', spacingEntries[i].name) + ': ' + spacingEntries[i].value + ';');
+    }
+  }
+
   if (typographyEntries.length > 0) {
     if (lines.length > 0) {
       lines.push('');
     }
     lines.push('  /* Typography */');
     for (let i = 0; i < typographyEntries.length; i += 1) {
-      lines.push(
-        '  --ion-' +
-        typographyEntries[i].group +
-        '-' +
-        typographyEntries[i].entry.name +
-        ': ' +
-        typographyEntries[i].entry.value +
-        ';'
-      );
+      lines.push('  ' + buildCssVariableName(prefix, typographyEntries[i].group, typographyEntries[i].entry.name) + ': ' + typographyEntries[i].entry.value + ';');
     }
   }
 
@@ -135,7 +147,7 @@ function generateIonic(tokens) {
     }
     lines.push('  /* Radius */');
     for (let i = 0; i < radiusEntries.length; i += 1) {
-      lines.push('  --ion-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+      lines.push('  ' + buildCssVariableName(prefix, 'radius', radiusEntries[i].name) + ': ' + radiusEntries[i].value + ';');
     }
   }
 
@@ -145,7 +157,7 @@ function generateIonic(tokens) {
     }
     lines.push('  /* Shadows */');
     for (let i = 0; i < shadowEntries.length; i += 1) {
-      lines.push('  --ion-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+      lines.push('  ' + buildCssVariableName(prefix, 'shadow', shadowEntries[i].name) + ': ' + shadowEntries[i].value + ';');
     }
   }
 

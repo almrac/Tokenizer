@@ -1,46 +1,18 @@
 (function () {
-  var sampleTokens = '{\n' +
-    '  "colors": {\n' +
-    '    "primary": "#0d6efd",\n' +
-    '    "secondary": "#6c757d",\n' +
-    '    "success": "#198754",\n' +
-    '    "danger": "#dc3545",\n' +
-    '    "brand": "#7c4dff"\n' +
-    '  },\n' +
-    '  "spacing": {\n' +
-    '    "xs": "0.25rem",\n' +
-    '    "sm": "0.5rem",\n' +
-    '    "md": "1rem",\n' +
-    '    "lg": "1.5rem"\n' +
-    '  },\n' +
-    '  "typography": {\n' +
-    '    "fontFamily": {\n' +
-    '      "base": "Inter, sans-serif",\n' +
-    '      "mono": "\\"Fira Code\\", monospace"\n' +
-    '    },\n' +
-    '    "fontSize": {\n' +
-    '      "body": "0.875rem",\n' +
-    '      "title": "1.25rem"\n' +
-    '    },\n' +
-    '    "fontWeight": {\n' +
-    '      "regular": "400",\n' +
-    '      "semibold": "600"\n' +
-    '    },\n' +
-    '    "lineHeight": {\n' +
-    '      "body": "1.5",\n' +
-    '      "title": "1.2"\n' +
-    '    }\n' +
-    '  },\n' +
-    '  "radius": {\n' +
-    '    "sm": "4px",\n' +
-    '    "md": "8px",\n' +
-    '    "lg": "12px"\n' +
-    '  },\n' +
-    '  "shadows": {\n' +
-    '    "sm": "0 1px 2px rgba(0, 0, 0, 0.12)",\n' +
-    '    "md": "0 4px 12px rgba(0, 0, 0, 0.16)"\n' +
-    '  }\n' +
-    '}';
+  var basicExampleTokens = {
+    colors: {
+      primary: '#005bc0',
+      secondary: '#5d5f65',
+      success: '#2ea96d',
+      danger: '#d74a49'
+    },
+    spacing: {
+      xs: '4px',
+      sm: '8px',
+      md: '16px',
+      lg: '24px'
+    }
+  };
 
   var outputFiles = {
     css: 'tokens.css',
@@ -62,14 +34,16 @@
   var supportedGroups = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
   var targetGroupSupport = {
     css: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
-    ionic: { colors: true, spacing: false, typography: true, radius: true, shadows: true },
+    ionic: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
     bootstrap: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
     tailwind: { colors: true, spacing: true, typography: true, radius: true, shadows: true }
   };
 
   var tokensInput = document.querySelector('[data-ui="tokens-input"]');
   var fileInput = document.querySelector('[data-ui="file-input"]');
-  var targetSelect = document.querySelector('[data-ui="target-select"]');
+  var targetOptions = Array.prototype.slice.call(document.querySelectorAll('[data-ui="target-option"]'));
+  var previewSwitch = document.querySelector('[data-ui="preview-switch"]');
+  var previewTargetSelect = document.querySelector('[data-ui="preview-target-select"]');
   var prefixField = document.querySelector('[data-ui="prefix-field"]');
   var prefixInput = document.querySelector('[data-ui="prefix-input"]');
   var filename = document.querySelector('[data-ui="filename"]');
@@ -84,6 +58,8 @@
   var emptyState = document.querySelector('[data-ui="empty-state"]');
   var defaultCopyLabel = 'Copiar';
   var copyResetTimer = 0;
+  var generatedOutputs = {};
+  var activePreviewTarget = 'css';
 
   function normalizeCssPrefix(prefix) {
     if (!prefix) {
@@ -591,9 +567,11 @@
     ];
   }
 
-  function generateIonic(tokens) {
+  function generateIonic(tokens, options) {
     var groups = getTokenGroups(tokens);
+    var prefix = normalizeCssPrefix(options && options.prefix);
     var keys = Object.keys(groups.colors);
+    var spacingEntries = flattenTokenEntries(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
     var shadowEntries = flattenTokenEntries(groups.shadows);
     var typographyBuckets = getTypographyBuckets(groups.typography);
@@ -624,13 +602,23 @@
       }
     }
 
+    if (spacingEntries.length > 0) {
+      if (lines.length > 0) {
+        lines.push('');
+      }
+      lines.push('  /* Spacing */');
+      for (i = 0; i < spacingEntries.length; i += 1) {
+        lines.push('  ' + buildCssVariableName(prefix, 'spacing', spacingEntries[i].name) + ': ' + spacingEntries[i].value + ';');
+      }
+    }
+
     if (typographyEntries.length > 0) {
       if (lines.length > 0) {
         lines.push('');
       }
       lines.push('  /* Typography */');
       for (i = 0; i < typographyEntries.length; i += 1) {
-        lines.push('  --ion-' + typographyEntries[i].group + '-' + typographyEntries[i].entry.name + ': ' + typographyEntries[i].entry.value + ';');
+        lines.push('  ' + buildCssVariableName(prefix, typographyEntries[i].group, typographyEntries[i].entry.name) + ': ' + typographyEntries[i].entry.value + ';');
       }
     }
 
@@ -640,7 +628,7 @@
       }
       lines.push('  /* Radius */');
       for (i = 0; i < radiusEntries.length; i += 1) {
-        lines.push('  --ion-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
+        lines.push('  ' + buildCssVariableName(prefix, 'radius', radiusEntries[i].name) + ': ' + radiusEntries[i].value + ';');
       }
     }
 
@@ -650,7 +638,7 @@
       }
       lines.push('  /* Shadows */');
       for (i = 0; i < shadowEntries.length; i += 1) {
-        lines.push('  --ion-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+        lines.push('  ' + buildCssVariableName(prefix, 'shadow', shadowEntries[i].name) + ': ' + shadowEntries[i].value + ';');
       }
     }
 
@@ -965,8 +953,48 @@
     throw new Error('Unsupported target: ' + target);
   }
 
+  function getSelectedTargets() {
+    var selected = [];
+    var i;
+
+    for (i = 0; i < targetOptions.length; i += 1) {
+      if (targetOptions[i].checked) {
+        selected.push(targetOptions[i].value);
+      }
+    }
+
+    return selected;
+  }
+
+  function setSelectedTargets(targets) {
+    var targetSet = {};
+    var i;
+
+    for (i = 0; i < targets.length; i += 1) {
+      targetSet[targets[i]] = true;
+    }
+
+    for (i = 0; i < targetOptions.length; i += 1) {
+      targetOptions[i].checked = !!targetSet[targetOptions[i].value];
+    }
+  }
+
+  function ensureAtLeastOneTarget(changedOption) {
+    if (getSelectedTargets().length > 0) {
+      return;
+    }
+
+    if (changedOption) {
+      changedOption.checked = true;
+    } else if (targetOptions.length > 0) {
+      targetOptions[0].checked = true;
+    }
+  }
+
   function updatePrefixVisibility() {
-    prefixField.hidden = targetSelect.value !== 'css';
+    var selectedTargets = getSelectedTargets();
+    var shouldShow = selectedTargets.indexOf('css') !== -1 || selectedTargets.indexOf('ionic') !== -1;
+    prefixField.hidden = !shouldShow;
   }
 
   function updateEmptyState(output) {
@@ -995,8 +1023,51 @@
     warningMessage.textContent = message;
   }
 
-  function getCurrentFileName() {
-    return outputFiles[targetSelect.value];
+  function getCurrentFileName(target) {
+    return outputFiles[target];
+  }
+
+  function triggerDownload(fileName, content) {
+    var blob = new Blob([content], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function updatePreviewSelector() {
+    var targets = Object.keys(generatedOutputs);
+    var i;
+    var option;
+
+    previewTargetSelect.textContent = '';
+
+    for (i = 0; i < targets.length; i += 1) {
+      option = document.createElement('option');
+      option.value = targets[i];
+      option.textContent = targets[i];
+      previewTargetSelect.appendChild(option);
+    }
+
+    previewSwitch.hidden = targets.length <= 1;
+
+    if (targets.length > 0) {
+      if (targets.indexOf(activePreviewTarget) === -1) {
+        activePreviewTarget = targets[0];
+      }
+      previewTargetSelect.value = activePreviewTarget;
+    }
+  }
+
+  function renderActivePreview() {
+    var output = generatedOutputs[activePreviewTarget] || '';
+    outputPreview.value = output;
+    updateActionState(output, activePreviewTarget);
   }
 
   function setCopyButtonLabel(label) {
@@ -1015,14 +1086,14 @@
     }, delay || 1400);
   }
 
-  function updateActionState(output) {
+  function updateActionState(output, target) {
     var hasOutput = !!output;
 
     copyButton.disabled = !hasOutput;
     downloadButton.disabled = !hasOutput;
     updateEmptyState(output);
     statusBadge.hidden = !hasOutput;
-    filename.textContent = hasOutput ? getCurrentFileName() : '';
+    filename.textContent = hasOutput ? getCurrentFileName(target || activePreviewTarget) : '';
 
     if (!hasOutput) {
       setCopyButtonLabel(defaultCopyLabel);
@@ -1030,13 +1101,25 @@
   }
 
   function renderOutput() {
-    var target = targetSelect.value;
+    var targets = getSelectedTargets();
     var generator;
     var parsedTokens;
     var validation;
+    var warnings = [];
+    var warningsMap = {};
+    var errorsMap = {};
+    var i;
+    var j;
+    var key;
+    var target;
     var output;
+    var hasErrors = false;
+    var newOutputs = {};
+    var validationWarning;
 
     updatePrefixVisibility();
+    ensureAtLeastOneTarget();
+    targets = getSelectedTargets();
 
     try {
       parsedTokens = JSON.parse(tokensInput.value);
@@ -1044,37 +1127,74 @@
       output = '';
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
       setWarning('');
-      outputPreview.value = output;
-      updateActionState(output);
+      generatedOutputs = {};
+      updatePreviewSelector();
+      renderActivePreview();
       return;
     }
 
-    validation = validateTokenInput(parsedTokens, target);
+    for (i = 0; i < targets.length; i += 1) {
+      target = targets[i];
+      validation = validateTokenInput(parsedTokens, target);
 
-    if (validation.errors.length > 0) {
-      output = '';
-      setError(validation.errors.join('\n'));
-      setWarning(validation.warnings.join('\n'));
-      outputPreview.value = output;
-      updateActionState(output);
+      for (j = 0; j < validation.errors.length; j += 1) {
+        errorsMap[validation.errors[j]] = true;
+      }
+
+      for (j = 0; j < validation.warnings.length; j += 1) {
+        validationWarning = targets.length > 1 ? '[' + target + '] ' + validation.warnings[j] : validation.warnings[j];
+        warningsMap[validationWarning] = true;
+      }
+
+      if (validation.errors.length > 0) {
+        hasErrors = true;
+      }
+    }
+
+    for (key in warningsMap) {
+      if (Object.prototype.hasOwnProperty.call(warningsMap, key)) {
+        warnings.push(key);
+      }
+    }
+
+    if (hasErrors) {
+      var errors = [];
+      for (key in errorsMap) {
+        if (Object.prototype.hasOwnProperty.call(errorsMap, key)) {
+          errors.push(key);
+        }
+      }
+      setError(errors.join('\n'));
+      setWarning(warnings.join('\n'));
+      generatedOutputs = {};
+      updatePreviewSelector();
+      renderActivePreview();
       return;
     }
 
     try {
-      generator = getGenerator(target);
-      output = generator(parsedTokens, {
-        prefix: prefixInput.value
-      });
+      for (i = 0; i < targets.length; i += 1) {
+        target = targets[i];
+        generator = getGenerator(target);
+        output = generator(parsedTokens, {
+          prefix: prefixInput.value
+        });
+        newOutputs[target] = output;
+      }
       setError('');
-      setWarning(validation.warnings.join('\n'));
+      setWarning(warnings.join('\n'));
     } catch (error) {
-      output = '';
-      setError('No se pudo generar la salida para este target. Revisa el contenido de los tokens e inténtalo de nuevo.');
-      setWarning(validation.warnings.join('\n'));
+      setError('No se pudo generar la salida para alguno de los targets seleccionados. Revisa el contenido de los tokens e inténtalo de nuevo.');
+      setWarning(warnings.join('\n'));
+      generatedOutputs = {};
+      updatePreviewSelector();
+      renderActivePreview();
+      return;
     }
 
-    outputPreview.value = output;
-    updateActionState(output);
+    generatedOutputs = newOutputs;
+    updatePreviewSelector();
+    renderActivePreview();
   }
 
   function handleFileUpload(event) {
@@ -1109,24 +1229,29 @@
   }
 
   function downloadOutput() {
-    if (!outputPreview.value) {
+    var targets = Object.keys(generatedOutputs);
+    var i;
+
+    if (targets.length === 0) {
       return;
     }
 
-    var blob = new Blob([outputPreview.value], { type: 'text/plain' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
+    if (targets.length === 1) {
+      triggerDownload(getCurrentFileName(targets[0]), generatedOutputs[targets[0]]);
+      return;
+    }
 
-    link.href = url;
-    link.download = getCurrentFileName();
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    for (i = 0; i < targets.length; i += 1) {
+      (function (target, delay) {
+        window.setTimeout(function () {
+          triggerDownload(getCurrentFileName(target), generatedOutputs[target]);
+        }, delay);
+      }(targets[i], i * 140));
+    }
   }
 
   function loadExample() {
-    tokensInput.value = sampleTokens;
+    tokensInput.value = JSON.stringify(basicExampleTokens, null, 2);
     fileInput.value = '';
     setError('');
     setWarning('');
@@ -1138,16 +1263,28 @@
     outputPreview.value = '';
     prefixInput.value = '';
     fileInput.value = '';
+    generatedOutputs = {};
     setError('');
     setWarning('');
     renderOutput();
   }
 
   tokensInput.value = '';
-  updateActionState('');
+  updateActionState('', 'css');
 
   tokensInput.addEventListener('input', renderOutput);
-  targetSelect.addEventListener('change', renderOutput);
+  for (var i = 0; i < targetOptions.length; i += 1) {
+    (function (option) {
+      option.addEventListener('change', function () {
+        ensureAtLeastOneTarget(option);
+        renderOutput();
+      });
+    }(targetOptions[i]));
+  }
+  previewTargetSelect.addEventListener('change', function () {
+    activePreviewTarget = previewTargetSelect.value;
+    renderActivePreview();
+  });
   prefixInput.addEventListener('input', renderOutput);
   fileInput.addEventListener('change', handleFileUpload);
   copyButton.addEventListener('click', copyOutput);
