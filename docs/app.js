@@ -1144,7 +1144,7 @@
   }
 
   function renderOutput() {
-    var targets = getSelectedTargets();
+    var targets;
     var generator;
     var parsedTokens;
     var validation;
@@ -1168,7 +1168,6 @@
     try {
       parsedTokens = JSON.parse(tokensInput.value);
     } catch (error) {
-      output = '';
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
       setWarning('');
       generatedOutputs = {};
