@@ -127,6 +127,20 @@ textarea {
   text-transform: uppercase;
 }
 
+.version-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(0, 91, 192, 0.1);
+  color: var(--color-primary-dim);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .workspace {
   width: min(1600px, 100%);
   flex: 1 1 auto;
@@ -601,7 +615,8 @@ button:disabled {
   }
 
   .topbar-divider,
-  .topbar-brand p {
+  .topbar-brand p,
+  .version-label {
     display: none;
   }
 

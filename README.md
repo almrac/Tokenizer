@@ -120,3 +120,9 @@ Notas:
 - ampliar validaciones y mensajes de error según el target
 - añadir más grupos de tokens manteniendo la misma simplicidad
 - mejorar la documentación con más ejemplos reales de entrada y salida
+
+## Roadmap corto
+
+- `v0.3.1`: pulido visual final de la interfaz y consistencia de estados vacíos/acciones
+- `v0.3.x`: mejoras incrementales de UX en la web estática sin añadir dependencias
+- `v0.4.0` (objetivo): ampliar grupos de tokens manteniendo CLI y web ligeras
