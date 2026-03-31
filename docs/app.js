@@ -348,7 +348,7 @@
     var target = targetSelect.value;
     var generator;
     var parsedTokens;
-    var output = '';
+    var output;
 
     updatePrefixVisibility();
 

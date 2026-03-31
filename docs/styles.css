@@ -361,7 +361,7 @@ button {
 }
 
 #download-button:hover:not(:disabled) {
-  background: var(--color-accent-strong, #37527d);
+  background: var(--color-primary, #37527d);
   transform: translateY(-1px);
 }
 
