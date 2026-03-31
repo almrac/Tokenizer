@@ -2,6 +2,7 @@ const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'
 const { getTypographyBuckets } = require('./naming');
 const TOP_LEVEL_ALIASES = {
   color: 'colors',
+  colour: 'colors',
   colours: 'colors',
   space: 'spacing',
   spaces: 'spacing',
@@ -43,6 +44,7 @@ const WRAPPER_KEYS = {
   semantic: true,
   semanticTokens: true,
   designTokens: true,
+  default: true,
 };
 const PREFERRED_ROOT_NAMES = {
   global: true,
@@ -134,6 +136,7 @@ function countKnownGroupKeys(value) {
   const keys = Object.keys(value || {});
   let canonicalCount = 0;
   let aliasCount = 0;
+  let unrelatedCount = 0;
 
   for (let i = 0; i < keys.length; i += 1) {
     const key = keys[i];
@@ -145,12 +148,17 @@ function countKnownGroupKeys(value) {
 
     if (getAliasTargetKey(key, TOP_LEVEL_ALIASES)) {
       aliasCount += 1;
+      continue;
     }
+
+    unrelatedCount += 1;
   }
 
   return {
     canonicalCount,
     aliasCount,
+    unrelatedCount,
+    totalKeys: keys.length,
   };
 }
 
@@ -177,17 +185,26 @@ function collectTokenRootCandidates(source, basePath, depth, candidates) {
       const leafLower = String(leaf).toLowerCase();
       const wrapperHint = WRAPPER_KEYS[key] || WRAPPER_KEYS[String(key).toLowerCase()];
       const preferredHint = PREFERRED_ROOT_NAMES[leaf] || PREFERRED_ROOT_NAMES[leafLower];
+      const score =
+        counts.canonicalCount * 12 +
+        counts.aliasCount * 6 +
+        (counts.canonicalCount + counts.aliasCount >= 2 ? 8 : 0) +
+        (preferredHint ? 6 : 0) +
+        (wrapperHint ? 4 : 0) -
+        Math.min(counts.unrelatedCount, 4) * 2 -
+        depth * 2;
 
       candidates.push({
         path,
         value,
         canonicalCount: counts.canonicalCount,
         aliasCount: counts.aliasCount,
-        score:
-          counts.canonicalCount * 4 +
-          counts.aliasCount * 2 +
-          (preferredHint ? 6 : 0) +
-          (wrapperHint ? 2 : 0),
+        unrelatedCount: counts.unrelatedCount,
+        totalKeys: counts.totalKeys,
+        preferredHint: !!preferredHint,
+        wrapperHint: !!wrapperHint,
+        depth,
+        score,
       });
     }
 
@@ -198,41 +215,74 @@ function collectTokenRootCandidates(source, basePath, depth, candidates) {
 }
 
 function pickTokenRoot(rawTokens, info, errors) {
-  if (!isObjectRecord(rawTokens)) {
-    return rawTokens;
-  }
+  const rootResult = {
+    value: rawTokens,
+    path: 'top-level',
+  };
 
-  if (hasCanonicalGroupShape(rawTokens)) {
-    return rawTokens;
+  if (!isObjectRecord(rawTokens)) {
+    return rootResult;
   }
 
   const candidates = [];
   collectTokenRootCandidates(rawTokens, '', 0, candidates);
 
+  if (hasCanonicalGroupShape(rawTokens)) {
+    if (candidates.length > 0) {
+      info.push('Using top-level token groups; wrapped candidates were ignored.');
+    }
+    return rootResult;
+  }
+
   if (candidates.length === 0) {
-    return rawTokens;
+    return rootResult;
   }
 
   if (candidates.length === 1) {
-    info.push('Using token root from "' + candidates[0].path + '".');
-    return candidates[0].value;
+    info.push(
+      'Using token root from "' +
+        candidates[0].path +
+        '" (' +
+        candidates[0].canonicalCount +
+        ' grupos canónicos, ' +
+        candidates[0].aliasCount +
+        ' aliases).'
+    );
+    return {
+      value: candidates[0].value,
+      path: candidates[0].path,
+    };
   }
 
   const sorted = candidates.slice().sort((a, b) => b.score - a.score);
-  const bestScore = sorted[0].score;
-  const bestCandidates = sorted.filter((item) => item.score === bestScore);
+  const best = sorted[0];
+  const second = sorted[1];
+  const scoreDelta = second ? best.score - second.score : best.score;
 
-  if (bestCandidates.length > 1) {
+  if (scoreDelta < 4) {
+    const topCandidates = sorted.slice(0, 3);
     errors.push(
       'Se detectaron múltiples posibles raíces de tokens: ' +
-        bestCandidates.map((item) => '"' + item.path + '"').join(', ') +
-        '. Reduce la ambigüedad dejando una raíz clara (por ejemplo, "global" o "default").'
+        topCandidates.map((item) => '"' + item.path + '"').join(', ') +
+        '. La diferencia de confianza es baja; deja una raíz clara (por ejemplo, "global" o "default").'
     );
-    return rawTokens;
+    return rootResult;
   }
 
-  info.push('Multiple possible token roots found; using "' + sorted[0].path + '".');
-  return sorted[0].value;
+  info.push(
+    'Detected multiple candidates; selected "' +
+      best.path +
+      '" because it has stronger token-group signals (score ' +
+      best.score +
+      ' vs ' +
+      second.score +
+      ').'
+  );
+
+  return {
+    value: best.value,
+    path: best.path,
+  };
 }
 
 function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
@@ -312,7 +362,8 @@ function normalizeTokenInput(rawTokens) {
     };
   }
 
-  extractedRoot = pickTokenRoot(rawTokens, info, errors);
+  const rootSelection = pickTokenRoot(rawTokens, info, errors);
+  extractedRoot = rootSelection.value;
   if (errors.length > 0) {
     return {
       normalized: rawTokens,
@@ -356,6 +407,11 @@ function normalizeTokenInput(rawTokens) {
     } else {
       info.push('Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.');
     }
+  }
+
+  const detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));
+  if (detectedGroups.length > 0) {
+    info.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
   }
 
   return {

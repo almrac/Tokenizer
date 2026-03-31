@@ -60,6 +60,7 @@ Además del formato canónico directo, Tokenizer puede recuperar grupos cuando v
 Wrappers reconocidos cuando el contenido parece una raíz de tokens:
 
 - `tokens`
+- `default`
 - `global`, `globals`
 - `theme`, `themes`
 - `values`
@@ -80,6 +81,30 @@ Feedback de extracción:
 
 - CLI: `Info: Using token root from "tokens"` o similar.
 - Web UI: se muestra en el bloque informativo ligero junto con otras normalizaciones.
+
+## Flujo de importación robusto (v0.6.0)
+
+Tokenizer aplica un pipeline de importación antes de generar:
+
+1. parseo JSON
+2. descubrimiento de raíces candidatas
+3. scoring/priorización de candidatas
+4. selección de raíz (si hay confianza suficiente)
+5. normalización de aliases
+6. validación canónica
+7. generación
+
+Reglas de selección:
+
+- si hay grupos canónicos claros en top-level, se priorizan;
+- si no, se evalúan raíces candidatas por señales (grupos canónicos, aliases mapeables, nombre wrapper, coherencia estructural);
+- si hay varias candidatas cercanas y la diferencia de confianza es baja, Tokenizer no adivina y devuelve error de ambigüedad.
+
+Mensajes de importación:
+
+- decisión de raíz (`Using token root from ...` o `Using top-level token groups...`);
+- cuando hay múltiples candidatas y una gana claramente, se informa el motivo resumido;
+- `Import summary` con raíz usada y grupos detectados.
 
 ## Validación y feedback (v0.3.4)
 

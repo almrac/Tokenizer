@@ -34,6 +34,7 @@
   var supportedGroups = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
   var topLevelAliases = {
     color: 'colors',
+    colour: 'colors',
     colours: 'colors',
     space: 'spacing',
     spaces: 'spacing',
@@ -74,7 +75,8 @@
     primitives: true,
     semantic: true,
     semanticTokens: true,
-    designTokens: true
+    designTokens: true,
+    default: true
   };
   var preferredRootNames = {
     global: true,
@@ -209,6 +211,7 @@
     var keys = Object.keys(value || {});
     var canonicalCount = 0;
     var aliasCount = 0;
+    var unrelatedCount = 0;
     var i;
     var key;
 
@@ -222,12 +225,17 @@
 
       if (getAliasTargetKey(key, topLevelAliases)) {
         aliasCount += 1;
+        continue;
       }
+
+      unrelatedCount += 1;
     }
 
     return {
       canonicalCount: canonicalCount,
-      aliasCount: aliasCount
+      aliasCount: aliasCount,
+      unrelatedCount: unrelatedCount,
+      totalKeys: keys.length
     };
   }
 
@@ -245,6 +253,7 @@
     var leafLower;
     var wrapperHint;
     var preferredHint;
+    var score;
 
     if (!isPlainObject(source) || depth > 3) {
       return;
@@ -266,15 +275,26 @@
         leafLower = String(leaf).toLowerCase();
         wrapperHint = wrapperKeys[key] || wrapperKeys[String(key).toLowerCase()];
         preferredHint = preferredRootNames[leaf] || preferredRootNames[leafLower];
+        score =
+          counts.canonicalCount * 12 +
+          counts.aliasCount * 6 +
+          (counts.canonicalCount + counts.aliasCount >= 2 ? 8 : 0) +
+          (preferredHint ? 6 : 0) +
+          (wrapperHint ? 4 : 0) -
+          Math.min(counts.unrelatedCount, 4) * 2 -
+          depth * 2;
 
         candidates.push({
           path: path,
           value: value,
-          score:
-            counts.canonicalCount * 4 +
-            counts.aliasCount * 2 +
-            (preferredHint ? 6 : 0) +
-            (wrapperHint ? 2 : 0)
+          canonicalCount: counts.canonicalCount,
+          aliasCount: counts.aliasCount,
+          unrelatedCount: counts.unrelatedCount,
+          totalKeys: counts.totalKeys,
+          preferredHint: !!preferredHint,
+          wrapperHint: !!wrapperHint,
+          depth: depth,
+          score: score
         });
       }
 
@@ -285,50 +305,81 @@
   }
 
   function pickTokenRoot(rawTokens, info, errors) {
+    var rootResult = {
+      value: rawTokens,
+      path: 'top-level'
+    };
     var candidates;
     var sorted;
-    var bestScore;
-    var bestCandidates;
+    var best;
+    var second;
+    var scoreDelta;
+    var topCandidates;
 
     if (!isPlainObject(rawTokens)) {
-      return rawTokens;
-    }
-
-    if (hasCanonicalGroupShape(rawTokens)) {
-      return rawTokens;
+      return rootResult;
     }
 
     candidates = [];
     collectTokenRootCandidates(rawTokens, '', 0, candidates);
 
+    if (hasCanonicalGroupShape(rawTokens)) {
+      if (candidates.length > 0) {
+        info.push('Using top-level token groups; wrapped candidates were ignored.');
+      }
+      return rootResult;
+    }
+
     if (candidates.length === 0) {
-      return rawTokens;
+      return rootResult;
     }
 
     if (candidates.length === 1) {
-      info.push('Using token root from "' + candidates[0].path + '".');
-      return candidates[0].value;
+      info.push(
+        'Using token root from "' +
+        candidates[0].path +
+        '" (' +
+        candidates[0].canonicalCount +
+        ' grupos canónicos, ' +
+        candidates[0].aliasCount +
+        ' aliases).'
+      );
+      return {
+        value: candidates[0].value,
+        path: candidates[0].path
+      };
     }
 
     sorted = candidates.slice().sort(function (a, b) {
       return b.score - a.score;
     });
-    bestScore = sorted[0].score;
-    bestCandidates = sorted.filter(function (item) {
-      return item.score === bestScore;
-    });
+    best = sorted[0];
+    second = sorted[1];
+    scoreDelta = second ? best.score - second.score : best.score;
 
-    if (bestCandidates.length > 1) {
+    if (scoreDelta < 4) {
+      topCandidates = sorted.slice(0, 3);
       errors.push(
         'Se detectaron múltiples posibles raíces de tokens: ' +
-        bestCandidates.map(function (item) { return '"' + item.path + '"'; }).join(', ') +
-        '. Reduce la ambigüedad dejando una raíz clara (por ejemplo, "global" o "default").'
+        topCandidates.map(function (item) { return '"' + item.path + '"'; }).join(', ') +
+        '. La diferencia de confianza es baja; deja una raíz clara (por ejemplo, "global" o "default").'
       );
-      return rawTokens;
+      return rootResult;
     }
 
-    info.push('Multiple possible token roots found; using "' + sorted[0].path + '".');
-    return sorted[0].value;
+    info.push(
+      'Detected multiple candidates; selected "' +
+      best.path +
+      '" because it has stronger token-group signals (score ' +
+      best.score +
+      ' vs ' +
+      second.score +
+      ').'
+    );
+    return {
+      value: best.value,
+      path: best.path
+    };
   }
 
   function mergeObjectRecords(baseRecord, incomingRecord, context, infoMessages) {
@@ -409,6 +460,8 @@
     var errors = [];
     var normalized;
     var extractedRoot;
+    var rootSelection;
+    var detectedGroups;
     var keys;
     var i;
     var originalKey;
@@ -425,7 +478,8 @@
       };
     }
 
-    extractedRoot = pickTokenRoot(rawTokens, info, errors);
+    rootSelection = pickTokenRoot(rawTokens, info, errors);
+    extractedRoot = rootSelection.value;
     if (errors.length > 0) {
       return {
         normalized: rawTokens,
@@ -469,6 +523,13 @@
       } else {
         info.push('Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.');
       }
+    }
+
+    detectedGroups = supportedGroups.filter(function (groupName) {
+      return groupHasValues(normalized, groupName);
+    });
+    if (detectedGroups.length > 0) {
+      info.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
     }
 
     return {

@@ -2,6 +2,23 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.6.0] - 2026-03-31
+
+### Added
+
+- Pipeline de importación más robusto para detección de raíz de tokens:
+  descubrimiento de candidatas + scoring simple + selección con umbral de confianza.
+- `Import summary` ligero con raíz usada y grupos detectados.
+
+### Changed
+
+- Priorización explícita de grupos canónicos top-level cuando existen.
+- Selección de raíz envuelta/anidada más predecible usando señales:
+  cantidad de grupos canónicos, aliases mapeables, nombre de wrapper y coherencia del branch.
+- Manejo de ambigüedad reforzado:
+  si las candidatas principales tienen confianza similar, se devuelve error en lugar de extracción insegura.
+- Feedback de importación más explicable en CLI y web.
+
 ## [v0.5.1] - 2026-03-31
 
 ### Added
