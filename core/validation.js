@@ -1,5 +1,7 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
 const { getTypographyBuckets } = require('./naming');
+const { applyFlatVariantCollectionAdapter } = require('./import-adapters');
+const { getTargetGroupSupportMap } = require('./target-mappings');
 const TOP_LEVEL_ALIASES = {
   color: 'colors',
   colour: 'colors',
@@ -54,36 +56,7 @@ const PREFERRED_ROOT_NAMES = {
   base: true,
 };
 
-const TARGET_GROUP_SUPPORT = {
-  css: {
-    colors: true,
-    spacing: true,
-    typography: true,
-    radius: true,
-    shadows: true,
-  },
-  ionic: {
-    colors: true,
-    spacing: true,
-    typography: true,
-    radius: true,
-    shadows: true,
-  },
-  bootstrap: {
-    colors: true,
-    spacing: true,
-    typography: true,
-    radius: true,
-    shadows: true,
-  },
-  tailwind: {
-    colors: true,
-    spacing: true,
-    typography: true,
-    radius: true,
-    shadows: true,
-  },
-};
+const TARGET_GROUP_SUPPORT = getTargetGroupSupportMap();
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -359,35 +332,53 @@ function normalizeTokenInput(rawTokens) {
   let extractedRoot = rawTokens;
   let rootUsed = 'top-level';
   let detectedGroups = [];
+  const adapterResult = applyFlatVariantCollectionAdapter(rawTokens);
+  const adaptedInput = adapterResult.adapted;
+  const adapterMetadata = adapterResult.metadata;
+  const summaryRootUsed = adapterMetadata.rootUsed || rootUsed;
 
-  if (!isObjectRecord(rawTokens)) {
+  if (adapterMetadata.errors.length > 0) {
+    errors.push.apply(errors, adapterMetadata.errors);
+  }
+  if (adapterMetadata.warnings.length > 0) {
+    importNotes.push.apply(importNotes, adapterMetadata.warnings);
+  }
+
+  if (!isObjectRecord(adaptedInput) || errors.length > 0) {
+    info.push.apply(info, importNotes);
+    info.push.apply(info, normalizationNotes);
+
     return {
-      normalized: rawTokens,
+      normalized: adaptedInput,
       info: info,
       summary: {
-        rootUsed,
+        rootUsed: summaryRootUsed,
         detectedGroups,
         normalizationNotes,
         importNotes,
+        sourcePattern: adapterMetadata.sourcePattern,
+        selectedVariant: adapterMetadata.selectedVariant,
       },
       errors: errors,
     };
   }
 
-  const rootSelection = pickTokenRoot(rawTokens, importNotes, errors);
+  const rootSelection = pickTokenRoot(adaptedInput, importNotes, errors);
   extractedRoot = rootSelection.value;
   rootUsed = rootSelection.path;
   if (errors.length > 0) {
     info.push.apply(info, importNotes);
     info.push.apply(info, normalizationNotes);
     return {
-      normalized: rawTokens,
+      normalized: adaptedInput,
       info: info,
       summary: {
-        rootUsed,
+        rootUsed: summaryRootUsed,
         detectedGroups,
         normalizationNotes,
         importNotes,
+        sourcePattern: adapterMetadata.sourcePattern,
+        selectedVariant: adapterMetadata.selectedVariant,
       },
       errors: errors,
     };
@@ -434,7 +425,13 @@ function normalizeTokenInput(rawTokens) {
 
   detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));
   if (detectedGroups.length > 0) {
-    importNotes.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
+    importNotes.push(
+      'Import summary: root "' +
+        (adapterMetadata.rootUsed || rootSelection.path) +
+        '", grupos detectados: ' +
+        detectedGroups.join(', ') +
+        '.'
+    );
   }
   info.push.apply(info, importNotes);
   info.push.apply(info, normalizationNotes);
@@ -443,10 +440,12 @@ function normalizeTokenInput(rawTokens) {
     normalized: normalized,
     info: info,
     summary: {
-      rootUsed: rootSelection.path,
+      rootUsed: adapterMetadata.rootUsed || rootSelection.path,
       detectedGroups: detectedGroups,
       normalizationNotes: normalizationNotes,
       importNotes: importNotes,
+      sourcePattern: adapterMetadata.sourcePattern,
+      selectedVariant: adapterMetadata.selectedVariant,
     },
     errors: errors,
   };

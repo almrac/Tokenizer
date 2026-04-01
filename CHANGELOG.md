@@ -2,6 +2,27 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.8.0] - 2026-04-01
+
+### Added
+
+- Capa interna de plantillas de mapeo por target (`css`, `ionic`, `bootstrap`, `tailwind`) con contrato simple:
+  `target`, `strategy`, `nativeMappings`, `groupRules`, `groupFallbacks`.
+- Primer adapter de entrada `flatVariantCollection` (colors-only) para detectar y convertir colecciones planas con variantes internas.
+- Metadatos de importación para adapter en `summary`:
+  `sourcePattern`, `rootUsed`, `selectedVariant`.
+
+### Changed
+
+- Flujo de importación en CLI/web: ahora ejecuta adapters antes de selección de raíz y normalización canónica.
+- `ionic`: mapeo nativo para `typography.fontFamily.base -> --ion-font-family` con fallback custom para el resto.
+- `bootstrap`: uso explícito de mapeos nativos iniciales (`$primary`, `$font-family-base`, `$border-radius`) con fallback existente.
+- Validación por target alineada a soporte derivado desde plantillas internas de mapeo.
+
+### Safety
+
+- Cuando una colección plana detectada contiene múltiples variantes internas y no existe selector explícito, la importación se bloquea con error claro (sin suposiciones silenciosas).
+
 ## [v0.7.0] - 2026-04-01
 
 ### Changed

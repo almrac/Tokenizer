@@ -1,4 +1,5 @@
 const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
+const { getNativeMapping } = require('./target-mappings');
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -62,7 +63,8 @@ function generateBootstrap(tokens) {
     }
 
     if (BOOTSTRAP_COLOR_NAMES[key]) {
-      colorEntries.push('$' + key + ': ' + groups.colors[key] + ';');
+      const colorVariable = getNativeMapping('bootstrap', 'colors.' + key) || '$' + key;
+      colorEntries.push(colorVariable + ': ' + groups.colors[key] + ';');
     }
   }
 
@@ -92,7 +94,9 @@ function generateBootstrap(tokens) {
   const lineHeightBase = pickBaseValue(typographyBuckets.lineHeight);
 
   if (fontFamilyBase) {
-    typographyBaseLines.push('$font-family-base: ' + fontFamilyBase + ';');
+    typographyBaseLines.push(
+      (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase + ';'
+    );
   }
   if (fontSizeBase) {
     typographyBaseLines.push('$font-size-base: ' + fontSizeBase + ';');
@@ -151,7 +155,8 @@ function generateBootstrap(tokens) {
       radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
     }
     if (radiusMap.base || radiusMap.md) {
-      lines.push('$border-radius: ' + (radiusMap.base || radiusMap.md) + ';');
+      const nativeRadius = getNativeMapping('bootstrap', 'radius.md') || '$border-radius';
+      lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.base) + ';');
     }
   }
 

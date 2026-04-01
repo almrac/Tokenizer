@@ -176,6 +176,12 @@ function main() {
   if (summary.rootUsed) {
     process.stderr.write('Info: Root used: ' + summary.rootUsed + '\n');
   }
+  if (summary.sourcePattern) {
+    process.stderr.write('Info: Source pattern: ' + summary.sourcePattern + '\n');
+  }
+  if (summary.selectedVariant) {
+    process.stderr.write('Info: Selected variant: ' + summary.selectedVariant + '\n');
+  }
   if (summary.detectedGroups && summary.detectedGroups.length > 0) {
     process.stderr.write('Info: Supported groups detected: ' + summary.detectedGroups.join(', ') + '\n');
   }

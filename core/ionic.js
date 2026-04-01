@@ -8,6 +8,7 @@ const {
   getTypographyBuckets,
   normalizeCssPrefix,
 } = require('./naming');
+const { getNativeMapping } = require('./target-mappings');
 
 // Ionic is more useful when each color includes the companion variables its theme system expects.
 function clampChannel(value) {
@@ -67,11 +68,15 @@ function getContrastRgb(rgb) {
 }
 
 function buildColorLines(name, value) {
+  const mappedBase = getNativeMapping('ionic', 'colors.' + name);
+  const baseVariable = mappedBase || '--ion-color-' + name;
   const rgb = hexToRgb(value);
+  const defaultBase = '--ion-color-' + name;
+  const canBuildCompanions = baseVariable === defaultBase;
 
   if (!rgb) {
     return [
-      '  --ion-color-' + name + ': ' + value + ';',
+      '  ' + baseVariable + ': ' + value + ';',
     ];
   }
 
@@ -79,8 +84,14 @@ function buildColorLines(name, value) {
   const shade = shiftColor(rgb, -18);
   const tint = shiftColor(rgb, 18);
 
+  if (!canBuildCompanions) {
+    return [
+      '  ' + baseVariable + ': ' + value + ';',
+    ];
+  }
+
   return [
-    '  --ion-color-' + name + ': ' + value + ';',
+    '  ' + baseVariable + ': ' + value + ';',
     '  --ion-color-' + name + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
     '  --ion-color-' + name + '-contrast: ' + rgbToHex(contrast) + ';',
     '  --ion-color-' + name + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
@@ -138,7 +149,26 @@ function generateIonic(tokens, options) {
     }
     lines.push('  /* Typography */');
     for (let i = 0; i < typographyEntries.length; i += 1) {
-      lines.push('  ' + buildCssVariableName(prefix, typographyEntries[i].group, typographyEntries[i].entry.name) + ': ' + typographyEntries[i].entry.value + ';');
+      const entry = typographyEntries[i];
+      let tokenPath = null;
+
+      if (entry.group === 'font-family') {
+        tokenPath = 'typography.fontFamily.' + entry.entry.name;
+      } else if (entry.group === 'font-size') {
+        tokenPath = 'typography.fontSize.' + entry.entry.name;
+      } else if (entry.group === 'font-weight') {
+        tokenPath = 'typography.fontWeight.' + entry.entry.name;
+      } else if (entry.group === 'line-height') {
+        tokenPath = 'typography.lineHeight.' + entry.entry.name;
+      } else if (entry.group === 'letter-spacing') {
+        tokenPath = 'typography.letterSpacing.' + entry.entry.name;
+      }
+
+      const nativeMapping = tokenPath ? getNativeMapping('ionic', tokenPath) : null;
+      const variableName =
+        nativeMapping || buildCssVariableName(prefix, entry.group, entry.entry.name);
+
+      lines.push('  ' + variableName + ': ' + entry.entry.value + ';');
     }
   }
 

@@ -86,12 +86,104 @@
     defaults: true,
     base: true
   };
-  var targetGroupSupport = {
-    css: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
-    ionic: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
-    bootstrap: { colors: true, spacing: true, typography: true, radius: true, shadows: true },
-    tailwind: { colors: true, spacing: true, typography: true, radius: true, shadows: true }
+  var targetMappingTemplates = {
+    css: {
+      target: 'css',
+      strategy: 'custom-prefix-fallback',
+      nativeMappings: {},
+      groupRules: {
+        colors: 'css.custom-properties.colors',
+        spacing: 'css.custom-properties.spacing',
+        typography: 'css.custom-properties.typography',
+        radius: 'css.custom-properties.radius',
+        shadows: 'css.custom-properties.shadows'
+      },
+      groupFallbacks: {
+        colors: 'custom-prefix',
+        spacing: 'custom-prefix',
+        typography: 'custom-prefix',
+        radius: 'custom-prefix',
+        shadows: 'custom-prefix'
+      }
+    },
+    ionic: {
+      target: 'ionic',
+      strategy: 'native-first',
+      nativeMappings: {
+        'colors.primary': '--ion-color-primary',
+        'colors.secondary': '--ion-color-secondary',
+        'typography.fontFamily.base': '--ion-font-family'
+      },
+      groupRules: {
+        colors: 'ionic.css-variables.colors',
+        spacing: 'css.custom-properties.spacing',
+        typography: 'native-when-known-else-custom',
+        radius: 'css.custom-properties.radius',
+        shadows: 'css.custom-properties.shadows'
+      },
+      groupFallbacks: {
+        spacing: 'custom-prefix',
+        typography: 'custom-prefix',
+        radius: 'custom-prefix',
+        shadows: 'custom-prefix'
+      }
+    },
+    bootstrap: {
+      target: 'bootstrap',
+      strategy: 'native-first',
+      nativeMappings: {
+        'colors.primary': '$primary',
+        'typography.fontFamily.base': '$font-family-base',
+        'radius.md': '$border-radius'
+      },
+      groupRules: {
+        colors: 'bootstrap.scss.colors',
+        spacing: 'bootstrap.scss.spacers-map',
+        typography: 'bootstrap.scss.typography',
+        radius: 'bootstrap.scss.radius',
+        shadows: 'bootstrap.scss.shadows'
+      },
+      groupFallbacks: {
+        colors: 'ignore-non-standard',
+        spacing: 'scoped-map',
+        typography: 'scoped-map-or-custom',
+        radius: 'scoped-variables',
+        shadows: 'scoped-variables'
+      }
+    },
+    tailwind: {
+      target: 'tailwind',
+      strategy: 'native-first',
+      nativeMappings: {
+        colors: 'theme.extend.colors',
+        spacing: 'theme.extend.spacing',
+        typography: {
+          fontFamily: 'theme.extend.fontFamily',
+          fontSize: 'theme.extend.fontSize',
+          fontWeight: 'theme.extend.fontWeight',
+          lineHeight: 'theme.extend.lineHeight',
+          letterSpacing: 'theme.extend.letterSpacing'
+        },
+        radius: 'theme.extend.borderRadius',
+        shadows: 'theme.extend.boxShadow'
+      },
+      groupRules: {
+        colors: 'tailwind.theme.extend.colors',
+        spacing: 'tailwind.theme.extend.spacing',
+        typography: 'tailwind.theme.extend.typography',
+        radius: 'tailwind.theme.extend.borderRadius',
+        shadows: 'tailwind.theme.extend.boxShadow'
+      },
+      groupFallbacks: {
+        colors: 'theme.extend.colors',
+        spacing: 'theme.extend.spacing',
+        typography: 'theme.extend.typography',
+        radius: 'theme.extend.borderRadius',
+        shadows: 'theme.extend.boxShadow'
+      }
+    }
   };
+  var targetGroupSupport = buildTargetGroupSupport();
 
   var tokensInput = document.querySelector('[data-ui="tokens-input"]');
   var fileInput = document.querySelector('[data-ui="file-input"]');
@@ -128,6 +220,49 @@
   var generatedOutputs = {};
   var activePreviewTarget = 'css';
   var preferredPreviewTarget = '';
+
+  function getTargetTemplate(target) {
+    return targetMappingTemplates[target] || targetMappingTemplates.css;
+  }
+
+  function getNativeMapping(target, tokenPath) {
+    var template = getTargetTemplate(target);
+    var nativeMappings = template && template.nativeMappings ? template.nativeMappings : {};
+
+    if (Object.prototype.hasOwnProperty.call(nativeMappings, tokenPath)) {
+      return nativeMappings[tokenPath];
+    }
+
+    return null;
+  }
+
+  function buildTargetGroupSupport() {
+    var targets = Object.keys(targetMappingTemplates);
+    var support = {};
+    var i;
+    var j;
+    var targetName;
+    var byGroup;
+    var groupName;
+    var rules;
+
+    for (i = 0; i < targets.length; i += 1) {
+      targetName = targets[i];
+      byGroup = {};
+      rules = targetMappingTemplates[targetName] && targetMappingTemplates[targetName].groupRules ?
+        targetMappingTemplates[targetName].groupRules :
+        {};
+
+      for (j = 0; j < supportedGroups.length; j += 1) {
+        groupName = supportedGroups[j];
+        byGroup[groupName] = !!rules[groupName];
+      }
+
+      support[targetName] = byGroup;
+    }
+
+    return support;
+  }
 
   function normalizeCssPrefix(prefix) {
     if (!prefix) {
@@ -179,6 +314,234 @@
     }
 
     return Object.keys(tokens[groupName]).length > 0;
+  }
+
+  function isColorLike(value) {
+    var text = String(value || '').trim();
+
+    if (!text) {
+      return false;
+    }
+
+    if (/^#[0-9a-fA-F]{3,8}$/.test(text)) {
+      return true;
+    }
+
+    if (/^(rgb|rgba|hsl|hsla)\(/i.test(text)) {
+      return true;
+    }
+
+    if (/^var\(--[^)]+\)$/.test(text)) {
+      return true;
+    }
+
+    if (/^oklch\(/i.test(text)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function collectObjectPathCandidates(source, basePath, depth, candidates) {
+    var keys;
+    var i;
+    var key;
+    var value;
+
+    if (!isPlainObject(source) || depth > 3) {
+      return;
+    }
+
+    keys = Object.keys(source);
+    candidates.push({
+      path: basePath || 'top-level',
+      value: source,
+      depth: depth
+    });
+
+    for (i = 0; i < keys.length; i += 1) {
+      key = keys[i];
+      value = source[key];
+
+      if (!isPlainObject(value)) {
+        continue;
+      }
+
+      collectObjectPathCandidates(value, basePath ? basePath + '.' + key : key, depth + 1, candidates);
+    }
+  }
+
+  function inspectFlatVariantCollection(collection) {
+    var tokenNames = Object.keys(collection || {});
+    var variantKeysByToken = [];
+    var scalarCount = 0;
+    var colorLikeCount = 0;
+    var i;
+    var j;
+    var tokenName;
+    var tokenValue;
+    var variantKeys;
+    var variantValue;
+    var mergedVariantKeys = {};
+
+    if (tokenNames.length === 0) {
+      return null;
+    }
+
+    for (i = 0; i < tokenNames.length; i += 1) {
+      tokenName = tokenNames[i];
+      tokenValue = collection[tokenName];
+
+      if (!isPlainObject(tokenValue)) {
+        return null;
+      }
+
+      variantKeys = Object.keys(tokenValue);
+      if (variantKeys.length === 0) {
+        return null;
+      }
+
+      variantKeysByToken.push(variantKeys);
+
+      for (j = 0; j < variantKeys.length; j += 1) {
+        variantValue = tokenValue[variantKeys[j]];
+
+        if (isPlainObject(variantValue) || Array.isArray(variantValue) || variantValue === null || typeof variantValue === 'undefined') {
+          return null;
+        }
+
+        scalarCount += 1;
+        if (isColorLike(variantValue)) {
+          colorLikeCount += 1;
+        }
+      }
+    }
+
+    if (scalarCount === 0) {
+      return null;
+    }
+
+    for (i = 0; i < variantKeysByToken.length; i += 1) {
+      for (j = 0; j < variantKeysByToken[i].length; j += 1) {
+        mergedVariantKeys[variantKeysByToken[i][j]] = true;
+      }
+    }
+
+    return {
+      tokenCount: tokenNames.length,
+      variantKeys: Object.keys(mergedVariantKeys),
+      colorLikeRatio: colorLikeCount / scalarCount
+    };
+  }
+
+  function applyFlatVariantCollectionAdapter(rawTokens) {
+    var metadata = {
+      sourcePattern: null,
+      rootUsed: null,
+      selectedVariant: null,
+      warnings: [],
+      errors: [],
+      applied: false
+    };
+    var objectCandidates;
+    var i;
+    var j;
+    var rootCandidate;
+    var rootValue;
+    var keys;
+    var key;
+    var maybeCollection;
+    var inspection;
+    var selectedVariant;
+    var colorTokens;
+    var tokenNames;
+    var k;
+    var tokenName;
+    var tokenValue;
+
+    if (!isPlainObject(rawTokens)) {
+      return {
+        adapted: rawTokens,
+        metadata: metadata
+      };
+    }
+
+    objectCandidates = [];
+    collectObjectPathCandidates(rawTokens, '', 0, objectCandidates);
+
+    for (i = 0; i < objectCandidates.length; i += 1) {
+      rootCandidate = objectCandidates[i];
+      rootValue = rootCandidate.value;
+      keys = Object.keys(rootValue);
+
+      for (j = 0; j < keys.length; j += 1) {
+        key = keys[j];
+        maybeCollection = rootValue[key];
+
+        if (!isPlainObject(maybeCollection)) {
+          continue;
+        }
+
+        inspection = inspectFlatVariantCollection(maybeCollection);
+        if (!inspection || inspection.colorLikeRatio < 0.7) {
+          continue;
+        }
+
+        metadata.sourcePattern = 'flatVariantCollection';
+        metadata.rootUsed = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
+
+        if (inspection.variantKeys.length !== 1) {
+          metadata.errors.push(
+            'Flat variant collection "' +
+            metadata.rootUsed +
+            '" contiene múltiples variantes (' +
+            inspection.variantKeys.join(', ') +
+            '). Indica una variante explícita para importar.'
+          );
+          return {
+            adapted: rawTokens,
+            metadata: metadata
+          };
+        }
+
+        selectedVariant = inspection.variantKeys[0];
+        colorTokens = {};
+        tokenNames = Object.keys(maybeCollection);
+
+        for (k = 0; k < tokenNames.length; k += 1) {
+          tokenName = tokenNames[k];
+          tokenValue = maybeCollection[tokenName][selectedVariant];
+
+          if (tokenValue === null || typeof tokenValue === 'undefined') {
+            continue;
+          }
+
+          colorTokens[tokenName] = String(tokenValue);
+        }
+
+        metadata.selectedVariant = selectedVariant;
+        metadata.applied = true;
+        metadata.warnings.push(
+          'Flat variant collection detectada en "' +
+          metadata.rootUsed +
+          '" y normalizada a "colors" usando la variante "' +
+          selectedVariant +
+          '".'
+        );
+
+        return {
+          adapted: {
+            colors: colorTokens
+          },
+          metadata: metadata
+        };
+      }
+    }
+
+    return {
+      adapted: rawTokens,
+      metadata: metadata
+    };
   }
 
   function getAliasTargetKey(key, aliases) {
@@ -474,6 +837,10 @@
     var extractedRoot;
     var rootSelection;
     var detectedGroups;
+    var adapterResult;
+    var adapterMetadata;
+    var adaptedInput;
+    var summaryRootUsed;
     var keys;
     var i;
     var originalKey;
@@ -482,33 +849,52 @@
     var isCanonical;
     var normalizedValue;
 
-    if (!isPlainObject(rawTokens)) {
+    adapterResult = applyFlatVariantCollectionAdapter(rawTokens);
+    adaptedInput = adapterResult.adapted;
+    adapterMetadata = adapterResult.metadata;
+    summaryRootUsed = adapterMetadata.rootUsed || 'top-level';
+
+    if (adapterMetadata.errors.length > 0) {
+      errors = errors.concat(adapterMetadata.errors);
+    }
+    if (adapterMetadata.warnings.length > 0) {
+      importNotes = importNotes.concat(adapterMetadata.warnings);
+    }
+
+    if (!isPlainObject(adaptedInput) || errors.length > 0) {
+      info.push.apply(info, importNotes);
+      info.push.apply(info, normalizationNotes);
+
       return {
-        normalized: rawTokens,
+        normalized: adaptedInput,
         info: info,
         summary: {
-          rootUsed: 'top-level',
+          rootUsed: summaryRootUsed,
           detectedGroups: [],
           normalizationNotes: normalizationNotes,
-          importNotes: importNotes
+          importNotes: importNotes,
+          sourcePattern: adapterMetadata.sourcePattern,
+          selectedVariant: adapterMetadata.selectedVariant
         },
         errors: errors
       };
     }
 
-    rootSelection = pickTokenRoot(rawTokens, importNotes, errors);
+    rootSelection = pickTokenRoot(adaptedInput, importNotes, errors);
     extractedRoot = rootSelection.value;
     if (errors.length > 0) {
       info.push.apply(info, importNotes);
       info.push.apply(info, normalizationNotes);
       return {
-        normalized: rawTokens,
+        normalized: adaptedInput,
         info: info,
         summary: {
-          rootUsed: rootSelection.path,
+          rootUsed: adapterMetadata.rootUsed || rootSelection.path,
           detectedGroups: [],
           normalizationNotes: normalizationNotes,
-          importNotes: importNotes
+          importNotes: importNotes,
+          sourcePattern: adapterMetadata.sourcePattern,
+          selectedVariant: adapterMetadata.selectedVariant
         },
         errors: errors
       };
@@ -557,7 +943,13 @@
       return groupHasValues(normalized, groupName);
     });
     if (detectedGroups.length > 0) {
-      importNotes.push('Import summary: root "' + rootSelection.path + '", grupos detectados: ' + detectedGroups.join(', ') + '.');
+      importNotes.push(
+        'Import summary: root "' +
+        (adapterMetadata.rootUsed || rootSelection.path) +
+        '", grupos detectados: ' +
+        detectedGroups.join(', ') +
+        '.'
+      );
     }
     info.push.apply(info, importNotes);
     info.push.apply(info, normalizationNotes);
@@ -566,10 +958,12 @@
       normalized: normalized,
       info: info,
       summary: {
-        rootUsed: rootSelection.path,
+        rootUsed: adapterMetadata.rootUsed || rootSelection.path,
         detectedGroups: detectedGroups,
         normalizationNotes: normalizationNotes,
-        importNotes: importNotes
+        importNotes: importNotes,
+        sourcePattern: adapterMetadata.sourcePattern,
+        selectedVariant: adapterMetadata.selectedVariant
       },
       errors: errors
     };
@@ -1056,11 +1450,15 @@
   }
 
   function buildIonicColorLines(name, value) {
+    var mappedBase = getNativeMapping('ionic', 'colors.' + name);
+    var baseVariable = mappedBase || '--ion-color-' + name;
+    var defaultBase = '--ion-color-' + name;
+    var canBuildCompanions = baseVariable === defaultBase;
     var rgb = hexToRgb(value);
 
     if (!rgb) {
       return [
-        '  --ion-color-' + name + ': ' + value + ';'
+        '  ' + baseVariable + ': ' + value + ';'
       ];
     }
 
@@ -1068,8 +1466,14 @@
     var shade = shiftColor(rgb, -18);
     var tint = shiftColor(rgb, 18);
 
+    if (!canBuildCompanions) {
+      return [
+        '  ' + baseVariable + ': ' + value + ';'
+      ];
+    }
+
     return [
-      '  --ion-color-' + name + ': ' + value + ';',
+      '  ' + baseVariable + ': ' + value + ';',
       '  --ion-color-' + name + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
       '  --ion-color-' + name + '-contrast: ' + rgbToHex(contrast) + ';',
       '  --ion-color-' + name + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
@@ -1129,7 +1533,26 @@
       }
       lines.push('  /* Typography */');
       for (i = 0; i < typographyEntries.length; i += 1) {
-        lines.push('  ' + buildCssVariableName(prefix, typographyEntries[i].group, typographyEntries[i].entry.name) + ': ' + typographyEntries[i].entry.value + ';');
+        var entry = typographyEntries[i];
+        var tokenPath = null;
+        var nativeMapping;
+        var variableName;
+
+        if (entry.group === 'font-family') {
+          tokenPath = 'typography.fontFamily.' + entry.entry.name;
+        } else if (entry.group === 'font-size') {
+          tokenPath = 'typography.fontSize.' + entry.entry.name;
+        } else if (entry.group === 'font-weight') {
+          tokenPath = 'typography.fontWeight.' + entry.entry.name;
+        } else if (entry.group === 'line-height') {
+          tokenPath = 'typography.lineHeight.' + entry.entry.name;
+        } else if (entry.group === 'letter-spacing') {
+          tokenPath = 'typography.letterSpacing.' + entry.entry.name;
+        }
+
+        nativeMapping = tokenPath ? getNativeMapping('ionic', tokenPath) : null;
+        variableName = nativeMapping || buildCssVariableName(prefix, entry.group, entry.entry.name);
+        lines.push('  ' + variableName + ': ' + entry.entry.value + ';');
       }
     }
 
@@ -1205,7 +1628,8 @@
         continue;
       }
       if (bootstrapColorNames[colorName]) {
-        colorEntries.push('$' + colorName + ': ' + groups.colors[colorName] + ';');
+        var colorVariable = getNativeMapping('bootstrap', 'colors.' + colorName) || ('$' + colorName);
+        colorEntries.push(colorVariable + ': ' + groups.colors[colorName] + ';');
       }
     }
 
@@ -1234,7 +1658,9 @@
     var lineHeightBase = pickBaseValue(typographyBuckets.lineHeight);
 
     if (fontFamilyBase) {
-      typographyBaseLines.push('$font-family-base: ' + fontFamilyBase + ';');
+      typographyBaseLines.push(
+        (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase + ';'
+      );
     }
     if (fontSizeBase) {
       typographyBaseLines.push('$font-size-base: ' + fontSizeBase + ';');
@@ -1290,7 +1716,8 @@
       }
 
       if (radiusMap.base || radiusMap.md) {
-        lines.push('$border-radius: ' + (radiusMap.base || radiusMap.md) + ';');
+        var nativeRadius = getNativeMapping('bootstrap', 'radius.md') || '$border-radius';
+        lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.base) + ';');
       }
     }
 

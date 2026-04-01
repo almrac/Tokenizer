@@ -142,6 +142,81 @@ Notas por target:
   `letterSpacing` se omite con warning por no tener variable global nativa equivalente.
 - `tailwind`: salida limpia bajo `theme.extend` con `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
 
+## Plantillas internas de mapeo por framework (v0.8.0)
+
+Tokenizer incorpora una capa interna de plantillas de mapeo por target para mantener reglas explícitas y fáciles de ampliar.
+
+Targets incluidos:
+
+- `css`
+- `ionic`
+- `bootstrap`
+- `tailwind`
+
+Cada plantilla define:
+
+- `target`
+- `strategy`
+- `nativeMappings`
+- `groupRules`
+- `groupFallbacks`
+
+Estrategia inicial:
+
+- `native-first` cuando existe un mapeo nativo claro.
+- fallback controlado cuando no hay mapeo nativo claro.
+- `css` usa fallback con prefijo custom para todo.
+
+Mapeos nativos iniciales:
+
+- `ionic`: `colors.primary -> --ion-color-primary`, `colors.secondary -> --ion-color-secondary`, `typography.fontFamily.base -> --ion-font-family`
+- `bootstrap`: `colors.primary -> $primary`, `typography.fontFamily.base -> $font-family-base`, `radius.md -> $border-radius`
+- `tailwind`: grupos dirigidos a `theme.extend.*` (`colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`)
+
+Esta capa es interna; no es todavía un sistema de settings de usuario.
+
+## Adapter de importación flatVariantCollection (colors-only, v0.8.0)
+
+Tokenizer añade un primer adapter de entrada para colecciones planas con variantes internas por token.
+
+Patrón detectado:
+
+```json
+{
+  "variableCollection": {
+    "primaryBg": { "mode1": "#ff6c00" },
+    "dangerBg": { "mode1": "#f9c8cd" }
+  }
+}
+```
+
+Comportamiento:
+
+- detecta raíces con estructura de colección plana token -> variantes;
+- valida que los valores finales sean mayoritariamente colores (heurística segura);
+- si solo existe una variante interna, la selecciona automáticamente;
+- reconstruye estructura canónica:
+
+```json
+{
+  "colors": {
+    "primaryBg": "#ff6c00",
+    "dangerBg": "#f9c8cd"
+  }
+}
+```
+
+Metadatos de importación (summary):
+
+- `sourcePattern`: `flatVariantCollection`
+- `rootUsed`: raíz detectada (por ejemplo `variableCollection`)
+- `selectedVariant`: variante seleccionada automáticamente (por ejemplo `mode1`)
+
+Seguridad ante múltiples variantes:
+
+- si hay más de una variante interna y no hay selector explícito, Tokenizer no adivina;
+- devuelve error claro para evitar importaciones ambiguas.
+
 ## Inspector ligero de entrada (v0.6.1)
 
 La UI web muestra un resumen compacto de interpretación de entrada para reducir el efecto “caja negra”.
