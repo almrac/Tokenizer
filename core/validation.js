@@ -330,12 +330,11 @@ function normalizeTokenInput(rawTokens) {
   const errors = [];
   let normalized = rawTokens;
   let extractedRoot = rawTokens;
-  let rootUsed = 'top-level';
   let detectedGroups = [];
   const adapterResult = applyFlatVariantCollectionAdapter(rawTokens);
   const adaptedInput = adapterResult.adapted;
   const adapterMetadata = adapterResult.metadata;
-  const summaryRootUsed = adapterMetadata.rootUsed || rootUsed;
+  const summaryRootUsed = adapterMetadata.rootUsed || 'top-level';
 
   if (adapterMetadata.errors.length > 0) {
     errors.push.apply(errors, adapterMetadata.errors);
@@ -365,7 +364,6 @@ function normalizeTokenInput(rawTokens) {
 
   const rootSelection = pickTokenRoot(adaptedInput, importNotes, errors);
   extractedRoot = rootSelection.value;
-  rootUsed = rootSelection.path;
   if (errors.length > 0) {
     info.push.apply(info, importNotes);
     info.push.apply(info, normalizationNotes);

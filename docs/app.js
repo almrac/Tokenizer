@@ -382,11 +382,7 @@
       return true;
     }
 
-    if (/^oklch\(/i.test(text)) {
-      return true;
-    }
-
-    return false;
+    return /^oklch\(/i.test(text);
   }
 
   function collectObjectPathCandidates(source, basePath, depth, candidates) {
