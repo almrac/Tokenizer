@@ -1,5 +1,5 @@
 const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
-const { getNativeMapping } = require('./target-mappings');
+const { getNativeMapping, normalizeTokenName, resolveBootstrapSemanticColorRole } = require('./target-mappings');
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -55,16 +55,40 @@ function generateBootstrap(tokens) {
     return lines;
   }
 
-  for (let i = 0; i < BOOTSTRAP_COLOR_ORDER.length; i += 1) {
-    const key = BOOTSTRAP_COLOR_ORDER[i];
+  const colorKeys = getSortedKeys(groups.colors);
+  const colorRoleAssignments = {};
 
-    if (!Object.prototype.hasOwnProperty.call(groups.colors, key)) {
+  for (let i = 0; i < colorKeys.length; i += 1) {
+    const key = colorKeys[i];
+    const role = resolveBootstrapSemanticColorRole(key);
+
+    if (!role || !BOOTSTRAP_COLOR_NAMES[role]) {
       continue;
     }
 
-    if (BOOTSTRAP_COLOR_NAMES[key]) {
-      const colorVariable = getNativeMapping('bootstrap', 'colors.' + key) || '$' + key;
-      colorEntries.push(colorVariable + ': ' + groups.colors[key] + ';');
+    const normalized = normalizeTokenName(key);
+    const score = normalized === role ? 2 : 1;
+    const previous = colorRoleAssignments[role];
+
+    if (!previous || score > previous.score) {
+      colorRoleAssignments[role] = {
+        value: groups.colors[key],
+        score: score,
+      };
+    }
+  }
+
+  for (let i = 0; i < BOOTSTRAP_COLOR_ORDER.length; i += 1) {
+    const role = BOOTSTRAP_COLOR_ORDER[i];
+    const assignment = colorRoleAssignments[role];
+
+    if (!assignment) {
+      continue;
+    }
+
+    if (BOOTSTRAP_COLOR_NAMES[role]) {
+      const colorVariable = getNativeMapping('bootstrap', 'colors.' + role) || '$' + role;
+      colorEntries.push(colorVariable + ': ' + assignment.value + ';');
     }
   }
 

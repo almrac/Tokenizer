@@ -7,8 +7,9 @@ const {
   getTokenGroups,
   getTypographyBuckets,
   normalizeCssPrefix,
+  toKebabCase,
 } = require('./naming');
-const { getNativeMapping } = require('./target-mappings');
+const { getNativeMapping, resolveIonicNativeColorRole } = require('./target-mappings');
 
 // Ionic is more useful when each color includes the companion variables its theme system expects.
 function clampChannel(value) {
@@ -68,11 +69,14 @@ function getContrastRgb(rgb) {
 }
 
 function buildColorLines(name, value) {
-  const mappedBase = getNativeMapping('ionic', 'colors.' + name);
-  const baseVariable = mappedBase || '--ion-color-' + name;
+  const nativeRole = resolveIonicNativeColorRole(name);
+  const mappedBase = nativeRole ? getNativeMapping('ionic', 'colors.' + nativeRole) : null;
+  const baseVariable = mappedBase || null;
   const rgb = hexToRgb(value);
-  const defaultBase = '--ion-color-' + name;
-  const canBuildCompanions = baseVariable === defaultBase;
+
+  if (!baseVariable) {
+    return null;
+  }
 
   if (!rgb) {
     return [
@@ -84,19 +88,13 @@ function buildColorLines(name, value) {
   const shade = shiftColor(rgb, -18);
   const tint = shiftColor(rgb, 18);
 
-  if (!canBuildCompanions) {
-    return [
-      '  ' + baseVariable + ': ' + value + ';',
-    ];
-  }
-
   return [
     '  ' + baseVariable + ': ' + value + ';',
-    '  --ion-color-' + name + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
-    '  --ion-color-' + name + '-contrast: ' + rgbToHex(contrast) + ';',
-    '  --ion-color-' + name + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
-    '  --ion-color-' + name + '-shade: ' + rgbToHex(shade) + ';',
-    '  --ion-color-' + name + '-tint: ' + rgbToHex(tint) + ';',
+    '  --ion-color-' + nativeRole + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
+    '  --ion-color-' + nativeRole + '-contrast: ' + rgbToHex(contrast) + ';',
+    '  --ion-color-' + nativeRole + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
+    '  --ion-color-' + nativeRole + '-shade: ' + rgbToHex(shade) + ';',
+    '  --ion-color-' + nativeRole + '-tint: ' + rgbToHex(tint) + ';',
   ];
 }
 
@@ -118,7 +116,12 @@ function generateIonic(tokens, options) {
 
   for (let i = 0; i < colorKeys.length; i += 1) {
     const key = colorKeys[i];
-    const colorLines = buildColorLines(key, groups.colors[key]);
+    const nativeRole = resolveIonicNativeColorRole(key);
+    const mappedBase = nativeRole ? getNativeMapping('ionic', 'colors.' + nativeRole) : null;
+    const fallbackTokenName = toKebabCase(key) || key;
+    const colorLines = mappedBase
+      ? (buildColorLines(key, groups.colors[key]) || ['  ' + mappedBase + ': ' + groups.colors[key] + ';'])
+      : ['  ' + buildCssVariableName(prefix, 'color', fallbackTokenName) + ': ' + groups.colors[key] + ';'];
 
     if (i === 0) {
       lines.push('  /* Colors */');

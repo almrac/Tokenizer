@@ -1,4 +1,46 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
+const IONIC_NATIVE_COLOR_ROLES = [
+  'primary',
+  'secondary',
+  'tertiary',
+  'success',
+  'warning',
+  'danger',
+  'light',
+  'medium',
+  'dark',
+];
+const BOOTSTRAP_SEMANTIC_COLOR_ROLES = [
+  'primary',
+  'secondary',
+  'success',
+  'danger',
+  'warning',
+  'info',
+  'light',
+  'dark',
+];
+
+function normalizeTokenName(value) {
+  return String(value || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-zA-Z0-9-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
+function buildIonicNativeColorMappings() {
+  const mapping = {};
+
+  for (let i = 0; i < IONIC_NATIVE_COLOR_ROLES.length; i += 1) {
+    const role = IONIC_NATIVE_COLOR_ROLES[i];
+    mapping['colors.' + role] = '--ion-color-' + role;
+  }
+
+  return mapping;
+}
 
 const TARGET_MAPPING_TEMPLATES = {
   css: {
@@ -23,11 +65,12 @@ const TARGET_MAPPING_TEMPLATES = {
   ionic: {
     target: 'ionic',
     strategy: 'native-first',
-    nativeMappings: {
-      'colors.primary': '--ion-color-primary',
-      'colors.secondary': '--ion-color-secondary',
-      'typography.fontFamily.base': '--ion-font-family',
-    },
+    nativeMappings: Object.assign(
+      buildIonicNativeColorMappings(),
+      {
+        'typography.fontFamily.base': '--ion-font-family',
+      }
+    ),
     groupRules: {
       colors: 'ionic.css-variables.colors',
       spacing: 'css.custom-properties.spacing',
@@ -137,9 +180,47 @@ function getTargetGroupSupportMap() {
   return support;
 }
 
+function resolveIonicNativeColorRole(tokenName) {
+  const normalized = normalizeTokenName(tokenName);
+
+  if (IONIC_NATIVE_COLOR_ROLES.indexOf(normalized) !== -1) {
+    return normalized;
+  }
+
+  return null;
+}
+
+function resolveBootstrapSemanticColorRole(tokenName) {
+  const normalized = normalizeTokenName(tokenName);
+
+  for (let i = 0; i < BOOTSTRAP_SEMANTIC_COLOR_ROLES.length; i += 1) {
+    const role = BOOTSTRAP_SEMANTIC_COLOR_ROLES[i];
+
+    if (normalized === role) {
+      return role;
+    }
+
+    if (
+      normalized === role + '-color' ||
+      normalized === role + '-colour' ||
+      normalized === 'color-' + role ||
+      normalized === 'colour-' + role
+    ) {
+      return role;
+    }
+  }
+
+  return null;
+}
+
 module.exports = {
+  BOOTSTRAP_SEMANTIC_COLOR_ROLES: BOOTSTRAP_SEMANTIC_COLOR_ROLES,
+  IONIC_NATIVE_COLOR_ROLES: IONIC_NATIVE_COLOR_ROLES,
   TARGET_MAPPING_TEMPLATES: TARGET_MAPPING_TEMPLATES,
   getNativeMapping: getNativeMapping,
   getTargetGroupSupportMap: getTargetGroupSupportMap,
   getTargetTemplate: getTargetTemplate,
+  normalizeTokenName: normalizeTokenName,
+  resolveBootstrapSemanticColorRole: resolveBootstrapSemanticColorRole,
+  resolveIonicNativeColorRole: resolveIonicNativeColorRole,
 };

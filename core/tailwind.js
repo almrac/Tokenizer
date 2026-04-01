@@ -1,4 +1,4 @@
-const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
+const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets, toKebabCase } = require('./naming');
 
 function buildObjectSection(indent, label, source, comment) {
   const keys = getSortedKeys(source);
@@ -83,7 +83,8 @@ function generateTailwind(tokens) {
     sections.push(['      /* Colors */', '      colors: {']);
     for (let i = 0; i < colorKeys.length; i += 1) {
       const key = colorKeys[i];
-      sections[sections.length - 1].push('        ' + JSON.stringify(key) + ': ' + JSON.stringify(groups.colors[key]) + ',');
+      const normalizedName = toKebabCase(key) || key;
+      sections[sections.length - 1].push('        ' + JSON.stringify(normalizedName) + ': ' + JSON.stringify(groups.colors[key]) + ',');
     }
     sections[sections.length - 1].push('      }');
   }

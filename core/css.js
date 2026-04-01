@@ -7,6 +7,7 @@ const {
   getTokenGroups,
   getTypographyBuckets,
   normalizeCssPrefix,
+  toKebabCase,
 } = require('./naming');
 
 // CSS output includes both supported token groups in a single :root block.
@@ -42,7 +43,8 @@ function generateCss(tokens, options) {
   }
 
   addSection('Colors', colorKeys, function (key) {
-    return '  ' + buildCssVariableName(prefix, 'color', key) + ': ' + groups.colors[key] + ';';
+    const normalizedName = toKebabCase(key) || key;
+    return '  ' + buildCssVariableName(prefix, 'color', normalizedName) + ': ' + groups.colors[key] + ';';
   });
 
   addSection('Spacing', spacingKeys, function (key) {

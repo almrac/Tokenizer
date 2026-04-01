@@ -112,6 +112,13 @@
       nativeMappings: {
         'colors.primary': '--ion-color-primary',
         'colors.secondary': '--ion-color-secondary',
+        'colors.tertiary': '--ion-color-tertiary',
+        'colors.success': '--ion-color-success',
+        'colors.warning': '--ion-color-warning',
+        'colors.danger': '--ion-color-danger',
+        'colors.light': '--ion-color-light',
+        'colors.medium': '--ion-color-medium',
+        'colors.dark': '--ion-color-dark',
         'typography.fontFamily.base': '--ion-font-family'
       },
       groupRules: {
@@ -231,6 +238,46 @@
 
     if (Object.prototype.hasOwnProperty.call(nativeMappings, tokenPath)) {
       return nativeMappings[tokenPath];
+    }
+
+    return null;
+  }
+
+  function normalizeTokenName(value) {
+    return String(value || '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .replace(/[\s_]+/g, '-')
+      .replace(/[^a-zA-Z0-9-]/g, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
+  }
+
+  function resolveIonicNativeColorRole(tokenName) {
+    var normalized = normalizeTokenName(tokenName);
+    var nativeRoles = ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger', 'light', 'medium', 'dark'];
+
+    return nativeRoles.indexOf(normalized) !== -1 ? normalized : null;
+  }
+
+  function resolveBootstrapSemanticColorRole(tokenName) {
+    var normalized = normalizeTokenName(tokenName);
+    var roles = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'];
+    var i;
+    var role;
+
+    for (i = 0; i < roles.length; i += 1) {
+      role = roles[i];
+
+      if (
+        normalized === role ||
+        normalized === role + '-color' ||
+        normalized === role + '-colour' ||
+        normalized === 'color-' + role ||
+        normalized === 'colour-' + role
+      ) {
+        return role;
+      }
     }
 
     return null;
@@ -1060,7 +1107,8 @@
     if (target === 'bootstrap' && isPlainObject(tokens.colors)) {
       colorKeys = getSortedKeys(tokens.colors);
       ignoredColorKeys = colorKeys.filter(function (key) {
-        return !bootstrapColorNames[key];
+        var mappedRole = resolveBootstrapSemanticColorRole(key);
+        return !mappedRole || !bootstrapColorNames[mappedRole];
       });
 
       if (ignoredColorKeys.length > 0) {
@@ -1417,7 +1465,8 @@
     }
 
     addSection('Colors', colorKeys, function (key) {
-      return '  ' + buildCssVariableName(prefix, 'color', key) + ': ' + groups.colors[key] + ';';
+      var normalizedName = toKebabCase(key) || key;
+      return '  ' + buildCssVariableName(prefix, 'color', normalizedName) + ': ' + groups.colors[key] + ';';
     });
 
     addSection('Spacing', spacingKeys, function (key) {
@@ -1450,11 +1499,14 @@
   }
 
   function buildIonicColorLines(name, value) {
-    var mappedBase = getNativeMapping('ionic', 'colors.' + name);
-    var baseVariable = mappedBase || '--ion-color-' + name;
-    var defaultBase = '--ion-color-' + name;
-    var canBuildCompanions = baseVariable === defaultBase;
+    var nativeRole = resolveIonicNativeColorRole(name);
+    var mappedBase = nativeRole ? getNativeMapping('ionic', 'colors.' + nativeRole) : null;
+    var baseVariable = mappedBase || null;
     var rgb = hexToRgb(value);
+
+    if (!baseVariable) {
+      return null;
+    }
 
     if (!rgb) {
       return [
@@ -1466,19 +1518,13 @@
     var shade = shiftColor(rgb, -18);
     var tint = shiftColor(rgb, 18);
 
-    if (!canBuildCompanions) {
-      return [
-        '  ' + baseVariable + ': ' + value + ';'
-      ];
-    }
-
     return [
       '  ' + baseVariable + ': ' + value + ';',
-      '  --ion-color-' + name + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
-      '  --ion-color-' + name + '-contrast: ' + rgbToHex(contrast) + ';',
-      '  --ion-color-' + name + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
-      '  --ion-color-' + name + '-shade: ' + rgbToHex(shade) + ';',
-      '  --ion-color-' + name + '-tint: ' + rgbToHex(tint) + ';'
+      '  --ion-color-' + nativeRole + '-rgb: ' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ';',
+      '  --ion-color-' + nativeRole + '-contrast: ' + rgbToHex(contrast) + ';',
+      '  --ion-color-' + nativeRole + '-contrast-rgb: ' + contrast.r + ', ' + contrast.g + ', ' + contrast.b + ';',
+      '  --ion-color-' + nativeRole + '-shade: ' + rgbToHex(shade) + ';',
+      '  --ion-color-' + nativeRole + '-tint: ' + rgbToHex(tint) + ';'
     ];
   }
 
@@ -1502,7 +1548,11 @@
     var colorLines;
 
     for (i = 0; i < keys.length; i += 1) {
-      colorLines = buildIonicColorLines(keys[i], groups.colors[keys[i]]);
+      var nativeRole = resolveIonicNativeColorRole(keys[i]);
+      var fallbackTokenName = toKebabCase(keys[i]) || keys[i];
+      colorLines = nativeRole
+        ? (buildIonicColorLines(keys[i], groups.colors[keys[i]]) || ['  ' + getNativeMapping('ionic', 'colors.' + nativeRole) + ': ' + groups.colors[keys[i]] + ';'])
+        : ['  ' + buildCssVariableName(prefix, 'color', fallbackTokenName) + ': ' + groups.colors[keys[i]] + ';'];
 
       if (i === 0) {
         lines.push('  /* Colors */');
@@ -1622,14 +1672,43 @@
       return mapLines;
     }
 
-    for (i = 0; i < bootstrapColorOrder.length; i += 1) {
-      var colorName = bootstrapColorOrder[i];
-      if (!Object.prototype.hasOwnProperty.call(groups.colors, colorName)) {
+    var colorKeys = getSortedKeys(groups.colors);
+    var colorRoleAssignments = {};
+
+    for (i = 0; i < colorKeys.length; i += 1) {
+      var tokenName = colorKeys[i];
+      var role = resolveBootstrapSemanticColorRole(tokenName);
+      var normalizedTokenName;
+      var score;
+      var previous;
+
+      if (!role || !bootstrapColorNames[role]) {
         continue;
       }
-      if (bootstrapColorNames[colorName]) {
-        var colorVariable = getNativeMapping('bootstrap', 'colors.' + colorName) || ('$' + colorName);
-        colorEntries.push(colorVariable + ': ' + groups.colors[colorName] + ';');
+
+      normalizedTokenName = normalizeTokenName(tokenName);
+      score = normalizedTokenName === role ? 2 : 1;
+      previous = colorRoleAssignments[role];
+
+      if (!previous || score > previous.score) {
+        colorRoleAssignments[role] = {
+          value: groups.colors[tokenName],
+          score: score
+        };
+      }
+    }
+
+    for (i = 0; i < bootstrapColorOrder.length; i += 1) {
+      var roleName = bootstrapColorOrder[i];
+      var assignment = colorRoleAssignments[roleName];
+
+      if (!assignment) {
+        continue;
+      }
+
+      if (bootstrapColorNames[roleName]) {
+        var colorVariable = getNativeMapping('bootstrap', 'colors.' + roleName) || ('$' + roleName);
+        colorEntries.push(colorVariable + ': ' + assignment.value + ';');
       }
     }
 
@@ -1832,7 +1911,8 @@
     if (colorKeys.length > 0) {
       sections.push(['      /* Colors */', '      colors: {']);
       for (i = 0; i < colorKeys.length; i += 1) {
-        sections[sections.length - 1].push('        ' + JSON.stringify(colorKeys[i]) + ': ' + JSON.stringify(groups.colors[colorKeys[i]]) + ',');
+        var normalizedColorName = toKebabCase(colorKeys[i]) || colorKeys[i];
+        sections[sections.length - 1].push('        ' + JSON.stringify(normalizedColorName) + ': ' + JSON.stringify(groups.colors[colorKeys[i]]) + ',');
       }
       sections[sections.length - 1].push('      }');
     }
