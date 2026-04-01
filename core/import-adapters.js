@@ -108,6 +108,34 @@ function inspectFlatVariantCollection(collection) {
   };
 }
 
+function resolveAutoVariant(variantKeys) {
+  const keys = Array.isArray(variantKeys) ? variantKeys.slice() : [];
+
+  if (keys.length === 1) {
+    return {
+      selectedVariant: keys[0],
+      reason: 'single',
+    };
+  }
+
+  if (keys.length === 2) {
+    const byLower = {};
+
+    for (let i = 0; i < keys.length; i += 1) {
+      byLower[String(keys[i]).toLowerCase()] = keys[i];
+    }
+
+    if (byLower.light && byLower.dark) {
+      return {
+        selectedVariant: byLower.light,
+        reason: 'light-dark-default',
+      };
+    }
+  }
+
+  return null;
+}
+
 function applyFlatVariantCollectionAdapter(rawTokens) {
   const metadata = {
     sourcePattern: null,
@@ -154,7 +182,9 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
       metadata.sourcePattern = 'flatVariantCollection';
       metadata.rootUsed = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
 
-      if (inspection.variantKeys.length !== 1) {
+      const autoVariant = resolveAutoVariant(inspection.variantKeys);
+
+      if (!autoVariant) {
         metadata.errors.push(
           'Flat variant collection "' +
             metadata.rootUsed +
@@ -168,7 +198,7 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
         };
       }
 
-      const selectedVariant = inspection.variantKeys[0];
+      const selectedVariant = autoVariant.selectedVariant;
       const colorTokens = {};
       const tokenNames = Object.keys(maybeCollection);
 
@@ -185,13 +215,20 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
 
       metadata.selectedVariant = selectedVariant;
       metadata.applied = true;
-      metadata.warnings.push(
-        'Flat variant collection detectada en "' +
-          metadata.rootUsed +
-          '" y normalizada a "colors" usando la variante "' +
-          selectedVariant +
-          '".'
-      );
+
+      if (autoVariant.reason === 'light-dark-default') {
+        metadata.warnings.push(
+          'Se ha seleccionado automáticamente la variante "light" en "' + metadata.rootUsed + '".'
+        );
+      } else {
+        metadata.warnings.push(
+          'Flat variant collection detectada en "' +
+            metadata.rootUsed +
+            '" y normalizada a "colors" usando la variante "' +
+            selectedVariant +
+            '".'
+        );
+      }
 
       return {
         adapted: {

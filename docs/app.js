@@ -477,6 +477,34 @@
     };
   }
 
+  function resolveAutoVariant(variantKeys) {
+    var keys = Array.isArray(variantKeys) ? variantKeys.slice() : [];
+    var byLower = {};
+    var i;
+
+    if (keys.length === 1) {
+      return {
+        selectedVariant: keys[0],
+        reason: 'single'
+      };
+    }
+
+    if (keys.length === 2) {
+      for (i = 0; i < keys.length; i += 1) {
+        byLower[String(keys[i]).toLowerCase()] = keys[i];
+      }
+
+      if (byLower.light && byLower.dark) {
+        return {
+          selectedVariant: byLower.light,
+          reason: 'light-dark-default'
+        };
+      }
+    }
+
+    return null;
+  }
+
   function applyFlatVariantCollectionAdapter(rawTokens) {
     var metadata = {
       sourcePattern: null,
@@ -495,6 +523,7 @@
     var key;
     var maybeCollection;
     var inspection;
+    var autoVariant;
     var selectedVariant;
     var colorTokens;
     var tokenNames;
@@ -533,7 +562,9 @@
         metadata.sourcePattern = 'flatVariantCollection';
         metadata.rootUsed = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
 
-        if (inspection.variantKeys.length !== 1) {
+        autoVariant = resolveAutoVariant(inspection.variantKeys);
+
+        if (!autoVariant) {
           metadata.errors.push(
             'Flat variant collection "' +
             metadata.rootUsed +
@@ -547,7 +578,7 @@
           };
         }
 
-        selectedVariant = inspection.variantKeys[0];
+        selectedVariant = autoVariant.selectedVariant;
         colorTokens = {};
         tokenNames = Object.keys(maybeCollection);
 
@@ -564,13 +595,20 @@
 
         metadata.selectedVariant = selectedVariant;
         metadata.applied = true;
-        metadata.warnings.push(
-          'Flat variant collection detectada en "' +
-          metadata.rootUsed +
-          '" y normalizada a "colors" usando la variante "' +
-          selectedVariant +
-          '".'
-        );
+
+        if (autoVariant.reason === 'light-dark-default') {
+          metadata.warnings.push(
+            'Se ha seleccionado automáticamente la variante "light" en "' + metadata.rootUsed + '".'
+          );
+        } else {
+          metadata.warnings.push(
+            'Flat variant collection detectada en "' +
+            metadata.rootUsed +
+            '" y normalizada a "colors" usando la variante "' +
+            selectedVariant +
+            '".'
+          );
+        }
 
         return {
           adapted: {
@@ -2085,10 +2123,15 @@
     var ignored = details && details.ignoredGroups ? details.ignoredGroups : [];
     var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
     var importNotes = details && details.importNotes ? details.importNotes : [];
+    var selectedVariant = details && details.selectedVariant ? details.selectedVariant : '';
     var warningCount = details && details.warningCount ? details.warningCount : 0;
     var meaningfulImportNotes = importNotes.filter(function (note) {
       return note.indexOf('Import summary:') !== 0;
     });
+
+    if (selectedVariant) {
+      meaningfulImportNotes.unshift('Variante seleccionada: ' + selectedVariant);
+    }
     var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || normalizationNotes.length > 0 || meaningfulImportNotes.length > 0;
     var status = 'Sin advertencias';
 
@@ -2268,6 +2311,7 @@
           supportedGroups: [],
           ignoredGroups: [],
           normalizationNotes: [],
+          selectedVariant: '',
           warningCount: 0
         });
       }
@@ -2289,6 +2333,7 @@
         ignoredGroups: [],
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
         importNotes: normalization.summary && normalization.summary.importNotes,
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: 0
       });
       return;
@@ -2345,6 +2390,7 @@
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
         importNotes: normalization.summary && normalization.summary.importNotes,
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: warningCount
       });
       return;
@@ -2373,6 +2419,7 @@
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
         importNotes: normalization.summary && normalization.summary.importNotes,
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: warningCount
       });
       return;
@@ -2388,6 +2435,7 @@
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
         importNotes: normalization.summary && normalization.summary.importNotes,
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: warningCount
       });
     }
