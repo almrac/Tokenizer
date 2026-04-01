@@ -1,7 +1,11 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
 const { getTypographyBuckets } = require('./naming');
 const { applyFlatVariantCollectionAdapter } = require('./import-adapters');
-const { getTargetGroupSupportMap, resolveBootstrapSemanticColorRole } = require('./target-mappings');
+const {
+  getTargetGroupSupportMap,
+  resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapSemanticColorRole,
+} = require('./target-mappings');
 const TOP_LEVEL_ALIASES = {
   color: 'colors',
   colour: 'colors',
@@ -541,11 +545,21 @@ function validateTokenInput(tokens, target) {
     const colorKeys = Object.keys(tokens.colors);
     const ignoredColorKeys = colorKeys.filter((key) => {
       const mappedRole = resolveBootstrapSemanticColorRole(key);
-      return !mappedRole || !BOOTSTRAP_COLOR_NAMES[mappedRole];
+      const probableGlobal = resolveBootstrapProbableGlobalColorVariable(key);
+
+      if (mappedRole && BOOTSTRAP_COLOR_NAMES[mappedRole]) {
+        return false;
+      }
+
+      return !probableGlobal;
     });
 
     if (ignoredColorKeys.length > 0) {
-      warnings.push('Bootstrap solo aplica colores estándar. Se ignorarán: ' + joinList(ignoredColorKeys) + '.');
+      warnings.push(
+        'Bootstrap solo aplica colores semánticos/globales claros. Se ignorarán: ' +
+          joinList(ignoredColorKeys) +
+          '.'
+      );
     }
   }
 

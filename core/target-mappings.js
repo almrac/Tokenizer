@@ -20,6 +20,21 @@ const BOOTSTRAP_SEMANTIC_COLOR_ROLES = [
   'light',
   'dark',
 ];
+const BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS = {
+  'base-color': '$body-color',
+  'text-default': '$body-color',
+  'body-color': '$body-color',
+  foreground: '$body-color',
+  'neutral-text': '$body-color',
+  'base-border-color': '$border-color',
+  'border-color': '$border-color',
+  'neutral-border': '$border-color',
+  'divider-color': '$border-color',
+  surface: '$body-bg',
+  background: '$body-bg',
+  'body-bg': '$body-bg',
+  'base-bg': '$body-bg',
+};
 
 function normalizeTokenName(value) {
   return String(value || '')
@@ -90,6 +105,13 @@ const TARGET_MAPPING_TEMPLATES = {
     strategy: 'native-first',
     nativeMappings: {
       'colors.primary': '$primary',
+      'colors.secondary': '$secondary',
+      'colors.success': '$success',
+      'colors.danger': '$danger',
+      'colors.warning': '$warning',
+      'colors.info': '$info',
+      'colors.light': '$light',
+      'colors.dark': '$dark',
       'typography.fontFamily.base': '$font-family-base',
       'radius.md': '$border-radius',
     },
@@ -213,14 +235,26 @@ function resolveBootstrapSemanticColorRole(tokenName) {
   return null;
 }
 
+function resolveBootstrapProbableGlobalColorVariable(tokenName) {
+  const normalized = normalizeTokenName(tokenName);
+
+  if (Object.prototype.hasOwnProperty.call(BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS, normalized)) {
+    return BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS[normalized];
+  }
+
+  return null;
+}
+
 module.exports = {
   BOOTSTRAP_SEMANTIC_COLOR_ROLES: BOOTSTRAP_SEMANTIC_COLOR_ROLES,
+  BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS: BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS,
   IONIC_NATIVE_COLOR_ROLES: IONIC_NATIVE_COLOR_ROLES,
   TARGET_MAPPING_TEMPLATES: TARGET_MAPPING_TEMPLATES,
   getNativeMapping: getNativeMapping,
   getTargetGroupSupportMap: getTargetGroupSupportMap,
   getTargetTemplate: getTargetTemplate,
   normalizeTokenName: normalizeTokenName,
+  resolveBootstrapProbableGlobalColorVariable: resolveBootstrapProbableGlobalColorVariable,
   resolveBootstrapSemanticColorRole: resolveBootstrapSemanticColorRole,
   resolveIonicNativeColorRole: resolveIonicNativeColorRole,
 };

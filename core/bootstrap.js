@@ -1,5 +1,10 @@
 const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
-const { getNativeMapping, normalizeTokenName, resolveBootstrapSemanticColorRole } = require('./target-mappings');
+const {
+  getNativeMapping,
+  normalizeTokenName,
+  resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapSemanticColorRole,
+} = require('./target-mappings');
 
 const BOOTSTRAP_COLOR_NAMES = {
   primary: true,
@@ -41,6 +46,20 @@ function generateBootstrap(tokens) {
     return bucket[keys[0]];
   }
 
+  function pickBucketValue(bucket, preferredKeys) {
+    if (!bucket) {
+      return null;
+    }
+
+    for (let i = 0; i < preferredKeys.length; i += 1) {
+      if (bucket[preferredKeys[i]]) {
+        return bucket[preferredKeys[i]];
+      }
+    }
+
+    return pickBaseValue(bucket);
+  }
+
   function buildScssMap(variableName, bucket) {
     const keys = getSortedKeys(bucket);
     if (keys.length === 0) {
@@ -57,24 +76,40 @@ function generateBootstrap(tokens) {
 
   const colorKeys = getSortedKeys(groups.colors);
   const colorRoleAssignments = {};
+  const globalColorAssignments = {};
+  const globalColorOrder = ['$body-color', '$body-bg', '$border-color'];
 
   for (let i = 0; i < colorKeys.length; i += 1) {
     const key = colorKeys[i];
     const role = resolveBootstrapSemanticColorRole(key);
+    const probableGlobalVariable = resolveBootstrapProbableGlobalColorVariable(key);
 
-    if (!role || !BOOTSTRAP_COLOR_NAMES[role]) {
+    if (role && BOOTSTRAP_COLOR_NAMES[role]) {
+      const normalized = normalizeTokenName(key);
+      const score = normalized === role ? 2 : 1;
+      const previous = colorRoleAssignments[role];
+
+      if (!previous || score > previous.score) {
+        colorRoleAssignments[role] = {
+          value: groups.colors[key],
+          score: score,
+        };
+      }
       continue;
     }
 
-    const normalized = normalizeTokenName(key);
-    const score = normalized === role ? 2 : 1;
-    const previous = colorRoleAssignments[role];
+    if (probableGlobalVariable) {
+      const normalized = normalizeTokenName(key);
+      const variableName = String(probableGlobalVariable).replace(/^\$/, '');
+      const score = normalized === variableName ? 2 : 1;
+      const previous = globalColorAssignments[probableGlobalVariable];
 
-    if (!previous || score > previous.score) {
-      colorRoleAssignments[role] = {
-        value: groups.colors[key],
-        score: score,
-      };
+      if (!previous || score > previous.score) {
+        globalColorAssignments[probableGlobalVariable] = {
+          value: groups.colors[key],
+          score: score,
+        };
+      }
     }
   }
 
@@ -90,6 +125,17 @@ function generateBootstrap(tokens) {
       const colorVariable = getNativeMapping('bootstrap', 'colors.' + role) || '$' + role;
       colorEntries.push(colorVariable + ': ' + assignment.value + ';');
     }
+  }
+
+  for (let i = 0; i < globalColorOrder.length; i += 1) {
+    const variableName = globalColorOrder[i];
+    const assignment = globalColorAssignments[variableName];
+
+    if (!assignment) {
+      continue;
+    }
+
+    colorEntries.push(variableName + ': ' + assignment.value + ';');
   }
 
   if (colorEntries.length > 0) {
@@ -112,10 +158,10 @@ function generateBootstrap(tokens) {
     lines.push(');');
   }
 
-  const fontFamilyBase = pickBaseValue(typographyBuckets.fontFamily);
-  const fontSizeBase = pickBaseValue(typographyBuckets.fontSize);
-  const fontWeightBase = pickBaseValue(typographyBuckets.fontWeight);
-  const lineHeightBase = pickBaseValue(typographyBuckets.lineHeight);
+  const fontFamilyBase = pickBucketValue(typographyBuckets.fontFamily, ['base', 'body']);
+  const fontSizeBase = pickBucketValue(typographyBuckets.fontSize, ['body', 'base']);
+  const fontWeightBase = pickBucketValue(typographyBuckets.fontWeight, ['regular', 'base']);
+  const lineHeightBase = pickBucketValue(typographyBuckets.lineHeight, ['body', 'base']);
 
   if (fontFamilyBase) {
     typographyBaseLines.push(
@@ -178,9 +224,9 @@ function generateBootstrap(tokens) {
     for (let i = 0; i < radiusEntries.length; i += 1) {
       radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
     }
-    if (radiusMap.base || radiusMap.md) {
+    if (radiusMap.base || radiusMap.default || radiusMap.md) {
       const nativeRadius = getNativeMapping('bootstrap', 'radius.md') || '$border-radius';
-      lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.base) + ';');
+      lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
     }
   }
 

@@ -140,6 +140,13 @@
       strategy: 'native-first',
       nativeMappings: {
         'colors.primary': '$primary',
+        'colors.secondary': '$secondary',
+        'colors.success': '$success',
+        'colors.danger': '$danger',
+        'colors.warning': '$warning',
+        'colors.info': '$info',
+        'colors.light': '$light',
+        'colors.dark': '$dark',
         'typography.fontFamily.base': '$font-family-base',
         'radius.md': '$border-radius'
       },
@@ -278,6 +285,31 @@
       ) {
         return role;
       }
+    }
+
+    return null;
+  }
+
+  function resolveBootstrapProbableGlobalColorVariable(tokenName) {
+    var normalized = normalizeTokenName(tokenName);
+    var probableGlobals = {
+      'base-color': '$body-color',
+      'text-default': '$body-color',
+      'body-color': '$body-color',
+      foreground: '$body-color',
+      'neutral-text': '$body-color',
+      'base-border-color': '$border-color',
+      'border-color': '$border-color',
+      'neutral-border': '$border-color',
+      'divider-color': '$border-color',
+      surface: '$body-bg',
+      background: '$body-bg',
+      'body-bg': '$body-bg',
+      'base-bg': '$body-bg'
+    };
+
+    if (Object.prototype.hasOwnProperty.call(probableGlobals, normalized)) {
+      return probableGlobals[normalized];
     }
 
     return null;
@@ -1142,11 +1174,19 @@
       colorKeys = getSortedKeys(tokens.colors);
       ignoredColorKeys = colorKeys.filter(function (key) {
         var mappedRole = resolveBootstrapSemanticColorRole(key);
-        return !mappedRole || !bootstrapColorNames[mappedRole];
+        var probableGlobal = resolveBootstrapProbableGlobalColorVariable(key);
+
+        if (mappedRole && bootstrapColorNames[mappedRole]) {
+          return false;
+        }
+
+        return !probableGlobal;
       });
 
       if (ignoredColorKeys.length > 0) {
-        warnings.push('Bootstrap solo aplica colores estándar. Se ignorarán: ' + joinQuoted(ignoredColorKeys) + '.');
+        warnings.push(
+          'Bootstrap solo aplica colores semánticos/globales claros. Se ignorarán: ' + joinQuoted(ignoredColorKeys) + '.'
+        );
       }
     }
 
@@ -1689,6 +1729,22 @@
       return keys.length > 0 ? bucket[keys[0]] : null;
     }
 
+    function pickBucketValue(bucket, preferredKeys) {
+      var j;
+
+      if (!bucket) {
+        return null;
+      }
+
+      for (j = 0; j < preferredKeys.length; j += 1) {
+        if (bucket[preferredKeys[j]]) {
+          return bucket[preferredKeys[j]];
+        }
+      }
+
+      return pickBaseValue(bucket);
+    }
+
     function buildScssMap(variableName, bucket) {
       var keys = getSortedKeys(bucket);
       var mapLines = [];
@@ -1708,27 +1764,43 @@
 
     var colorKeys = getSortedKeys(groups.colors);
     var colorRoleAssignments = {};
+    var globalColorAssignments = {};
+    var globalColorOrder = ['$body-color', '$body-bg', '$border-color'];
 
     for (i = 0; i < colorKeys.length; i += 1) {
       var tokenName = colorKeys[i];
       var role = resolveBootstrapSemanticColorRole(tokenName);
+      var probableGlobalVariable = resolveBootstrapProbableGlobalColorVariable(tokenName);
       var normalizedTokenName;
       var score;
       var previous;
 
-      if (!role || !bootstrapColorNames[role]) {
+      if (role && bootstrapColorNames[role]) {
+        normalizedTokenName = normalizeTokenName(tokenName);
+        score = normalizedTokenName === role ? 2 : 1;
+        previous = colorRoleAssignments[role];
+
+        if (!previous || score > previous.score) {
+          colorRoleAssignments[role] = {
+            value: groups.colors[tokenName],
+            score: score
+          };
+        }
         continue;
       }
 
-      normalizedTokenName = normalizeTokenName(tokenName);
-      score = normalizedTokenName === role ? 2 : 1;
-      previous = colorRoleAssignments[role];
+      if (probableGlobalVariable) {
+        var variableName = String(probableGlobalVariable).replace(/^\$/, '');
+        normalizedTokenName = normalizeTokenName(tokenName);
+        score = normalizedTokenName === variableName ? 2 : 1;
+        previous = globalColorAssignments[probableGlobalVariable];
 
-      if (!previous || score > previous.score) {
-        colorRoleAssignments[role] = {
-          value: groups.colors[tokenName],
-          score: score
-        };
+        if (!previous || score > previous.score) {
+          globalColorAssignments[probableGlobalVariable] = {
+            value: groups.colors[tokenName],
+            score: score
+          };
+        }
       }
     }
 
@@ -1744,6 +1816,17 @@
         var colorVariable = getNativeMapping('bootstrap', 'colors.' + roleName) || ('$' + roleName);
         colorEntries.push(colorVariable + ': ' + assignment.value + ';');
       }
+    }
+
+    for (i = 0; i < globalColorOrder.length; i += 1) {
+      var globalVariableName = globalColorOrder[i];
+      var globalAssignment = globalColorAssignments[globalVariableName];
+
+      if (!globalAssignment) {
+        continue;
+      }
+
+      colorEntries.push(globalVariableName + ': ' + globalAssignment.value + ';');
     }
 
     if (colorEntries.length > 0) {
@@ -1765,10 +1848,10 @@
       lines.push(');');
     }
 
-    var fontFamilyBase = pickBaseValue(typographyBuckets.fontFamily);
-    var fontSizeBase = pickBaseValue(typographyBuckets.fontSize);
-    var fontWeightBase = pickBaseValue(typographyBuckets.fontWeight);
-    var lineHeightBase = pickBaseValue(typographyBuckets.lineHeight);
+    var fontFamilyBase = pickBucketValue(typographyBuckets.fontFamily, ['base', 'body']);
+    var fontSizeBase = pickBucketValue(typographyBuckets.fontSize, ['body', 'base']);
+    var fontWeightBase = pickBucketValue(typographyBuckets.fontWeight, ['regular', 'base']);
+    var lineHeightBase = pickBucketValue(typographyBuckets.lineHeight, ['body', 'base']);
 
     if (fontFamilyBase) {
       typographyBaseLines.push(
@@ -1828,9 +1911,9 @@
         radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
       }
 
-      if (radiusMap.base || radiusMap.md) {
+      if (radiusMap.base || radiusMap.default || radiusMap.md) {
         var nativeRadius = getNativeMapping('bootstrap', 'radius.md') || '$border-radius';
-        lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.base) + ';');
+        lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
       }
     }
 

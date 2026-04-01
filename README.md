@@ -138,7 +138,7 @@ Notas por target:
 
 - `css`: variables custom con naming consistente para tipografía (`font-family`, `font-size`, `font-weight`, `line-height`, `letter-spacing`), radius y shadows.
 - `ionic`: mantiene variables nativas `--ion-color-*` para colores y usa fallback custom con prefijo para grupos no nativos.
-- `bootstrap`: prioriza overrides SCSS prácticos (colores estándar, `$spacers`, tipografía base/mapas, radius, shadows).  
+- `bootstrap`: prioriza overrides SCSS prácticos con estrategia en tres niveles para `colors` (mapeos semánticos seguros, globales probables y omisión con warning), además de `$spacers`, tipografía base/mapas, radius y shadows.  
   `letterSpacing` se omite con warning por no tener variable global nativa equivalente.
 - `tailwind`: salida limpia bajo `theme.extend` con `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
 
@@ -170,7 +170,7 @@ Estrategia inicial:
 Mapeos nativos iniciales:
 
 - `ionic`: `colors.primary -> --ion-color-primary`, `colors.secondary -> --ion-color-secondary`, `typography.fontFamily.base -> --ion-font-family`
-- `bootstrap`: `colors.primary -> $primary`, `typography.fontFamily.base -> $font-family-base`, `radius.md -> $border-radius`
+- `bootstrap`: `colors.primary/secondary/success/danger/warning/info/light/dark -> $...`, `typography.fontFamily.base -> $font-family-base`, `radius.md -> $border-radius`
 - `tailwind`: grupos dirigidos a `theme.extend.*` (`colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`)
 
 Esta capa es interna; no es todavía un sistema de settings de usuario.
@@ -248,14 +248,14 @@ CLI (resumen ligero):
 - Se valida que los grupos top-level soportados (`colors`, `spacing`, `typography`, `radius`, `shadows`) sean objetos.
 - Si hay grupos top-level no soportados, se muestran como advertencia y se ignoran.
 - Si el target ignora algún grupo presente, se avisa pero la generación continúa.
-- Para `bootstrap`, se advierte cuando hay colores no estándar que Bootstrap no aplica.
+- Para `bootstrap`, se advierte cuando hay colores sin equivalencia semántica/global clara en variables SCSS de Bootstrap.
 - Si no hay grupos soportados con contenido, la generación se bloquea con error.
 
 Soporte por target:
 
 - `css`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
 - `ionic`: usa `colors` nativos y fallback custom para `spacing`, `typography`, `radius`, `shadows`
-- `bootstrap`: usa todos los grupos, pero en `colors` solo aplica claves estándar de Bootstrap
+- `bootstrap`: usa todos los grupos; en `colors` aplica primero roles semánticos seguros, luego globales probables (`$body-color`, `$border-color`, `$body-bg`) y omite el resto con warning
 - `tailwind`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
 
 Reglas de comportamiento:
@@ -280,8 +280,10 @@ Feedback por entorno:
   mantiene el mapeo completo de `colors` con convención `--ion-color-*`.
   para grupos no nativos (`spacing`, `typography`, `radius`, `shadows`) usa fallback de variables custom con prefijo configurable (por ejemplo `--tk-spacing-md`).
 - `bootstrap`:
-  mapea `colors` estándar de Bootstrap, `$spacers`, variables de tipografía base (`$font-family-base`, `$font-size-base`, `$font-weight-base`, `$line-height-base`), mapas tipográficos (`$font-sizes`, `$font-weights`, `$line-heights`), `radius` y `shadows`.
-  Colores no estándar se ignoran con warning.
+  mapea `colors` de Bootstrap en tres niveles:
+  roles semánticos seguros (`$primary`, `$secondary`, `$success`, `$danger`, `$warning`, `$info`, `$light`, `$dark`),
+  globales probables (`$body-color`, `$border-color`, `$body-bg`) y omisión con warning cuando no hay equivalencia clara.
+  También mantiene `$spacers`, variables de tipografía base (`$font-family-base`, `$font-size-base`, `$font-weight-base`, `$line-height-base`), mapas tipográficos (`$font-sizes`, `$font-weights`, `$line-heights`), `radius` y `shadows`.
 - `tailwind`:
   mapea a `theme.extend` en `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
 

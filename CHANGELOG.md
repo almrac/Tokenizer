@@ -2,6 +2,24 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.8.1] - 2026-04-02
+
+### Changed
+
+- Bootstrap refina su mapeo de `colors` con estrategia en tres niveles:
+  mapeos semánticos seguros, globales probables y omisión con warning cuando no existe equivalencia SCSS clara.
+- Soporte ampliado de mapeo seguro para roles Bootstrap:
+  `primary`, `secondary`, `success`, `danger`, `warning`, `info`, `light`, `dark` (incluyendo variantes tipo `primaryColor`).
+- Soporte de mapeos globales probables en Bootstrap:
+  `baseColor/textDefault/bodyColor/foreground/neutralText -> $body-color`,
+  `baseBorderColor/borderColor/neutralBorder/dividerColor -> $border-color`,
+  `surface/background/bodyBg/baseBg -> $body-bg`.
+- Selección de tipografía base en Bootstrap más intencional:
+  `fontSize.body`, `fontWeight.regular`, `lineHeight.body` priorizados para variables base cuando existen.
+- Radius Bootstrap más útil:
+  `$border-radius` ahora también puede tomar `radius.default` además de `radius.md`/`radius.base`.
+- Alineación completa entre CLI y preview web para la misma lógica de mapeo/warnings de Bootstrap.
+
 ## [v0.8.0] - 2026-04-01
 
 ### Added
