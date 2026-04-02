@@ -257,11 +257,11 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
 
       if (!autoVariant) {
         metadata.errors.push(
-          'Flat variant collection "' +
+          'Se detectó una colección con múltiples variantes en "' +
             collectionPath +
-            '" contiene múltiples variantes (' +
+            '". Variantes disponibles: ' +
             inspection.variantKeys.join(', ') +
-            '). Indica una variante explícita para importar.'
+            '. Selecciona una variante explícita para continuar.'
         );
         return {
           adapted: rawTokens,
