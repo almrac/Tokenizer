@@ -312,6 +312,72 @@ function normalizeTypographyGroup(typographySource, normalizationNotes) {
   return normalized;
 }
 
+function normalizeLengthLikeLeaf(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value) + 'px';
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return value;
+  }
+
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return trimmed + 'px';
+  }
+
+  return value;
+}
+
+function normalizeLengthLikeTree(value) {
+  if (isObjectRecord(value)) {
+    const normalized = {};
+    const keys = Object.keys(value);
+
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      normalized[key] = normalizeLengthLikeTree(value[key]);
+    }
+
+    return normalized;
+  }
+
+  return normalizeLengthLikeLeaf(value);
+}
+
+function normalizeTypographyLengthValues(typographySource) {
+  if (!isObjectRecord(typographySource)) {
+    return typographySource;
+  }
+
+  const normalized = {};
+  const keys = Object.keys(typographySource);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    const value = typographySource[key];
+
+    if (key === 'fontWeight') {
+      normalized[key] = value;
+      continue;
+    }
+
+    if (key === 'fontSize' || key === 'lineHeight') {
+      normalized[key] = normalizeLengthLikeTree(value);
+      continue;
+    }
+
+    normalized[key] = isObjectRecord(value) ? normalizeTypographyLengthValues(value) : value;
+  }
+
+  return normalized;
+}
+
 function normalizeTokenInput(rawTokens) {
   const importNotes = [];
   const normalizationNotes = [];
@@ -408,6 +474,18 @@ function normalizeTokenInput(rawTokens) {
         'Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.'
       );
     }
+  }
+
+  if (isObjectRecord(normalized.spacing)) {
+    normalized.spacing = normalizeLengthLikeTree(normalized.spacing);
+  }
+
+  if (isObjectRecord(normalized.radius)) {
+    normalized.radius = normalizeLengthLikeTree(normalized.radius);
+  }
+
+  if (isObjectRecord(normalized.typography)) {
+    normalized.typography = normalizeTypographyLengthValues(normalized.typography);
   }
 
   detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));

@@ -1176,6 +1176,85 @@
     return normalized;
   }
 
+  function normalizeLengthLikeLeaf(value) {
+    var trimmed;
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return String(value) + 'px';
+    }
+
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    trimmed = value.trim();
+
+    if (!trimmed) {
+      return value;
+    }
+
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      return trimmed + 'px';
+    }
+
+    return value;
+  }
+
+  function normalizeLengthLikeTree(value) {
+    var normalized;
+    var keys;
+    var i;
+    var key;
+
+    if (isPlainObject(value)) {
+      normalized = {};
+      keys = Object.keys(value);
+
+      for (i = 0; i < keys.length; i += 1) {
+        key = keys[i];
+        normalized[key] = normalizeLengthLikeTree(value[key]);
+      }
+
+      return normalized;
+    }
+
+    return normalizeLengthLikeLeaf(value);
+  }
+
+  function normalizeTypographyLengthValues(typographySource) {
+    var normalized;
+    var keys;
+    var i;
+    var key;
+    var value;
+
+    if (!isPlainObject(typographySource)) {
+      return typographySource;
+    }
+
+    normalized = {};
+    keys = Object.keys(typographySource);
+
+    for (i = 0; i < keys.length; i += 1) {
+      key = keys[i];
+      value = typographySource[key];
+
+      if (key === 'fontWeight') {
+        normalized[key] = value;
+        continue;
+      }
+
+      if (key === 'fontSize' || key === 'lineHeight') {
+        normalized[key] = normalizeLengthLikeTree(value);
+        continue;
+      }
+
+      normalized[key] = isPlainObject(value) ? normalizeTypographyLengthValues(value) : value;
+    }
+
+    return normalized;
+  }
+
   function normalizeTokenInput(rawTokens) {
     var importNotes = [];
     var normalizationNotes = [];
@@ -1285,6 +1364,18 @@
           'Conflicto al normalizar "' + originalKey + '" en "' + canonicalKey + '": se mantiene el valor canónico.'
         );
       }
+    }
+
+    if (isPlainObject(normalized.spacing)) {
+      normalized.spacing = normalizeLengthLikeTree(normalized.spacing);
+    }
+
+    if (isPlainObject(normalized.radius)) {
+      normalized.radius = normalizeLengthLikeTree(normalized.radius);
+    }
+
+    if (isPlainObject(normalized.typography)) {
+      normalized.typography = normalizeTypographyLengthValues(normalized.typography);
     }
 
     detectedGroups = supportedGroups.filter(function (groupName) {
