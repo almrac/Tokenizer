@@ -490,6 +490,31 @@
     return '--' + normalized + '-';
   }
 
+  function normalizeSassPrefix(prefix) {
+    var trimmed;
+    var normalized;
+
+    if (prefix === null || typeof prefix === 'undefined') {
+      return 'tk';
+    }
+
+    trimmed = String(prefix).trim();
+
+    if (!trimmed) {
+      return 'tk';
+    }
+
+    normalized = trimmed
+      .replace(/^\$+/, '')
+      .replace(/^-+/, '')
+      .replace(/[^a-zA-Z0-9-]/g, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
+
+    return normalized || 'tk';
+  }
+
   function getTokenGroups(tokens) {
     var safeTokens = tokens && typeof tokens === 'object' ? tokens : {};
     var colors = safeTokens.colors && typeof safeTokens.colors === 'object' ? safeTokens.colors : {};
@@ -1886,8 +1911,9 @@
     return buildRootBlock(lines);
   }
 
-  function generateBootstrap(tokens) {
+  function generateBootstrap(tokens, options) {
     var groups = getTokenGroups(tokens);
+    var fallbackPrefix = normalizeSassPrefix(options && options.prefix);
     var lines = [];
     var spacingKeys = getSortedKeys(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
@@ -1900,7 +1926,7 @@
     var i;
 
     function buildExtendedSassVariable(group, tokenName) {
-      return '$tk-' + group + '-' + (toKebabCase(tokenName) || tokenName);
+      return '$' + fallbackPrefix + '-' + group + '-' + (toKebabCase(tokenName) || tokenName);
     }
 
     function pickBaseEntry(bucket) {
@@ -2540,7 +2566,26 @@
 
   function updatePrefixVisibility() {
     var selectedTargets = getSelectedTargets();
-    var shouldShow = selectedTargets.indexOf('css') !== -1 || selectedTargets.indexOf('ionic') !== -1;
+    var prefixDependentFallbackModes = {
+      'custom-prefix': true,
+      'extended-sass-variable': true,
+      'native-then-extended-sass-variable': true,
+      'native-and-scss-maps-then-extended-sass-variable': true
+    };
+    var shouldShow = selectedTargets.some(function (target) {
+      var template = getTargetTemplate(target);
+      var groupFallbacks = template && template.groupFallbacks ? template.groupFallbacks : {};
+      var fallbackKeys = Object.keys(groupFallbacks);
+      var i;
+
+      for (i = 0; i < fallbackKeys.length; i += 1) {
+        if (prefixDependentFallbackModes[groupFallbacks[fallbackKeys[i]]]) {
+          return true;
+        }
+      }
+
+      return false;
+    });
     prefixField.hidden = !shouldShow;
   }
 

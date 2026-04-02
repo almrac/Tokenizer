@@ -21,9 +21,32 @@ const BOOTSTRAP_COLOR_NAMES = {
 };
 const BOOTSTRAP_COLOR_ORDER = ['primary', 'secondary', 'success', 'info', 'warning', 'danger', 'light', 'dark'];
 
-// Bootstrap output uses native Sass slots first and emits explicit $tk-* fallbacks for useful extra tokens.
-function generateBootstrap(tokens) {
+function normalizeSassPrefix(prefix) {
+  if (prefix === null || typeof prefix === 'undefined') {
+    return 'tk';
+  }
+
+  const trimmed = String(prefix).trim();
+
+  if (!trimmed) {
+    return 'tk';
+  }
+
+  const normalized = trimmed
+    .replace(/^\$+/, '')
+    .replace(/^-+/, '')
+    .replace(/[^a-zA-Z0-9-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+
+  return normalized || 'tk';
+}
+
+// Bootstrap output uses native Sass slots first and emits explicit $<prefix>-* fallbacks for useful extra tokens.
+function generateBootstrap(tokens, options) {
   const groups = getTokenGroups(tokens);
+  const fallbackPrefix = normalizeSassPrefix(options && options.prefix);
   const lines = [];
   const spacingKeys = getSortedKeys(groups.spacing);
   const typographyBuckets = getTypographyBuckets(groups.typography);
@@ -35,7 +58,7 @@ function generateBootstrap(tokens) {
   const typographyFallbackLines = [];
 
   function buildExtendedSassVariable(group, tokenName) {
-    return '$tk-' + group + '-' + (toKebabCase(tokenName) || tokenName);
+    return '$' + fallbackPrefix + '-' + group + '-' + (toKebabCase(tokenName) || tokenName);
   }
 
   function pickBaseEntry(bucket) {

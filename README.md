@@ -394,7 +394,7 @@ Opciones disponibles:
   también admite múltiples targets separados por coma, por ejemplo `css,tailwind`
 - `--input` opcional. Por defecto usa `./tokens.json`
 - `--output` opcional. Por defecto usa `./dist`
-- `--prefix` opcional. Aplica a `css` y a variables custom de fallback en `ionic`
+- `--prefix` opcional. Aplica a `css`, a variables custom de fallback en `ionic` y a variables extendidas de fallback en `bootstrap`
 
 Ejemplos:
 
