@@ -485,6 +485,66 @@
     return Object.keys(tokens[groupName]).length > 0;
   }
 
+  var supportedGroupsSet = {
+    colors: true,
+    spacing: true,
+    typography: true,
+    radius: true,
+    shadows: true
+  };
+
+  function resolveCanonicalGroupName(key) {
+    if (!key) {
+      return null;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(supportedGroupsSet, key)) {
+      return key;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(topLevelAliases, key)) {
+      return topLevelAliases[key];
+    }
+
+    var lowered = String(key).toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(topLevelAliases, lowered)) {
+      return topLevelAliases[lowered];
+    }
+
+    return null;
+  }
+
+  function replacePathValue(source, path, replacement) {
+    var parts;
+
+    function walk(node, index) {
+      var key;
+      var clone;
+
+      if (!isPlainObject(node)) {
+        return node;
+      }
+
+      key = parts[index];
+      clone = Object.assign({}, node);
+
+      if (index === parts.length - 1) {
+        clone[key] = replacement;
+        return clone;
+      }
+
+      clone[key] = walk(node[key], index + 1);
+      return clone;
+    }
+
+    if (path === 'top-level') {
+      return replacement;
+    }
+
+    parts = String(path).split('.');
+    return walk(source, 0);
+  }
+
   function isColorLike(value) {
     var text = String(value || '').trim();
 
@@ -647,6 +707,10 @@
     var inspection;
     var autoVariant;
     var selectedVariant;
+    var siblingKeys;
+    var siblingGroupSignals;
+    var extractedKeyGroup;
+    var shouldMergeIntoSiblingRoot;
     var colorTokens;
     var tokenNames;
     var k;
@@ -682,14 +746,15 @@
         }
 
         metadata.sourcePattern = 'flatVariantCollection';
-        metadata.rootUsed = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
+        var collectionPath = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
+        metadata.rootUsed = collectionPath;
 
         autoVariant = resolveAutoVariant(inspection.variantKeys);
 
         if (!autoVariant) {
           metadata.errors.push(
             'Flat variant collection "' +
-            metadata.rootUsed +
+            collectionPath +
             '" contiene múltiples variantes (' +
             inspection.variantKeys.join(', ') +
             '). Indica una variante explícita para importar.'
@@ -717,6 +782,15 @@
 
         metadata.selectedVariant = selectedVariant;
         metadata.applied = true;
+        siblingKeys = keys.filter(function (item) { return item !== key; });
+        siblingGroupSignals = siblingKeys.filter(function (siblingKey) {
+          return !!resolveCanonicalGroupName(siblingKey);
+        });
+        extractedKeyGroup = resolveCanonicalGroupName(key);
+        shouldMergeIntoSiblingRoot = extractedKeyGroup === 'colors' || siblingGroupSignals.length > 0;
+        if (shouldMergeIntoSiblingRoot) {
+          metadata.rootUsed = rootCandidate.path;
+        }
 
         if (autoVariant.reason === 'light-dark-default') {
           metadata.warnings.push(
@@ -730,6 +804,16 @@
             selectedVariant +
             '".'
           );
+        }
+
+        if (shouldMergeIntoSiblingRoot) {
+          var rebuiltRoot = Object.assign({}, rootValue);
+          rebuiltRoot[key] = colorTokens;
+
+          return {
+            adapted: replacePathValue(rawTokens, rootCandidate.path, rebuiltRoot),
+            metadata: metadata
+          };
         }
 
         return {
