@@ -148,7 +148,18 @@
         'colors.light': '$light',
         'colors.dark': '$dark',
         'typography.fontFamily.base': '$font-family-base',
-        'radius.md': '$border-radius'
+        'typography.fontSize.body': '$font-size-base',
+        'typography.fontWeight.regular': '$font-weight-base',
+        'typography.lineHeight.body': '$line-height-base',
+        'radius.sm': '$border-radius-sm',
+        'radius.md': '$border-radius',
+        'radius.default': '$border-radius',
+        'radius.lg': '$border-radius-lg',
+        'shadows.sm': '$box-shadow-sm',
+        'shadows.md': '$box-shadow',
+        'shadows.default': '$box-shadow',
+        'shadows.base': '$box-shadow',
+        spacing: '$spacers'
       },
       groupRules: {
         colors: 'bootstrap.scss.colors',
@@ -310,6 +321,22 @@
 
     if (Object.prototype.hasOwnProperty.call(probableGlobals, normalized)) {
       return probableGlobals[normalized];
+    }
+
+    return null;
+  }
+
+  function resolveBootstrapShadowGlobalVariable(tokenName) {
+    var normalized = normalizeTokenName(tokenName);
+    var globals = {
+      sm: '$box-shadow-sm',
+      md: '$box-shadow',
+      default: '$box-shadow',
+      base: '$box-shadow'
+    };
+
+    if (Object.prototype.hasOwnProperty.call(globals, normalized)) {
+      return globals[normalized];
     }
 
     return null;
@@ -1092,6 +1119,8 @@
     var ignoredGroups;
     var colorKeys;
     var ignoredColorKeys;
+    var shadowKeys;
+    var ignoredShadowKeys;
     var i;
     var groupName;
 
@@ -1186,6 +1215,19 @@
       if (ignoredColorKeys.length > 0) {
         warnings.push(
           'Bootstrap solo aplica colores semánticos/globales claros. Se ignorarán: ' + joinQuoted(ignoredColorKeys) + '.'
+        );
+      }
+    }
+
+    if (target === 'bootstrap' && isPlainObject(tokens.shadows)) {
+      shadowKeys = getSortedKeys(tokens.shadows);
+      ignoredShadowKeys = shadowKeys.filter(function (key) {
+        return !resolveBootstrapShadowGlobalVariable(key);
+      });
+
+      if (ignoredShadowKeys.length > 0) {
+        warnings.push(
+          'Bootstrap solo aplica sombras globales claras. Se ignorarán: ' + joinQuoted(ignoredShadowKeys) + '.'
         );
       }
     }
@@ -1715,7 +1757,6 @@
     var typographyMapLines = [];
     var i;
     var radiusMap = {};
-    var shadowMap = {};
 
     function pickBaseValue(bucket) {
       var keys;
@@ -1859,13 +1900,19 @@
       );
     }
     if (fontSizeBase) {
-      typographyBaseLines.push('$font-size-base: ' + fontSizeBase + ';');
+      typographyBaseLines.push(
+        (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase + ';'
+      );
     }
     if (fontWeightBase) {
-      typographyBaseLines.push('$font-weight-base: ' + fontWeightBase + ';');
+      typographyBaseLines.push(
+        (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase + ';'
+      );
     }
     if (lineHeightBase) {
-      typographyBaseLines.push('$line-height-base: ' + lineHeightBase + ';');
+      typographyBaseLines.push(
+        (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase + ';'
+      );
     }
 
     var fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize);
@@ -1921,14 +1968,45 @@
       if (lines.length > 0) {
         lines.push('');
       }
-      lines.push('/* Shadows */');
+      var globalShadowAssignments = {};
+      var globalShadowOrder = ['$box-shadow-sm', '$box-shadow'];
+
       for (i = 0; i < shadowEntries.length; i += 1) {
-        lines.push('$box-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
-        shadowMap[shadowEntries[i].name] = shadowEntries[i].value;
+        var shadowName = shadowEntries[i].name;
+        var globalShadowVariable = resolveBootstrapShadowGlobalVariable(shadowName);
+        var normalizedShadowName = normalizeTokenName(shadowName);
+        var shadowScore =
+          normalizedShadowName === 'sm' ||
+          normalizedShadowName === 'md' ||
+          normalizedShadowName === 'default' ||
+          normalizedShadowName === 'base' ? 2 : 1;
+        var previousShadow = globalShadowAssignments[globalShadowVariable];
+
+        if (!globalShadowVariable) {
+          continue;
+        }
+
+        if (!previousShadow || shadowScore > previousShadow.score) {
+          globalShadowAssignments[globalShadowVariable] = {
+            value: shadowEntries[i].value,
+            score: shadowScore
+          };
+        }
       }
 
-      if (shadowMap.base || shadowMap.md) {
-        lines.push('$box-shadow: ' + (shadowMap.base || shadowMap.md) + ';');
+      if (Object.keys(globalShadowAssignments).length > 0) {
+        lines.push('/* Shadows */');
+
+        for (i = 0; i < globalShadowOrder.length; i += 1) {
+          var globalShadowName = globalShadowOrder[i];
+          var globalShadowAssignment = globalShadowAssignments[globalShadowName];
+
+          if (!globalShadowAssignment) {
+            continue;
+          }
+
+          lines.push(globalShadowName + ': ' + globalShadowAssignment.value + ';');
+        }
       }
     }
 

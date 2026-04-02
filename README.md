@@ -175,6 +175,32 @@ Mapeos nativos iniciales:
 
 Esta capa es interna; no es todavía un sistema de settings de usuario.
 
+## Expansión de plantillas por grupos (v0.8.2)
+
+La capa de plantillas ya no cubre solo `colors`; ahora se aplica también a:
+
+- `typography`
+- `radius`
+- `shadows`
+- `spacing`
+
+Resumen por framework:
+
+- `css`: fallback custom-prefix en todos los grupos (`colors`, `typography`, `radius`, `shadows`, `spacing`).
+- `ionic`: mantiene mapeos nativos solo cuando son claros (`colors` por whitelist y `typography.fontFamily.base`); el resto usa fallback custom-prefix.
+- `bootstrap`: estrategia en tres niveles:
+  1) mapeos seguros nativos,
+  2) mapeos globales probables cuando hay señal fuerte,
+  3) warning + omisión para tokens sin equivalente SCSS claro (por ejemplo ciertos `shadows` o `colors` específicos).
+- `tailwind`: mapeo directo a `theme.extend.*` para `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
+
+Bootstrap (grupos ampliados):
+
+- `typography`: base prioriza `fontFamily.base`, `fontSize.body`, `fontWeight.regular`, `lineHeight.body`.
+- `radius`: mantiene `sm`/`md|default`/`lg` como variables globales útiles (`$border-radius-sm`, `$border-radius`, `$border-radius-lg`) y conserva overrides de nivel token.
+- `shadows`: aplica mapeo global claro (`sm -> $box-shadow-sm`, `md|default -> $box-shadow`) y omite variantes ambiguas con warning.
+- `spacing`: mantiene mapeo en `$spacers`.
+
 ## Adapter de importación flatVariantCollection (colors-only, v0.8.0)
 
 Tokenizer añade un primer adapter de entrada para colecciones planas con variantes internas por token.

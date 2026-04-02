@@ -4,6 +4,7 @@ const { applyFlatVariantCollectionAdapter } = require('./import-adapters');
 const {
   getTargetGroupSupportMap,
   resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole,
 } = require('./target-mappings');
 const TOP_LEVEL_ALIASES = {
@@ -559,6 +560,17 @@ function validateTokenInput(tokens, target) {
         'Bootstrap solo aplica colores semánticos/globales claros. Se ignorarán: ' +
           joinList(ignoredColorKeys) +
           '.'
+      );
+    }
+  }
+
+  if (target === 'bootstrap' && isObjectRecord(tokens.shadows)) {
+    const shadowKeys = Object.keys(tokens.shadows);
+    const ignoredShadowKeys = shadowKeys.filter((key) => !resolveBootstrapShadowGlobalVariable(key));
+
+    if (ignoredShadowKeys.length > 0) {
+      warnings.push(
+        'Bootstrap solo aplica sombras globales claras. Se ignorarán: ' + joinList(ignoredShadowKeys) + '.'
       );
     }
   }

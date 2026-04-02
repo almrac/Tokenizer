@@ -3,6 +3,7 @@ const {
   getNativeMapping,
   normalizeTokenName,
   resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole,
 } = require('./target-mappings');
 
@@ -169,13 +170,19 @@ function generateBootstrap(tokens) {
     );
   }
   if (fontSizeBase) {
-    typographyBaseLines.push('$font-size-base: ' + fontSizeBase + ';');
+    typographyBaseLines.push(
+      (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase + ';'
+    );
   }
   if (fontWeightBase) {
-    typographyBaseLines.push('$font-weight-base: ' + fontWeightBase + ';');
+    typographyBaseLines.push(
+      (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase + ';'
+    );
   }
   if (lineHeightBase) {
-    typographyBaseLines.push('$line-height-base: ' + lineHeightBase + ';');
+    typographyBaseLines.push(
+      (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase + ';'
+    );
   }
 
   const fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize);
@@ -234,17 +241,41 @@ function generateBootstrap(tokens) {
     if (lines.length > 0) {
       lines.push('');
     }
-    lines.push('/* Shadows */');
+    const globalShadowAssignments = {};
+    const globalShadowOrder = ['$box-shadow-sm', '$box-shadow'];
+
     for (let i = 0; i < shadowEntries.length; i += 1) {
-      lines.push('$box-shadow-' + shadowEntries[i].name + ': ' + shadowEntries[i].value + ';');
+      const name = shadowEntries[i].name;
+      const globalVariable = resolveBootstrapShadowGlobalVariable(name);
+      const normalized = normalizeTokenName(name);
+      const score = normalized === 'md' || normalized === 'default' || normalized === 'base' || normalized === 'sm' ? 2 : 1;
+      const previous = globalShadowAssignments[globalVariable];
+
+      if (!globalVariable) {
+        continue;
+      }
+
+      if (!previous || score > previous.score) {
+        globalShadowAssignments[globalVariable] = {
+          value: shadowEntries[i].value,
+          score: score,
+        };
+      }
     }
 
-    const shadowMap = {};
-    for (let i = 0; i < shadowEntries.length; i += 1) {
-      shadowMap[shadowEntries[i].name] = shadowEntries[i].value;
-    }
-    if (shadowMap.base || shadowMap.md) {
-      lines.push('$box-shadow: ' + (shadowMap.base || shadowMap.md) + ';');
+    if (Object.keys(globalShadowAssignments).length > 0) {
+      lines.push('/* Shadows */');
+
+      for (let i = 0; i < globalShadowOrder.length; i += 1) {
+        const variableName = globalShadowOrder[i];
+        const assignment = globalShadowAssignments[variableName];
+
+        if (!assignment) {
+          continue;
+        }
+
+        lines.push(variableName + ': ' + assignment.value + ';');
+      }
     }
   }
 

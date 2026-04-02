@@ -35,6 +35,12 @@ const BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS = {
   'body-bg': '$body-bg',
   'base-bg': '$body-bg',
 };
+const BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS = {
+  sm: '$box-shadow-sm',
+  md: '$box-shadow',
+  default: '$box-shadow',
+  base: '$box-shadow',
+};
 
 function normalizeTokenName(value) {
   return String(value || '')
@@ -113,7 +119,18 @@ const TARGET_MAPPING_TEMPLATES = {
       'colors.light': '$light',
       'colors.dark': '$dark',
       'typography.fontFamily.base': '$font-family-base',
+      'typography.fontSize.body': '$font-size-base',
+      'typography.fontWeight.regular': '$font-weight-base',
+      'typography.lineHeight.body': '$line-height-base',
+      'radius.sm': '$border-radius-sm',
       'radius.md': '$border-radius',
+      'radius.default': '$border-radius',
+      'radius.lg': '$border-radius-lg',
+      'shadows.sm': '$box-shadow-sm',
+      'shadows.md': '$box-shadow',
+      'shadows.default': '$box-shadow',
+      'shadows.base': '$box-shadow',
+      spacing: '$spacers',
     },
     groupRules: {
       colors: 'bootstrap.scss.colors',
@@ -245,9 +262,20 @@ function resolveBootstrapProbableGlobalColorVariable(tokenName) {
   return null;
 }
 
+function resolveBootstrapShadowGlobalVariable(tokenName) {
+  const normalized = normalizeTokenName(tokenName);
+
+  if (Object.prototype.hasOwnProperty.call(BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS, normalized)) {
+    return BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS[normalized];
+  }
+
+  return null;
+}
+
 module.exports = {
   BOOTSTRAP_SEMANTIC_COLOR_ROLES: BOOTSTRAP_SEMANTIC_COLOR_ROLES,
   BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS: BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS,
+  BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS: BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS,
   IONIC_NATIVE_COLOR_ROLES: IONIC_NATIVE_COLOR_ROLES,
   TARGET_MAPPING_TEMPLATES: TARGET_MAPPING_TEMPLATES,
   getNativeMapping: getNativeMapping,
@@ -255,6 +283,7 @@ module.exports = {
   getTargetTemplate: getTargetTemplate,
   normalizeTokenName: normalizeTokenName,
   resolveBootstrapProbableGlobalColorVariable: resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapShadowGlobalVariable: resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole: resolveBootstrapSemanticColorRole,
   resolveIonicNativeColorRole: resolveIonicNativeColorRole,
 };
