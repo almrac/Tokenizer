@@ -1300,12 +1300,6 @@
     var unsupportedTopLevel;
     var supportedPresentGroups;
     var ignoredGroups;
-    var colorKeys;
-    var ignoredColorKeys;
-    var shadowKeys;
-    var ignoredShadowKeys;
-    var radiusEntries;
-    var ignoredRadiusKeys;
     var i;
     var groupName;
 
