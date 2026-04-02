@@ -1,4 +1,4 @@
-const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
+const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets, toKebabCase } = require('./naming');
 const {
   getNativeMapping,
   isBootstrapTypographyTokenMappable,
@@ -21,7 +21,7 @@ const BOOTSTRAP_COLOR_NAMES = {
 };
 const BOOTSTRAP_COLOR_ORDER = ['primary', 'secondary', 'success', 'info', 'warning', 'danger', 'light', 'dark'];
 
-// Bootstrap output is limited to recognized color overrides plus the spacers map.
+// Bootstrap output uses native Sass slots first and emits explicit $tk-* fallbacks for useful extra tokens.
 function generateBootstrap(tokens) {
   const groups = getTokenGroups(tokens);
   const lines = [];
@@ -32,13 +32,18 @@ function generateBootstrap(tokens) {
   const colorEntries = [];
   const typographyBaseLines = [];
   const typographyMapLines = [];
+  const typographyFallbackLines = [];
 
-  function pickBaseValue(bucket) {
+  function buildExtendedSassVariable(group, tokenName) {
+    return '$tk-' + group + '-' + (toKebabCase(tokenName) || tokenName);
+  }
+
+  function pickBaseEntry(bucket) {
     if (bucket.base) {
-      return bucket.base;
+      return { name: 'base', value: bucket.base };
     }
     if (bucket.body) {
-      return bucket.body;
+      return { name: 'body', value: bucket.body };
     }
 
     const keys = getSortedKeys(bucket);
@@ -46,21 +51,27 @@ function generateBootstrap(tokens) {
       return null;
     }
 
-    return bucket[keys[0]];
+    return {
+      name: keys[0],
+      value: bucket[keys[0]],
+    };
   }
 
-  function pickBucketValue(bucket, preferredKeys) {
+  function pickBucketEntry(bucket, preferredKeys) {
     if (!bucket) {
       return null;
     }
 
     for (let i = 0; i < preferredKeys.length; i += 1) {
       if (bucket[preferredKeys[i]]) {
-        return bucket[preferredKeys[i]];
+        return {
+          name: preferredKeys[i],
+          value: bucket[preferredKeys[i]],
+        };
       }
     }
 
-    return pickBaseValue(bucket);
+    return pickBaseEntry(bucket);
   }
 
   function buildScssMap(variableName, bucket, keyFilter) {
@@ -93,6 +104,7 @@ function generateBootstrap(tokens) {
   const colorRoleAssignments = {};
   const globalColorAssignments = {};
   const globalColorOrder = ['$body-color', '$body-bg', '$border-color'];
+  const consumedColorKeys = {};
 
   for (let i = 0; i < colorKeys.length; i += 1) {
     const key = colorKeys[i];
@@ -107,6 +119,7 @@ function generateBootstrap(tokens) {
       if (!previous || score > previous.score) {
         colorRoleAssignments[role] = {
           value: groups.colors[key],
+          key: key,
           score: score,
         };
       }
@@ -122,6 +135,7 @@ function generateBootstrap(tokens) {
       if (!previous || score > previous.score) {
         globalColorAssignments[probableGlobalVariable] = {
           value: groups.colors[key],
+          key: key,
           score: score,
         };
       }
@@ -139,6 +153,7 @@ function generateBootstrap(tokens) {
     if (BOOTSTRAP_COLOR_NAMES[role]) {
       const colorVariable = getNativeMapping('bootstrap', 'colors.' + role) || '$' + role;
       colorEntries.push(colorVariable + ': ' + assignment.value + ';');
+      consumedColorKeys[assignment.key] = true;
     }
   }
 
@@ -151,6 +166,17 @@ function generateBootstrap(tokens) {
     }
 
     colorEntries.push(variableName + ': ' + assignment.value + ';');
+    consumedColorKeys[assignment.key] = true;
+  }
+
+  for (let i = 0; i < colorKeys.length; i += 1) {
+    const key = colorKeys[i];
+
+    if (consumedColorKeys[key]) {
+      continue;
+    }
+
+    colorEntries.push(buildExtendedSassVariable('color', key) + ': ' + groups.colors[key] + ';');
   }
 
   if (colorEntries.length > 0) {
@@ -173,30 +199,41 @@ function generateBootstrap(tokens) {
     lines.push(');');
   }
 
-  const fontFamilyBase = pickBucketValue(typographyBuckets.fontFamily, ['base', 'body']);
-  const fontSizeBase = pickBucketValue(typographyBuckets.fontSize, ['body', 'base']);
-  const fontWeightBase = pickBucketValue(typographyBuckets.fontWeight, ['regular', 'base']);
-  const lineHeightBase = pickBucketValue(typographyBuckets.lineHeight, ['body', 'base']);
+  const consumedTypography = {
+    fontFamily: {},
+    fontSize: {},
+    fontWeight: {},
+    lineHeight: {},
+    letterSpacing: {},
+  };
+  const fontFamilyBase = pickBucketEntry(typographyBuckets.fontFamily, ['base', 'body']);
+  const fontSizeBase = pickBucketEntry(typographyBuckets.fontSize, ['body', 'base']);
+  const fontWeightBase = pickBucketEntry(typographyBuckets.fontWeight, ['regular', 'base']);
+  const lineHeightBase = pickBucketEntry(typographyBuckets.lineHeight, ['body', 'base']);
 
   if (fontFamilyBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase + ';'
+      (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase.value + ';'
     );
+    consumedTypography.fontFamily[fontFamilyBase.name] = true;
   }
   if (fontSizeBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase + ';'
+      (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase.value + ';'
     );
+    consumedTypography.fontSize[fontSizeBase.name] = true;
   }
   if (fontWeightBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase + ';'
+      (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase.value + ';'
     );
+    consumedTypography.fontWeight[fontWeightBase.name] = true;
   }
   if (lineHeightBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase + ';'
+      (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase.value + ';'
     );
+    consumedTypography.lineHeight[lineHeightBase.name] = true;
   }
 
   const fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize, isBootstrapTypographyTokenMappable);
@@ -213,7 +250,69 @@ function generateBootstrap(tokens) {
     typographyMapLines.push(...lineHeightsMap);
   }
 
-  if (typographyBaseLines.length > 0 || typographyMapLines.length > 0) {
+  const fontSizeKeys = getSortedKeys(typographyBuckets.fontSize);
+  const fontWeightKeys = getSortedKeys(typographyBuckets.fontWeight);
+  const lineHeightKeys = getSortedKeys(typographyBuckets.lineHeight);
+  const fontFamilyKeys = getSortedKeys(typographyBuckets.fontFamily);
+  const letterSpacingKeys = getSortedKeys(typographyBuckets.letterSpacing);
+
+  for (let i = 0; i < fontSizeKeys.length; i += 1) {
+    const key = fontSizeKeys[i];
+    if (isBootstrapTypographyTokenMappable(key)) {
+      consumedTypography.fontSize[key] = true;
+    }
+  }
+  for (let i = 0; i < fontWeightKeys.length; i += 1) {
+    const key = fontWeightKeys[i];
+    if (isBootstrapTypographyTokenMappable(key)) {
+      consumedTypography.fontWeight[key] = true;
+    }
+  }
+  for (let i = 0; i < lineHeightKeys.length; i += 1) {
+    const key = lineHeightKeys[i];
+    if (isBootstrapTypographyTokenMappable(key)) {
+      consumedTypography.lineHeight[key] = true;
+    }
+  }
+
+  for (let i = 0; i < fontFamilyKeys.length; i += 1) {
+    const key = fontFamilyKeys[i];
+    if (!consumedTypography.fontFamily[key]) {
+      typographyFallbackLines.push(
+        buildExtendedSassVariable('font-family', key) + ': ' + typographyBuckets.fontFamily[key] + ';'
+      );
+    }
+  }
+  for (let i = 0; i < fontSizeKeys.length; i += 1) {
+    const key = fontSizeKeys[i];
+    if (!consumedTypography.fontSize[key]) {
+      typographyFallbackLines.push(buildExtendedSassVariable('font-size', key) + ': ' + typographyBuckets.fontSize[key] + ';');
+    }
+  }
+  for (let i = 0; i < fontWeightKeys.length; i += 1) {
+    const key = fontWeightKeys[i];
+    if (!consumedTypography.fontWeight[key]) {
+      typographyFallbackLines.push(
+        buildExtendedSassVariable('font-weight', key) + ': ' + typographyBuckets.fontWeight[key] + ';'
+      );
+    }
+  }
+  for (let i = 0; i < lineHeightKeys.length; i += 1) {
+    const key = lineHeightKeys[i];
+    if (!consumedTypography.lineHeight[key]) {
+      typographyFallbackLines.push(
+        buildExtendedSassVariable('line-height', key) + ': ' + typographyBuckets.lineHeight[key] + ';'
+      );
+    }
+  }
+  for (let i = 0; i < letterSpacingKeys.length; i += 1) {
+    const key = letterSpacingKeys[i];
+    typographyFallbackLines.push(
+      buildExtendedSassVariable('letter-spacing', key) + ': ' + typographyBuckets.letterSpacing[key] + ';'
+    );
+  }
+
+  if (typographyBaseLines.length > 0 || typographyMapLines.length > 0 || typographyFallbackLines.length > 0) {
     if (lines.length > 0) {
       lines.push('');
     }
@@ -230,11 +329,21 @@ function generateBootstrap(tokens) {
         lines.push(typographyMapLines[i]);
       }
     }
+
+    if (typographyFallbackLines.length > 0) {
+      if (typographyBaseLines.length > 0 || typographyMapLines.length > 0) {
+        lines.push('');
+      }
+      for (let i = 0; i < typographyFallbackLines.length; i += 1) {
+        lines.push(typographyFallbackLines[i]);
+      }
+    }
   }
 
   if (radiusEntries.length > 0) {
     const radiusMap = {};
     const radiusLines = [];
+    const consumedRadiusKeys = {};
 
     for (let i = 0; i < radiusEntries.length; i += 1) {
       radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
@@ -242,10 +351,12 @@ function generateBootstrap(tokens) {
 
     if (radiusMap.sm) {
       radiusLines.push((getNativeMapping('bootstrap', 'radius.sm') || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
+      consumedRadiusKeys.sm = true;
     }
 
     if (radiusMap.lg) {
       radiusLines.push((getNativeMapping('bootstrap', 'radius.lg') || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
+      consumedRadiusKeys.lg = true;
     }
 
     if (radiusMap.base || radiusMap.default || radiusMap.md) {
@@ -255,6 +366,23 @@ function generateBootstrap(tokens) {
         resolveBootstrapRadiusVariable('md') ||
         '$border-radius';
       radiusLines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
+      if (radiusMap.md) {
+        consumedRadiusKeys.md = true;
+      }
+      if (radiusMap.default) {
+        consumedRadiusKeys.default = true;
+      }
+      if (radiusMap.base) {
+        consumedRadiusKeys.base = true;
+      }
+    }
+
+    for (let i = 0; i < radiusEntries.length; i += 1) {
+      const name = radiusEntries[i].name;
+      if (consumedRadiusKeys[name]) {
+        continue;
+      }
+      radiusLines.push(buildExtendedSassVariable('radius', name) + ': ' + radiusEntries[i].value + ';');
     }
 
     if (radiusLines.length > 0) {
@@ -269,6 +397,8 @@ function generateBootstrap(tokens) {
   if (shadowEntries.length > 0) {
     const globalShadowAssignments = {};
     const globalShadowOrder = ['$box-shadow-sm', '$box-shadow'];
+    const consumedShadowKeys = {};
+    const shadowLines = [];
 
     for (let i = 0; i < shadowEntries.length; i += 1) {
       const name = shadowEntries[i].name;
@@ -284,27 +414,38 @@ function generateBootstrap(tokens) {
       if (!previous || score > previous.score) {
         globalShadowAssignments[globalVariable] = {
           value: shadowEntries[i].value,
+          key: name,
           score: score,
         };
       }
     }
 
-    if (Object.keys(globalShadowAssignments).length > 0) {
+    for (let i = 0; i < globalShadowOrder.length; i += 1) {
+      const variableName = globalShadowOrder[i];
+      const assignment = globalShadowAssignments[variableName];
+
+      if (!assignment) {
+        continue;
+      }
+
+      shadowLines.push(variableName + ': ' + assignment.value + ';');
+      consumedShadowKeys[assignment.key] = true;
+    }
+
+    for (let i = 0; i < shadowEntries.length; i += 1) {
+      const name = shadowEntries[i].name;
+      if (consumedShadowKeys[name]) {
+        continue;
+      }
+      shadowLines.push(buildExtendedSassVariable('shadow', name) + ': ' + shadowEntries[i].value + ';');
+    }
+
+    if (shadowLines.length > 0) {
       if (lines.length > 0) {
         lines.push('');
       }
       lines.push('/* Shadows */');
-
-      for (let i = 0; i < globalShadowOrder.length; i += 1) {
-        const variableName = globalShadowOrder[i];
-        const assignment = globalShadowAssignments[variableName];
-
-        if (!assignment) {
-          continue;
-        }
-
-        lines.push(variableName + ': ' + assignment.value + ';');
-      }
+      lines.push(...shadowLines);
     }
   }
 

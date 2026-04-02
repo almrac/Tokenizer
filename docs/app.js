@@ -137,7 +137,7 @@
     },
     bootstrap: {
       target: 'bootstrap',
-      strategy: 'native-first',
+      strategy: 'native-first-with-extended-fallback',
       nativeMappings: {
         'colors.primary': '$primary',
         'colors.secondary': '$secondary',
@@ -169,11 +169,11 @@
         shadows: 'bootstrap.scss.shadows'
       },
       groupFallbacks: {
-        colors: 'ignore-non-standard',
+        colors: 'extended-sass-variable',
         spacing: 'scoped-map',
-        typography: 'scoped-map-or-custom',
-        radius: 'scoped-variables',
-        shadows: 'scoped-variables'
+        typography: 'native-and-scss-maps-then-extended-sass-variable',
+        radius: 'native-then-extended-sass-variable',
+        shadows: 'native-then-extended-sass-variable'
       }
     },
     tailwind: {
@@ -1348,50 +1348,6 @@
       warnings.push('El target "' + target + '" ignora los grupos: ' + joinQuoted(ignoredGroups) + '.');
     }
 
-    if (target === 'bootstrap' && isPlainObject(tokens.colors)) {
-      colorKeys = getSortedKeys(tokens.colors);
-      ignoredColorKeys = colorKeys.filter(function (key) {
-        var mappedRole = resolveBootstrapSemanticColorRole(key);
-        var probableGlobal = resolveBootstrapProbableGlobalColorVariable(key);
-
-        if (mappedRole && bootstrapColorNames[mappedRole]) {
-          return false;
-        }
-
-        return !probableGlobal;
-      });
-
-      if (ignoredColorKeys.length > 0) {
-        warnings.push(
-          'Bootstrap solo aplica colores semánticos/globales claros. Se ignorarán: ' + joinQuoted(ignoredColorKeys) + '.'
-        );
-      }
-    }
-
-    if (target === 'bootstrap' && isPlainObject(tokens.shadows)) {
-      shadowKeys = getSortedKeys(tokens.shadows);
-      ignoredShadowKeys = shadowKeys.filter(function (key) {
-        return !resolveBootstrapShadowGlobalVariable(key);
-      });
-
-      if (ignoredShadowKeys.length > 0) {
-        warnings.push(
-          'Bootstrap solo aplica sombras globales claras. Se ignorarán: ' + joinQuoted(ignoredShadowKeys) + '.'
-        );
-      }
-    }
-
-    if (target === 'bootstrap' && isPlainObject(tokens.radius)) {
-      radiusEntries = flattenTokenEntries(tokens.radius);
-      ignoredRadiusKeys = radiusEntries
-        .map(function (entry) { return entry.name; })
-        .filter(function (key) { return !resolveBootstrapRadiusVariable(key); });
-
-      if (ignoredRadiusKeys.length > 0) {
-        warnings.push('Bootstrap solo aplica radius globales claros. Se ignorarán: ' + joinQuoted(ignoredRadiusKeys) + '.');
-      }
-    }
-
     if (isPlainObject(tokens.typography)) {
       var typographyBuckets = getTypographyBuckets(tokens.typography);
       var hasTypographyMappings =
@@ -1407,49 +1363,6 @@
         );
       }
 
-      if (target === 'bootstrap' && Object.keys(typographyBuckets.letterSpacing).length > 0) {
-        warnings.push(
-          'Bootstrap no tiene una variable global equivalente para "letterSpacing"; estos tokens se omiten.'
-        );
-      }
-
-      if (target === 'bootstrap') {
-        var ignoredTypographyKeys = [];
-        var familyKeys = Object.keys(typographyBuckets.fontFamily);
-        var sizeKeys = Object.keys(typographyBuckets.fontSize);
-        var weightKeys = Object.keys(typographyBuckets.fontWeight);
-        var lineHeightKeys = Object.keys(typographyBuckets.lineHeight);
-
-        for (i = 0; i < familyKeys.length; i += 1) {
-          if (familyKeys[i] !== 'base' && familyKeys[i] !== 'body') {
-            ignoredTypographyKeys.push('fontFamily.' + familyKeys[i]);
-          }
-        }
-
-        for (i = 0; i < sizeKeys.length; i += 1) {
-          if (!isBootstrapTypographyTokenMappable(sizeKeys[i])) {
-            ignoredTypographyKeys.push('fontSize.' + sizeKeys[i]);
-          }
-        }
-
-        for (i = 0; i < weightKeys.length; i += 1) {
-          if (!isBootstrapTypographyTokenMappable(weightKeys[i])) {
-            ignoredTypographyKeys.push('fontWeight.' + weightKeys[i]);
-          }
-        }
-
-        for (i = 0; i < lineHeightKeys.length; i += 1) {
-          if (!isBootstrapTypographyTokenMappable(lineHeightKeys[i])) {
-            ignoredTypographyKeys.push('lineHeight.' + lineHeightKeys[i]);
-          }
-        }
-
-        if (ignoredTypographyKeys.length > 0) {
-          warnings.push(
-            'Bootstrap omite claves tipográficas sin equivalente global claro: ' + joinQuoted(ignoredTypographyKeys) + '.'
-          );
-        }
-      }
     }
 
     return {
@@ -1953,22 +1866,29 @@
     var colorEntries = [];
     var typographyBaseLines = [];
     var typographyMapLines = [];
+    var typographyFallbackLines = [];
     var i;
-    var radiusMap = {};
 
-    function pickBaseValue(bucket) {
-      var keys;
-      if (bucket.base) {
-        return bucket.base;
-      }
-      if (bucket.body) {
-        return bucket.body;
-      }
-      keys = getSortedKeys(bucket);
-      return keys.length > 0 ? bucket[keys[0]] : null;
+    function buildExtendedSassVariable(group, tokenName) {
+      return '$tk-' + group + '-' + (toKebabCase(tokenName) || tokenName);
     }
 
-    function pickBucketValue(bucket, preferredKeys) {
+    function pickBaseEntry(bucket) {
+      var keys;
+      if (bucket.base) {
+        return { name: 'base', value: bucket.base };
+      }
+      if (bucket.body) {
+        return { name: 'body', value: bucket.body };
+      }
+      keys = getSortedKeys(bucket);
+      if (keys.length === 0) {
+        return null;
+      }
+      return { name: keys[0], value: bucket[keys[0]] };
+    }
+
+    function pickBucketEntry(bucket, preferredKeys) {
       var j;
 
       if (!bucket) {
@@ -1977,11 +1897,14 @@
 
       for (j = 0; j < preferredKeys.length; j += 1) {
         if (bucket[preferredKeys[j]]) {
-          return bucket[preferredKeys[j]];
+          return {
+            name: preferredKeys[j],
+            value: bucket[preferredKeys[j]]
+          };
         }
       }
 
-      return pickBaseValue(bucket);
+      return pickBaseEntry(bucket);
     }
 
     function buildScssMap(variableName, bucket, keyFilter) {
@@ -2013,6 +1936,7 @@
     var colorRoleAssignments = {};
     var globalColorAssignments = {};
     var globalColorOrder = ['$body-color', '$body-bg', '$border-color'];
+    var consumedColorKeys = {};
 
     for (i = 0; i < colorKeys.length; i += 1) {
       var tokenName = colorKeys[i];
@@ -2030,6 +1954,7 @@
         if (!previous || score > previous.score) {
           colorRoleAssignments[role] = {
             value: groups.colors[tokenName],
+            key: tokenName,
             score: score
           };
         }
@@ -2045,6 +1970,7 @@
         if (!previous || score > previous.score) {
           globalColorAssignments[probableGlobalVariable] = {
             value: groups.colors[tokenName],
+            key: tokenName,
             score: score
           };
         }
@@ -2062,6 +1988,7 @@
       if (bootstrapColorNames[roleName]) {
         var colorVariable = getNativeMapping('bootstrap', 'colors.' + roleName) || ('$' + roleName);
         colorEntries.push(colorVariable + ': ' + assignment.value + ';');
+        consumedColorKeys[assignment.key] = true;
       }
     }
 
@@ -2074,6 +2001,17 @@
       }
 
       colorEntries.push(globalVariableName + ': ' + globalAssignment.value + ';');
+      consumedColorKeys[globalAssignment.key] = true;
+    }
+
+    for (i = 0; i < colorKeys.length; i += 1) {
+      var colorKey = colorKeys[i];
+
+      if (consumedColorKeys[colorKey]) {
+        continue;
+      }
+
+      colorEntries.push(buildExtendedSassVariable('color', colorKey) + ': ' + groups.colors[colorKey] + ';');
     }
 
     if (colorEntries.length > 0) {
@@ -2095,30 +2033,41 @@
       lines.push(');');
     }
 
-    var fontFamilyBase = pickBucketValue(typographyBuckets.fontFamily, ['base', 'body']);
-    var fontSizeBase = pickBucketValue(typographyBuckets.fontSize, ['body', 'base']);
-    var fontWeightBase = pickBucketValue(typographyBuckets.fontWeight, ['regular', 'base']);
-    var lineHeightBase = pickBucketValue(typographyBuckets.lineHeight, ['body', 'base']);
+    var consumedTypography = {
+      fontFamily: {},
+      fontSize: {},
+      fontWeight: {},
+      lineHeight: {},
+      letterSpacing: {}
+    };
+    var fontFamilyBase = pickBucketEntry(typographyBuckets.fontFamily, ['base', 'body']);
+    var fontSizeBase = pickBucketEntry(typographyBuckets.fontSize, ['body', 'base']);
+    var fontWeightBase = pickBucketEntry(typographyBuckets.fontWeight, ['regular', 'base']);
+    var lineHeightBase = pickBucketEntry(typographyBuckets.lineHeight, ['body', 'base']);
 
     if (fontFamilyBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase + ';'
+        (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase.value + ';'
       );
+      consumedTypography.fontFamily[fontFamilyBase.name] = true;
     }
     if (fontSizeBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase + ';'
+        (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase.value + ';'
       );
+      consumedTypography.fontSize[fontSizeBase.name] = true;
     }
     if (fontWeightBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase + ';'
+        (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase.value + ';'
       );
+      consumedTypography.fontWeight[fontWeightBase.name] = true;
     }
     if (lineHeightBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase + ';'
+        (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase.value + ';'
       );
+      consumedTypography.lineHeight[lineHeightBase.name] = true;
     }
 
     var fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize, isBootstrapTypographyTokenMappable);
@@ -2135,7 +2084,63 @@
       typographyMapLines = typographyMapLines.concat(lineHeightsMap);
     }
 
-    if (typographyBaseLines.length > 0 || typographyMapLines.length > 0) {
+    var fontSizeKeys = getSortedKeys(typographyBuckets.fontSize);
+    var fontWeightKeys = getSortedKeys(typographyBuckets.fontWeight);
+    var lineHeightKeys = getSortedKeys(typographyBuckets.lineHeight);
+    var fontFamilyKeys = getSortedKeys(typographyBuckets.fontFamily);
+    var letterSpacingKeys = getSortedKeys(typographyBuckets.letterSpacing);
+
+    for (i = 0; i < fontSizeKeys.length; i += 1) {
+      if (isBootstrapTypographyTokenMappable(fontSizeKeys[i])) {
+        consumedTypography.fontSize[fontSizeKeys[i]] = true;
+      }
+    }
+    for (i = 0; i < fontWeightKeys.length; i += 1) {
+      if (isBootstrapTypographyTokenMappable(fontWeightKeys[i])) {
+        consumedTypography.fontWeight[fontWeightKeys[i]] = true;
+      }
+    }
+    for (i = 0; i < lineHeightKeys.length; i += 1) {
+      if (isBootstrapTypographyTokenMappable(lineHeightKeys[i])) {
+        consumedTypography.lineHeight[lineHeightKeys[i]] = true;
+      }
+    }
+
+    for (i = 0; i < fontFamilyKeys.length; i += 1) {
+      if (!consumedTypography.fontFamily[fontFamilyKeys[i]]) {
+        typographyFallbackLines.push(
+          buildExtendedSassVariable('font-family', fontFamilyKeys[i]) + ': ' + typographyBuckets.fontFamily[fontFamilyKeys[i]] + ';'
+        );
+      }
+    }
+    for (i = 0; i < fontSizeKeys.length; i += 1) {
+      if (!consumedTypography.fontSize[fontSizeKeys[i]]) {
+        typographyFallbackLines.push(
+          buildExtendedSassVariable('font-size', fontSizeKeys[i]) + ': ' + typographyBuckets.fontSize[fontSizeKeys[i]] + ';'
+        );
+      }
+    }
+    for (i = 0; i < fontWeightKeys.length; i += 1) {
+      if (!consumedTypography.fontWeight[fontWeightKeys[i]]) {
+        typographyFallbackLines.push(
+          buildExtendedSassVariable('font-weight', fontWeightKeys[i]) + ': ' + typographyBuckets.fontWeight[fontWeightKeys[i]] + ';'
+        );
+      }
+    }
+    for (i = 0; i < lineHeightKeys.length; i += 1) {
+      if (!consumedTypography.lineHeight[lineHeightKeys[i]]) {
+        typographyFallbackLines.push(
+          buildExtendedSassVariable('line-height', lineHeightKeys[i]) + ': ' + typographyBuckets.lineHeight[lineHeightKeys[i]] + ';'
+        );
+      }
+    }
+    for (i = 0; i < letterSpacingKeys.length; i += 1) {
+      typographyFallbackLines.push(
+        buildExtendedSassVariable('letter-spacing', letterSpacingKeys[i]) + ': ' + typographyBuckets.letterSpacing[letterSpacingKeys[i]] + ';'
+      );
+    }
+
+    if (typographyBaseLines.length > 0 || typographyMapLines.length > 0 || typographyFallbackLines.length > 0) {
       if (lines.length > 0) {
         lines.push('');
       }
@@ -2152,20 +2157,34 @@
           lines.push(typographyMapLines[i]);
         }
       }
+
+      if (typographyFallbackLines.length > 0) {
+        if (typographyBaseLines.length > 0 || typographyMapLines.length > 0) {
+          lines.push('');
+        }
+        for (i = 0; i < typographyFallbackLines.length; i += 1) {
+          lines.push(typographyFallbackLines[i]);
+        }
+      }
     }
 
     if (radiusEntries.length > 0) {
+      var radiusMap = {};
       var radiusLines = [];
+      var consumedRadiusKeys = {};
+
       for (i = 0; i < radiusEntries.length; i += 1) {
         radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
       }
 
       if (radiusMap.sm) {
         radiusLines.push((getNativeMapping('bootstrap', 'radius.sm') || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
+        consumedRadiusKeys.sm = true;
       }
 
       if (radiusMap.lg) {
         radiusLines.push((getNativeMapping('bootstrap', 'radius.lg') || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
+        consumedRadiusKeys.lg = true;
       }
 
       if (radiusMap.base || radiusMap.default || radiusMap.md) {
@@ -2175,6 +2194,23 @@
           resolveBootstrapRadiusVariable('md') ||
           '$border-radius';
         radiusLines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
+        if (radiusMap.md) {
+          consumedRadiusKeys.md = true;
+        }
+        if (radiusMap.default) {
+          consumedRadiusKeys.default = true;
+        }
+        if (radiusMap.base) {
+          consumedRadiusKeys.base = true;
+        }
+      }
+
+      for (i = 0; i < radiusEntries.length; i += 1) {
+        var radiusName = radiusEntries[i].name;
+        if (consumedRadiusKeys[radiusName]) {
+          continue;
+        }
+        radiusLines.push(buildExtendedSassVariable('radius', radiusName) + ': ' + radiusEntries[i].value + ';');
       }
 
       if (radiusLines.length > 0) {
@@ -2191,6 +2227,8 @@
     if (shadowEntries.length > 0) {
       var globalShadowAssignments = {};
       var globalShadowOrder = ['$box-shadow-sm', '$box-shadow'];
+      var consumedShadowKeys = {};
+      var shadowLines = [];
 
       for (i = 0; i < shadowEntries.length; i += 1) {
         var shadowName = shadowEntries[i].name;
@@ -2210,26 +2248,39 @@
         if (!previousShadow || shadowScore > previousShadow.score) {
           globalShadowAssignments[globalShadowVariable] = {
             value: shadowEntries[i].value,
+            key: shadowName,
             score: shadowScore
           };
         }
       }
 
-      if (Object.keys(globalShadowAssignments).length > 0) {
+      for (i = 0; i < globalShadowOrder.length; i += 1) {
+        var globalShadowName = globalShadowOrder[i];
+        var globalShadowAssignment = globalShadowAssignments[globalShadowName];
+
+        if (!globalShadowAssignment) {
+          continue;
+        }
+
+        shadowLines.push(globalShadowName + ': ' + globalShadowAssignment.value + ';');
+        consumedShadowKeys[globalShadowAssignment.key] = true;
+      }
+
+      for (i = 0; i < shadowEntries.length; i += 1) {
+        var shadowKey = shadowEntries[i].name;
+        if (consumedShadowKeys[shadowKey]) {
+          continue;
+        }
+        shadowLines.push(buildExtendedSassVariable('shadow', shadowKey) + ': ' + shadowEntries[i].value + ';');
+      }
+
+      if (shadowLines.length > 0) {
         if (lines.length > 0) {
           lines.push('');
         }
         lines.push('/* Shadows */');
-
-        for (i = 0; i < globalShadowOrder.length; i += 1) {
-          var globalShadowName = globalShadowOrder[i];
-          var globalShadowAssignment = globalShadowAssignments[globalShadowName];
-
-          if (!globalShadowAssignment) {
-            continue;
-          }
-
-          lines.push(globalShadowName + ': ' + globalShadowAssignment.value + ';');
+        for (i = 0; i < shadowLines.length; i += 1) {
+          lines.push(shadowLines[i]);
         }
       }
     }

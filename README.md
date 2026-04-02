@@ -138,8 +138,7 @@ Notas por target:
 
 - `css`: variables custom con naming consistente para tipografía (`font-family`, `font-size`, `font-weight`, `line-height`, `letter-spacing`), radius y shadows.
 - `ionic`: mantiene variables nativas `--ion-color-*` para colores y usa fallback custom con prefijo para grupos no nativos.
-- `bootstrap`: prioriza overrides SCSS prácticos con estrategia en tres niveles para `colors` (mapeos semánticos seguros, globales probables y omisión con warning), además de `$spacers`, tipografía base/mapas, radius y shadows.  
-  `letterSpacing` se omite con warning por no tener variable global nativa equivalente.
+- `bootstrap`: Sass-first con política formal: mapeos nativos primero (`$primary`, `$font-family-base`, `$border-radius`, etc.), slots globales claros cuando aplica (`$body-color`, `$body-bg`, `$border-color`) y fallback explícito `$tk-*` para tokens útiles fuera de rango nativo.
 - `tailwind`: salida limpia bajo `theme.extend` con `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
 
 ## Plantillas internas de mapeo por framework (v0.8.0)
@@ -191,14 +190,14 @@ Resumen por framework:
 - `bootstrap`: estrategia en tres niveles:
   1) mapeos seguros nativos,
   2) mapeos globales probables cuando hay señal fuerte,
-  3) warning + omisión para tokens sin equivalente SCSS claro (por ejemplo ciertos `shadows` o `colors` específicos).
+  3) fallback explícito `$tk-*` para tokens útiles sin slot nativo/global claro; warning + omisión solo si el token realmente no es exportable.
 - `tailwind`: mapeo directo a `theme.extend.*` para `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
 
 Bootstrap (grupos ampliados):
 
-- `typography`: base prioriza `fontFamily.base`, `fontSize.body`, `fontWeight.regular`, `lineHeight.body`; claves tipográficas específicas/sin equivalente global claro se omiten con warning.
-- `radius`: aplica `sm`/`md|default`/`lg` como variables globales útiles (`$border-radius-sm`, `$border-radius`, `$border-radius-lg`) y omite radios específicos/ambiguos con warning.
-- `shadows`: aplica mapeo global claro (`sm -> $box-shadow-sm`, `md|default -> $box-shadow`) y omite variantes ambiguas con warning.
+- `typography`: base prioriza `fontFamily.base`, `fontSize.body`, `fontWeight.regular`, `lineHeight.body`; claves adicionales se preservan con fallback `$tk-*` cuando no hay slot nativo/global.
+- `radius`: aplica `sm`/`md|default`/`lg` como variables globales útiles (`$border-radius-sm`, `$border-radius`, `$border-radius-lg`) y preserva radios adicionales con `$tk-radius-*`.
+- `shadows`: aplica mapeo global claro (`sm -> $box-shadow-sm`, `md|default -> $box-shadow`) y preserva variantes adicionales con `$tk-shadow-*`.
 - `spacing`: mantiene mapeo en `$spacers`.
 
 ## Adapter de importación flatVariantCollection (colors-only, v0.8.0)
@@ -274,14 +273,14 @@ CLI (resumen ligero):
 - Se valida que los grupos top-level soportados (`colors`, `spacing`, `typography`, `radius`, `shadows`) sean objetos.
 - Si hay grupos top-level no soportados, se muestran como advertencia y se ignoran.
 - Si el target ignora algún grupo presente, se avisa pero la generación continúa.
-- Para `bootstrap`, se advierte cuando hay colores sin equivalencia semántica/global clara en variables SCSS de Bootstrap.
+- Para `bootstrap`, se advierte solo cuando un token no puede exportarse de forma segura ni como fallback extendido.
 - Si no hay grupos soportados con contenido, la generación se bloquea con error.
 
 Soporte por target:
 
 - `css`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
 - `ionic`: usa `colors` nativos y fallback custom para `spacing`, `typography`, `radius`, `shadows`
-- `bootstrap`: usa todos los grupos; en `colors` aplica primero roles semánticos seguros, luego globales probables (`$body-color`, `$border-color`, `$body-bg`) y omite el resto con warning
+- `bootstrap`: usa todos los grupos; en `colors` aplica primero roles semánticos seguros, luego globales probables (`$body-color`, `$border-color`, `$body-bg`) y después fallback `$tk-color-*` para el resto útil
 - `tailwind`: usa `colors`, `spacing`, `typography`, `radius`, `shadows`
 
 Reglas de comportamiento:
@@ -308,7 +307,7 @@ Feedback por entorno:
 - `bootstrap`:
   mapea `colors` de Bootstrap en tres niveles:
   roles semánticos seguros (`$primary`, `$secondary`, `$success`, `$danger`, `$warning`, `$info`, `$light`, `$dark`),
-  globales probables (`$body-color`, `$border-color`, `$body-bg`) y omisión con warning cuando no hay equivalencia clara.
+  globales probables (`$body-color`, `$border-color`, `$body-bg`) y fallback `$tk-color-*` cuando no hay equivalencia clara.
   También mantiene `$spacers`, variables de tipografía base (`$font-family-base`, `$font-size-base`, `$font-weight-base`, `$line-height-base`), mapas tipográficos (`$font-sizes`, `$font-weights`, `$line-heights`), `radius` y `shadows`.
 - `tailwind`:
   mapea a `theme.extend` en `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.

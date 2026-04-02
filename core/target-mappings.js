@@ -131,7 +131,7 @@ const TARGET_MAPPING_TEMPLATES = {
   },
   bootstrap: {
     target: 'bootstrap',
-    strategy: 'native-first',
+    strategy: 'native-first-with-extended-fallback',
     nativeMappings: {
       'colors.primary': '$primary',
       'colors.secondary': '$secondary',
@@ -163,11 +163,11 @@ const TARGET_MAPPING_TEMPLATES = {
       shadows: 'bootstrap.scss.shadows',
     },
     groupFallbacks: {
-      colors: 'ignore-non-standard',
+      colors: 'extended-sass-variable',
       spacing: 'scoped-map',
-      typography: 'scoped-map-or-custom',
-      radius: 'scoped-variables',
-      shadows: 'scoped-variables',
+      typography: 'native-and-scss-maps-then-extended-sass-variable',
+      radius: 'native-then-extended-sass-variable',
+      shadows: 'native-then-extended-sass-variable',
     },
   },
   tailwind: {

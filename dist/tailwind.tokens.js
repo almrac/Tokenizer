@@ -3,11 +3,11 @@ module.exports = {
     extend: {
       /* Colors */
       colors: {
+        "brand": "#7c4dff",
+        "danger": "#dc3545",
         "primary": "#0d6efd",
         "secondary": "#6c757d",
         "success": "#198754",
-        "danger": "#dc3545",
-        "brand": "#7c4dff",
       },
 
       /* Spacing */
