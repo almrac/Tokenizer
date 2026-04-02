@@ -314,6 +314,9 @@ function normalizeTypographyGroup(typographySource, normalizationNotes) {
 
 function normalizeLengthLikeLeaf(value) {
   if (typeof value === 'number' && Number.isFinite(value)) {
+    if (Object.is(value, 0) || value === 0) {
+      return '0';
+    }
     return String(value) + 'px';
   }
 
@@ -328,6 +331,9 @@ function normalizeLengthLikeLeaf(value) {
   }
 
   if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    if (Number(trimmed) === 0) {
+      return '0';
+    }
     return trimmed + 'px';
   }
 
@@ -368,7 +374,7 @@ function normalizeTypographyLengthValues(typographySource) {
     }
 
     if (key === 'fontSize' || key === 'lineHeight') {
-      normalized[key] = normalizeLengthLikeTree(value);
+      normalized[key] = key === 'lineHeight' ? normalizeLineHeightTree(value) : normalizeLengthLikeTree(value);
       continue;
     }
 
@@ -376,6 +382,54 @@ function normalizeTypographyLengthValues(typographySource) {
   }
 
   return normalized;
+}
+
+function normalizeLineHeightLeaf(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    if (Object.is(value, 0) || value === 0) {
+      return '0';
+    }
+    return String(value);
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return value;
+  }
+
+  if (/^normal$/i.test(trimmed)) {
+    return 'normal';
+  }
+
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    if (Number(trimmed) === 0) {
+      return '0';
+    }
+    return trimmed;
+  }
+
+  return value;
+}
+
+function normalizeLineHeightTree(value) {
+  if (isObjectRecord(value)) {
+    const normalized = {};
+    const keys = Object.keys(value);
+
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      normalized[key] = normalizeLineHeightTree(value[key]);
+    }
+
+    return normalized;
+  }
+
+  return normalizeLineHeightLeaf(value);
 }
 
 function normalizeTokenInput(rawTokens) {

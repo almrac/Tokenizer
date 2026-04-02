@@ -1354,6 +1354,9 @@
     var trimmed;
 
     if (typeof value === 'number' && Number.isFinite(value)) {
+      if (Object.is(value, 0) || value === 0) {
+        return '0';
+      }
       return String(value) + 'px';
     }
 
@@ -1368,6 +1371,9 @@
     }
 
     if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      if (Number(trimmed) === 0) {
+        return '0';
+      }
       return trimmed + 'px';
     }
 
@@ -1419,7 +1425,7 @@
       }
 
       if (key === 'fontSize' || key === 'lineHeight') {
-        normalized[key] = normalizeLengthLikeTree(value);
+        normalized[key] = key === 'lineHeight' ? normalizeLineHeightTree(value) : normalizeLengthLikeTree(value);
         continue;
       }
 
@@ -1427,6 +1433,61 @@
     }
 
     return normalized;
+  }
+
+  function normalizeLineHeightLeaf(value) {
+    var trimmed;
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      if (Object.is(value, 0) || value === 0) {
+        return '0';
+      }
+      return String(value);
+    }
+
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    trimmed = value.trim();
+
+    if (!trimmed) {
+      return value;
+    }
+
+    if (/^normal$/i.test(trimmed)) {
+      return 'normal';
+    }
+
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      if (Number(trimmed) === 0) {
+        return '0';
+      }
+      return trimmed;
+    }
+
+    return value;
+  }
+
+  function normalizeLineHeightTree(value) {
+    var normalized;
+    var keys;
+    var i;
+    var key;
+
+    if (isPlainObject(value)) {
+      normalized = {};
+      keys = Object.keys(value);
+
+      for (i = 0; i < keys.length; i += 1) {
+        key = keys[i];
+        normalized[key] = normalizeLineHeightTree(value[key]);
+      }
+
+      return normalized;
+    }
+
+    return normalizeLineHeightLeaf(value);
   }
 
   function normalizeTokenInput(rawTokens) {
