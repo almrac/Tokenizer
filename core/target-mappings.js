@@ -90,7 +90,14 @@ const TARGET_MAPPING_TEMPLATES = {
   css: {
     target: 'css',
     strategy: 'custom-prefix-fallback',
+    exportPolicy: {
+      nativeFirst: false,
+      probableMappings: false,
+      extendedFallback: 'default',
+      warnAndOmit: 'last-resort',
+    },
     nativeMappings: {},
+    probableMappings: {},
     groupRules: {
       colors: 'css.custom-properties.colors',
       spacing: 'css.custom-properties.spacing',
@@ -109,12 +116,19 @@ const TARGET_MAPPING_TEMPLATES = {
   ionic: {
     target: 'ionic',
     strategy: 'native-first',
+    exportPolicy: {
+      nativeFirst: true,
+      probableMappings: false,
+      extendedFallback: 'default',
+      warnAndOmit: 'last-resort',
+    },
     nativeMappings: Object.assign(
       buildIonicNativeColorMappings(),
       {
         'typography.fontFamily.base': '--ion-font-family',
       }
     ),
+    probableMappings: {},
     groupRules: {
       colors: 'ionic.css-variables.colors',
       spacing: 'css.custom-properties.spacing',
@@ -132,6 +146,12 @@ const TARGET_MAPPING_TEMPLATES = {
   bootstrap: {
     target: 'bootstrap',
     strategy: 'native-first-with-extended-fallback',
+    exportPolicy: {
+      nativeFirst: true,
+      probableMappings: true,
+      extendedFallback: 'explicit',
+      warnAndOmit: 'last-resort',
+    },
     nativeMappings: {
       'colors.primary': '$primary',
       'colors.secondary': '$secondary',
@@ -155,6 +175,15 @@ const TARGET_MAPPING_TEMPLATES = {
       'shadows.base': '$box-shadow',
       spacing: '$spacers',
     },
+    probableMappings: {
+      'colors.baseColor': '$body-color',
+      'colors.bodyColor': '$body-color',
+      'colors.baseBorderColor': '$border-color',
+      'colors.borderColor': '$border-color',
+      'colors.surface': '$body-bg',
+      'colors.baseBg': '$body-bg',
+      'colors.bodyBg': '$body-bg',
+    },
     groupRules: {
       colors: 'bootstrap.scss.colors',
       spacing: 'bootstrap.scss.spacers-map',
@@ -173,6 +202,12 @@ const TARGET_MAPPING_TEMPLATES = {
   tailwind: {
     target: 'tailwind',
     strategy: 'native-first',
+    exportPolicy: {
+      nativeFirst: true,
+      probableMappings: false,
+      extendedFallback: 'rare',
+      warnAndOmit: 'last-resort',
+    },
     nativeMappings: {
       colors: 'theme.extend.colors',
       spacing: 'theme.extend.spacing',
@@ -186,6 +221,7 @@ const TARGET_MAPPING_TEMPLATES = {
       radius: 'theme.extend.borderRadius',
       shadows: 'theme.extend.boxShadow',
     },
+    probableMappings: {},
     groupRules: {
       colors: 'tailwind.theme.extend.colors',
       spacing: 'tailwind.theme.extend.spacing',

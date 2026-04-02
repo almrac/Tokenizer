@@ -90,7 +90,14 @@
     css: {
       target: 'css',
       strategy: 'custom-prefix-fallback',
+      exportPolicy: {
+        nativeFirst: false,
+        probableMappings: false,
+        extendedFallback: 'default',
+        warnAndOmit: 'last-resort'
+      },
       nativeMappings: {},
+      probableMappings: {},
       groupRules: {
         colors: 'css.custom-properties.colors',
         spacing: 'css.custom-properties.spacing',
@@ -109,6 +116,12 @@
     ionic: {
       target: 'ionic',
       strategy: 'native-first',
+      exportPolicy: {
+        nativeFirst: true,
+        probableMappings: false,
+        extendedFallback: 'default',
+        warnAndOmit: 'last-resort'
+      },
       nativeMappings: {
         'colors.primary': '--ion-color-primary',
         'colors.secondary': '--ion-color-secondary',
@@ -121,6 +134,7 @@
         'colors.dark': '--ion-color-dark',
         'typography.fontFamily.base': '--ion-font-family'
       },
+      probableMappings: {},
       groupRules: {
         colors: 'ionic.css-variables.colors',
         spacing: 'css.custom-properties.spacing',
@@ -138,6 +152,12 @@
     bootstrap: {
       target: 'bootstrap',
       strategy: 'native-first-with-extended-fallback',
+      exportPolicy: {
+        nativeFirst: true,
+        probableMappings: true,
+        extendedFallback: 'explicit',
+        warnAndOmit: 'last-resort'
+      },
       nativeMappings: {
         'colors.primary': '$primary',
         'colors.secondary': '$secondary',
@@ -161,6 +181,15 @@
         'shadows.base': '$box-shadow',
         spacing: '$spacers'
       },
+      probableMappings: {
+        'colors.baseColor': '$body-color',
+        'colors.bodyColor': '$body-color',
+        'colors.baseBorderColor': '$border-color',
+        'colors.borderColor': '$border-color',
+        'colors.surface': '$body-bg',
+        'colors.baseBg': '$body-bg',
+        'colors.bodyBg': '$body-bg'
+      },
       groupRules: {
         colors: 'bootstrap.scss.colors',
         spacing: 'bootstrap.scss.spacers-map',
@@ -179,6 +208,12 @@
     tailwind: {
       target: 'tailwind',
       strategy: 'native-first',
+      exportPolicy: {
+        nativeFirst: true,
+        probableMappings: false,
+        extendedFallback: 'rare',
+        warnAndOmit: 'last-resort'
+      },
       nativeMappings: {
         colors: 'theme.extend.colors',
         spacing: 'theme.extend.spacing',
@@ -192,6 +227,7 @@
         radius: 'theme.extend.borderRadius',
         shadows: 'theme.extend.boxShadow'
       },
+      probableMappings: {},
       groupRules: {
         colors: 'tailwind.theme.extend.colors',
         spacing: 'tailwind.theme.extend.spacing',

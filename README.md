@@ -141,6 +141,21 @@ Notas por target:
 - `bootstrap`: Sass-first con política formal: mapeos nativos primero (`$primary`, `$font-family-base`, `$border-radius`, etc.), slots globales claros cuando aplica (`$body-color`, `$body-bg`, `$border-color`) y fallback explícito `$tk-*` para tokens útiles fuera de rango nativo.
 - `tailwind`: salida limpia bajo `theme.extend` con `colors`, `spacing`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing`, `borderRadius`, `boxShadow`.
 
+## Política formal de exportación (v0.8.3)
+
+Tokenizer aplica una política común en todos los targets (`css`, `ionic`, `bootstrap`, `tailwind`) y en todos los grupos (`colors`, `spacing`, `typography`, `radius`, `shadows`):
+
+1. native-first cuando existe un slot nativo claro.
+2. fallback extendido explícito cuando no hay slot nativo, pero el token sigue siendo útil.
+3. warning + omisión solo como último recurso.
+
+Notas por target:
+
+- `css`: fallback custom-prefix como estrategia normal (`--tk-*` o prefijo configurado).
+- `ionic`: usa slots nativos reales (`--ion-color-*`, `--ion-font-family`) solo cuando son claros; el resto va a fallback custom-prefix.
+- `bootstrap`: Sass-first; usa variables/mapas nativos y mapeos globales probables (`$body-color`, `$border-color`, `$body-bg`) cuando aplica, y fallback explícito no nativo (`$tk-*`) para tokens útiles fuera del set Bootstrap.
+- `tailwind`: prioriza `theme.extend` para todos los grupos soportados; fallback/omisión solo cuando no hay representación limpia.
+
 ## Plantillas internas de mapeo por framework (v0.8.0)
 
 Tokenizer incorpora una capa interna de plantillas de mapeo por target para mantener reglas explícitas y fáciles de ampliar.

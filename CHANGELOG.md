@@ -2,6 +2,21 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [v0.8.3] - 2026-04-02
+
+### Changed
+
+- Política formal de exportación aplicada de forma consistente en `css`, `ionic`, `bootstrap` y `tailwind`:
+  1) native-first, 2) fallback extendido explícito, 3) warning + omisión solo como último recurso.
+- Bootstrap deja de omitir por defecto tokens útiles fuera de slots nativos/globales y ahora los preserva con fallback explícito `$tk-*`:
+  - `colors` no nativos -> `$tk-color-*`
+  - `typography` adicional (incluido `letterSpacing`) -> `$tk-font-*` / `$tk-letter-spacing-*`
+  - `radius` adicional -> `$tk-radius-*`
+  - `shadows` adicional -> `$tk-shadow-*`
+- Validación ajustada para Bootstrap: se eliminan warnings de omisión que ya no aplican cuando existe fallback útil.
+- Capa de plantillas de mapeo ampliada con metadatos explícitos de política por target (`exportPolicy`, `probableMappings`) para formalizar native/probable/fallback/omit-last.
+- Alineación completa entre CLI (`core/*`) y preview web (`docs/app.js`) para la misma política de exportación.
+
 ## [v0.8.2] - 2026-04-02
 
 ### Changed
