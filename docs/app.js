@@ -538,6 +538,136 @@
     }).join(', ');
   }
 
+  function isColorValue(value) {
+    var text;
+
+    if (typeof value !== 'string') {
+      return false;
+    }
+
+    text = value.trim();
+
+    if (!text) {
+      return false;
+    }
+
+    if (/^#[0-9a-fA-F]{3}$/.test(text) || /^#[0-9a-fA-F]{4}$/.test(text) || /^#[0-9a-fA-F]{6}$/.test(text) || /^#[0-9a-fA-F]{8}$/.test(text)) {
+      return true;
+    }
+
+    if (/^rgba?\(.+\)$/i.test(text) || /^hsla?\(.+\)$/i.test(text)) {
+      return true;
+    }
+
+    if (/^transparent$/i.test(text) || /^currentcolor$/i.test(text)) {
+      return true;
+    }
+
+    if (/^var\(--[^)]+\)$/.test(text) || /^oklch\(.+\)$/i.test(text)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function isSpacingValue(value) {
+    var text;
+
+    if (typeof value === 'number') {
+      return Number.isFinite(value);
+    }
+
+    if (typeof value !== 'string') {
+      return false;
+    }
+
+    text = value.trim();
+
+    if (!text) {
+      return false;
+    }
+
+    if (text === '0' || /^-?\d+(\.\d+)?$/.test(text)) {
+      return true;
+    }
+
+    if (
+      /^-?\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)$/i.test(text) ||
+      /^(calc|min|max|clamp)\(.+\)$/i.test(text) ||
+      /^var\(--[^)]+\)$/.test(text)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function isShadowValue(value) {
+    var text;
+
+    if (typeof value !== 'string') {
+      return false;
+    }
+
+    text = value.trim();
+
+    if (!text) {
+      return false;
+    }
+
+    if (/^none$/i.test(text) || /^var\(--[^)]+\)$/.test(text)) {
+      return true;
+    }
+
+    if (
+      /(^|[\s,(])-?\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)(?=[\s,)])/i.test(text) ||
+      /(^|[\s,(])0(?=[\s,)])/i.test(text)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function sanitizeLeafGroup(source, predicate, pathPrefix, invalidPaths) {
+    var keys;
+    var i;
+    var key;
+    var value;
+    var path;
+    var sanitized;
+    var nested;
+
+    if (!isPlainObject(source)) {
+      return source;
+    }
+
+    sanitized = {};
+    keys = Object.keys(source);
+
+    for (i = 0; i < keys.length; i += 1) {
+      key = keys[i];
+      value = source[key];
+      path = pathPrefix ? pathPrefix + '.' + key : key;
+
+      if (isPlainObject(value)) {
+        nested = sanitizeLeafGroup(value, predicate, path, invalidPaths);
+        if (isPlainObject(nested) && Object.keys(nested).length > 0) {
+          sanitized[key] = nested;
+        }
+        continue;
+      }
+
+      if (predicate(value)) {
+        sanitized[key] = value;
+      } else {
+        invalidPaths.push(path);
+      }
+    }
+
+    return sanitized;
+  }
+
   function groupHasValues(tokens, groupName) {
     if (!isPlainObject(tokens) || !isPlainObject(tokens[groupName])) {
       return false;
@@ -1376,6 +1506,40 @@
 
     if (isPlainObject(normalized.typography)) {
       normalized.typography = normalizeTypographyLengthValues(normalized.typography);
+    }
+
+    var invalidColorPaths = [];
+    var invalidSpacingPaths = [];
+    var invalidShadowPaths = [];
+
+    if (isPlainObject(normalized.colors)) {
+      normalized.colors = sanitizeLeafGroup(normalized.colors, isColorValue, 'colors', invalidColorPaths);
+    }
+
+    if (isPlainObject(normalized.spacing)) {
+      normalized.spacing = sanitizeLeafGroup(normalized.spacing, isSpacingValue, 'spacing', invalidSpacingPaths);
+    }
+
+    if (isPlainObject(normalized.shadows)) {
+      normalized.shadows = sanitizeLeafGroup(normalized.shadows, isShadowValue, 'shadows', invalidShadowPaths);
+    }
+
+    if (invalidColorPaths.length > 0) {
+      normalizationNotes.push(
+        'Se omiten tokens inválidos en "colors": ' + joinQuoted(invalidColorPaths) + '.'
+      );
+    }
+
+    if (invalidSpacingPaths.length > 0) {
+      normalizationNotes.push(
+        'Se omiten tokens inválidos en "spacing": ' + joinQuoted(invalidSpacingPaths) + '.'
+      );
+    }
+
+    if (invalidShadowPaths.length > 0) {
+      normalizationNotes.push(
+        'Se omiten tokens inválidos en "shadows": ' + joinQuoted(invalidShadowPaths) + '.'
+      );
     }
 
     detectedGroups = supportedGroups.filter(function (groupName) {

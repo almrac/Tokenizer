@@ -488,6 +488,34 @@ function normalizeTokenInput(rawTokens) {
     normalized.typography = normalizeTypographyLengthValues(normalized.typography);
   }
 
+  const invalidColorPaths = [];
+  const invalidSpacingPaths = [];
+  const invalidShadowPaths = [];
+
+  if (isObjectRecord(normalized.colors)) {
+    normalized.colors = sanitizeLeafGroup(normalized.colors, isColorValue, 'colors', invalidColorPaths);
+  }
+
+  if (isObjectRecord(normalized.spacing)) {
+    normalized.spacing = sanitizeLeafGroup(normalized.spacing, isSpacingValue, 'spacing', invalidSpacingPaths);
+  }
+
+  if (isObjectRecord(normalized.shadows)) {
+    normalized.shadows = sanitizeLeafGroup(normalized.shadows, isShadowValue, 'shadows', invalidShadowPaths);
+  }
+
+  if (invalidColorPaths.length > 0) {
+    normalizationNotes.push('Se omiten tokens inválidos en "colors": ' + joinList(invalidColorPaths) + '.');
+  }
+
+  if (invalidSpacingPaths.length > 0) {
+    normalizationNotes.push('Se omiten tokens inválidos en "spacing": ' + joinList(invalidSpacingPaths) + '.');
+  }
+
+  if (invalidShadowPaths.length > 0) {
+    normalizationNotes.push('Se omiten tokens inválidos en "shadows": ' + joinList(invalidShadowPaths) + '.');
+  }
+
   detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));
   if (detectedGroups.length > 0) {
     importNotes.push(
@@ -526,6 +554,122 @@ function groupHasValues(tokens, groupName) {
 
 function joinList(values) {
   return values.map((value) => '"' + value + '"').join(', ');
+}
+
+function isColorValue(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const text = value.trim();
+
+  if (!text) {
+    return false;
+  }
+
+  if (/^#[0-9a-fA-F]{3}$/.test(text) || /^#[0-9a-fA-F]{4}$/.test(text) || /^#[0-9a-fA-F]{6}$/.test(text) || /^#[0-9a-fA-F]{8}$/.test(text)) {
+    return true;
+  }
+
+  if (/^rgba?\(.+\)$/i.test(text) || /^hsla?\(.+\)$/i.test(text)) {
+    return true;
+  }
+
+  if (/^transparent$/i.test(text) || /^currentcolor$/i.test(text)) {
+    return true;
+  }
+
+  if (/^var\(--[^)]+\)$/.test(text) || /^oklch\(.+\)$/i.test(text)) {
+    return true;
+  }
+
+  return false;
+}
+
+function isSpacingValue(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value);
+  }
+
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const text = value.trim();
+
+  if (!text) {
+    return false;
+  }
+
+  if (text === '0' || /^-?\d+(\.\d+)?$/.test(text)) {
+    return true;
+  }
+
+  if (
+    /^-?\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)$/i.test(text) ||
+    /^(calc|min|max|clamp)\(.+\)$/i.test(text) ||
+    /^var\(--[^)]+\)$/.test(text)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function isShadowValue(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const text = value.trim();
+
+  if (!text) {
+    return false;
+  }
+
+  if (/^none$/i.test(text) || /^var\(--[^)]+\)$/.test(text)) {
+    return true;
+  }
+
+  if (
+    /(^|[\s,(])-?\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)(?=[\s,)])/i.test(text) ||
+    /(^|[\s,(])0(?=[\s,)])/i.test(text)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function sanitizeLeafGroup(source, predicate, pathPrefix, invalidPaths) {
+  if (!isObjectRecord(source)) {
+    return source;
+  }
+
+  const sanitized = {};
+  const keys = Object.keys(source);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    const value = source[key];
+    const path = pathPrefix ? pathPrefix + '.' + key : key;
+
+    if (isObjectRecord(value)) {
+      const nested = sanitizeLeafGroup(value, predicate, path, invalidPaths);
+      if (isObjectRecord(nested) && Object.keys(nested).length > 0) {
+        sanitized[key] = nested;
+      }
+      continue;
+    }
+
+    if (predicate(value)) {
+      sanitized[key] = value;
+    } else {
+      invalidPaths.push(path);
+    }
+  }
+
+  return sanitized;
 }
 
 function validateTokenInput(tokens, target) {
