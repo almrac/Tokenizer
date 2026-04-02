@@ -196,8 +196,8 @@ Resumen por framework:
 
 Bootstrap (grupos ampliados):
 
-- `typography`: base prioriza `fontFamily.base`, `fontSize.body`, `fontWeight.regular`, `lineHeight.body`.
-- `radius`: mantiene `sm`/`md|default`/`lg` como variables globales útiles (`$border-radius-sm`, `$border-radius`, `$border-radius-lg`) y conserva overrides de nivel token.
+- `typography`: base prioriza `fontFamily.base`, `fontSize.body`, `fontWeight.regular`, `lineHeight.body`; claves tipográficas específicas/sin equivalente global claro se omiten con warning.
+- `radius`: aplica `sm`/`md|default`/`lg` como variables globales útiles (`$border-radius-sm`, `$border-radius`, `$border-radius-lg`) y omite radios específicos/ambiguos con warning.
 - `shadows`: aplica mapeo global claro (`sm -> $box-shadow-sm`, `md|default -> $box-shadow`) y omite variantes ambiguas con warning.
 - `spacing`: mantiene mapeo en `$spacers`.
 

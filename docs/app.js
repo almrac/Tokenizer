@@ -342,6 +342,69 @@
     return null;
   }
 
+  function isBootstrapTypographyTokenMappable(tokenName) {
+    var normalized = normalizeTokenName(tokenName);
+    var safeKeys = {
+      base: true,
+      body: true,
+      caption: true,
+      title: true,
+      display: true,
+      regular: true,
+      medium: true,
+      semibold: true,
+      bold: true,
+      light: true,
+      normal: true,
+      xxs: true,
+      xs: true,
+      sm: true,
+      md: true,
+      lg: true,
+      xl: true,
+      '2xl': true,
+      '3xl': true,
+      '4xl': true,
+      '5xl': true
+    };
+
+    if (!normalized) {
+      return false;
+    }
+
+    if (/^(hover|active|focus|disabled|pressed|selected|visited)(-|$)/.test(normalized)) {
+      return false;
+    }
+
+    if (/(hover|active|focus|disabled|overlay|component|button|input|card|modal|tooltip|popover|chip|badge|table|link)/.test(normalized)) {
+      return false;
+    }
+
+    if (/^\d+$/.test(normalized)) {
+      return true;
+    }
+
+    return !!safeKeys[normalized];
+  }
+
+  function resolveBootstrapRadiusVariable(tokenName) {
+    var normalized = normalizeTokenName(tokenName);
+
+    if (normalized === 'sm') {
+      return '$border-radius-sm';
+    }
+
+    if (normalized === 'lg') {
+      return '$border-radius-lg';
+    }
+
+    if (normalized === 'md' || normalized === 'default' || normalized === 'base') {
+      return '$border-radius';
+    }
+
+    return null;
+  }
+
   function buildTargetGroupSupport() {
     var targets = Object.keys(targetMappingTemplates);
     var support = {};
@@ -1121,6 +1184,8 @@
     var ignoredColorKeys;
     var shadowKeys;
     var ignoredShadowKeys;
+    var radiusEntries;
+    var ignoredRadiusKeys;
     var i;
     var groupName;
 
@@ -1232,6 +1297,17 @@
       }
     }
 
+    if (target === 'bootstrap' && isPlainObject(tokens.radius)) {
+      radiusEntries = flattenTokenEntries(tokens.radius);
+      ignoredRadiusKeys = radiusEntries
+        .map(function (entry) { return entry.name; })
+        .filter(function (key) { return !resolveBootstrapRadiusVariable(key); });
+
+      if (ignoredRadiusKeys.length > 0) {
+        warnings.push('Bootstrap solo aplica radius globales claros. Se ignorarán: ' + joinQuoted(ignoredRadiusKeys) + '.');
+      }
+    }
+
     if (isPlainObject(tokens.typography)) {
       var typographyBuckets = getTypographyBuckets(tokens.typography);
       var hasTypographyMappings =
@@ -1251,6 +1327,44 @@
         warnings.push(
           'Bootstrap no tiene una variable global equivalente para "letterSpacing"; estos tokens se omiten.'
         );
+      }
+
+      if (target === 'bootstrap') {
+        var ignoredTypographyKeys = [];
+        var familyKeys = Object.keys(typographyBuckets.fontFamily);
+        var sizeKeys = Object.keys(typographyBuckets.fontSize);
+        var weightKeys = Object.keys(typographyBuckets.fontWeight);
+        var lineHeightKeys = Object.keys(typographyBuckets.lineHeight);
+
+        for (i = 0; i < familyKeys.length; i += 1) {
+          if (familyKeys[i] !== 'base' && familyKeys[i] !== 'body') {
+            ignoredTypographyKeys.push('fontFamily.' + familyKeys[i]);
+          }
+        }
+
+        for (i = 0; i < sizeKeys.length; i += 1) {
+          if (!isBootstrapTypographyTokenMappable(sizeKeys[i])) {
+            ignoredTypographyKeys.push('fontSize.' + sizeKeys[i]);
+          }
+        }
+
+        for (i = 0; i < weightKeys.length; i += 1) {
+          if (!isBootstrapTypographyTokenMappable(weightKeys[i])) {
+            ignoredTypographyKeys.push('fontWeight.' + weightKeys[i]);
+          }
+        }
+
+        for (i = 0; i < lineHeightKeys.length; i += 1) {
+          if (!isBootstrapTypographyTokenMappable(lineHeightKeys[i])) {
+            ignoredTypographyKeys.push('lineHeight.' + lineHeightKeys[i]);
+          }
+        }
+
+        if (ignoredTypographyKeys.length > 0) {
+          warnings.push(
+            'Bootstrap omite claves tipográficas sin equivalente global claro: ' + joinQuoted(ignoredTypographyKeys) + '.'
+          );
+        }
       }
     }
 
@@ -1786,19 +1900,27 @@
       return pickBaseValue(bucket);
     }
 
-    function buildScssMap(variableName, bucket) {
+    function buildScssMap(variableName, bucket, keyFilter) {
       var keys = getSortedKeys(bucket);
       var mapLines = [];
       var j;
 
-      if (keys.length === 0) {
+      for (j = 0; j < keys.length; j += 1) {
+        if (keyFilter && !keyFilter(keys[j])) {
+          continue;
+        }
+
+        if (mapLines.length === 0) {
+          mapLines.push(variableName + ': (');
+        }
+
+        mapLines.push('  "' + keys[j] + '": ' + bucket[keys[j]] + ',');
+      }
+
+      if (mapLines.length === 0) {
         return null;
       }
 
-      mapLines.push(variableName + ': (');
-      for (j = 0; j < keys.length; j += 1) {
-        mapLines.push('  "' + keys[j] + '": ' + bucket[keys[j]] + ',');
-      }
       mapLines.push(');');
       return mapLines;
     }
@@ -1915,9 +2037,9 @@
       );
     }
 
-    var fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize);
-    var fontWeightsMap = buildScssMap('$font-weights', typographyBuckets.fontWeight);
-    var lineHeightsMap = buildScssMap('$line-heights', typographyBuckets.lineHeight);
+    var fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize, isBootstrapTypographyTokenMappable);
+    var fontWeightsMap = buildScssMap('$font-weights', typographyBuckets.fontWeight, isBootstrapTypographyTokenMappable);
+    var lineHeightsMap = buildScssMap('$line-heights', typographyBuckets.lineHeight, isBootstrapTypographyTokenMappable);
 
     if (fontSizesMap) {
       typographyMapLines = typographyMapLines.concat(fontSizesMap);
@@ -1949,25 +2071,40 @@
     }
 
     if (radiusEntries.length > 0) {
-      if (lines.length > 0) {
-        lines.push('');
-      }
-      lines.push('/* Radius */');
+      var radiusLines = [];
       for (i = 0; i < radiusEntries.length; i += 1) {
-        lines.push('$border-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
         radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
       }
 
+      if (radiusMap.sm) {
+        radiusLines.push((getNativeMapping('bootstrap', 'radius.sm') || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
+      }
+
+      if (radiusMap.lg) {
+        radiusLines.push((getNativeMapping('bootstrap', 'radius.lg') || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
+      }
+
       if (radiusMap.base || radiusMap.default || radiusMap.md) {
-        var nativeRadius = getNativeMapping('bootstrap', 'radius.md') || '$border-radius';
-        lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
+        var nativeRadius =
+          getNativeMapping('bootstrap', 'radius.md') ||
+          getNativeMapping('bootstrap', 'radius.default') ||
+          resolveBootstrapRadiusVariable('md') ||
+          '$border-radius';
+        radiusLines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
+      }
+
+      if (radiusLines.length > 0) {
+        if (lines.length > 0) {
+          lines.push('');
+        }
+        lines.push('/* Radius */');
+        for (i = 0; i < radiusLines.length; i += 1) {
+          lines.push(radiusLines[i]);
+        }
       }
     }
 
     if (shadowEntries.length > 0) {
-      if (lines.length > 0) {
-        lines.push('');
-      }
       var globalShadowAssignments = {};
       var globalShadowOrder = ['$box-shadow-sm', '$box-shadow'];
 
@@ -1995,6 +2132,9 @@
       }
 
       if (Object.keys(globalShadowAssignments).length > 0) {
+        if (lines.length > 0) {
+          lines.push('');
+        }
         lines.push('/* Shadows */');
 
         for (i = 0; i < globalShadowOrder.length; i += 1) {

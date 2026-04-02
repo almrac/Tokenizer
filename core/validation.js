@@ -1,9 +1,11 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
-const { getTypographyBuckets } = require('./naming');
+const { flattenTokenEntries, getTypographyBuckets } = require('./naming');
 const { applyFlatVariantCollectionAdapter } = require('./import-adapters');
 const {
   getTargetGroupSupportMap,
+  isBootstrapTypographyTokenMappable,
   resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapRadiusVariable,
   resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole,
 } = require('./target-mappings');
@@ -594,6 +596,63 @@ function validateTokenInput(tokens, target) {
       warnings.push(
         'Bootstrap no tiene una variable global equivalente para "letterSpacing"; estos tokens se omiten.'
       );
+    }
+
+    if (target === 'bootstrap') {
+      const ignoredTypographyKeys = [];
+      const fontFamilyKeys = Object.keys(buckets.fontFamily);
+      const fontSizeKeys = Object.keys(buckets.fontSize);
+      const fontWeightKeys = Object.keys(buckets.fontWeight);
+      const lineHeightKeys = Object.keys(buckets.lineHeight);
+
+      for (let i = 0; i < fontFamilyKeys.length; i += 1) {
+        const key = fontFamilyKeys[i];
+        if (key !== 'base' && key !== 'body') {
+          ignoredTypographyKeys.push('fontFamily.' + key);
+        }
+      }
+
+      for (let i = 0; i < fontSizeKeys.length; i += 1) {
+        if (!isBootstrapTypographyTokenMappable(fontSizeKeys[i])) {
+          ignoredTypographyKeys.push('fontSize.' + fontSizeKeys[i]);
+        }
+      }
+
+      for (let i = 0; i < fontWeightKeys.length; i += 1) {
+        if (!isBootstrapTypographyTokenMappable(fontWeightKeys[i])) {
+          ignoredTypographyKeys.push('fontWeight.' + fontWeightKeys[i]);
+        }
+      }
+
+      for (let i = 0; i < lineHeightKeys.length; i += 1) {
+        if (!isBootstrapTypographyTokenMappable(lineHeightKeys[i])) {
+          ignoredTypographyKeys.push('lineHeight.' + lineHeightKeys[i]);
+        }
+      }
+
+      if (ignoredTypographyKeys.length > 0) {
+        warnings.push(
+          'Bootstrap omite claves tipográficas sin equivalente global claro: ' +
+            joinList(ignoredTypographyKeys) +
+            '.'
+        );
+      }
+    }
+  }
+
+  if (target === 'bootstrap' && isObjectRecord(tokens.radius)) {
+    const radiusEntries = flattenTokenEntries(tokens.radius);
+    const ignoredRadiusKeys = [];
+
+    for (let i = 0; i < radiusEntries.length; i += 1) {
+      const key = radiusEntries[i].name;
+      if (!resolveBootstrapRadiusVariable(key)) {
+        ignoredRadiusKeys.push(key);
+      }
+    }
+
+    if (ignoredRadiusKeys.length > 0) {
+      warnings.push('Bootstrap solo aplica radius globales claros. Se ignorarán: ' + joinList(ignoredRadiusKeys) + '.');
     }
   }
 

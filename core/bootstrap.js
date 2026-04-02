@@ -1,8 +1,10 @@
 const { flattenTokenEntries, getSortedKeys, getTokenGroups, getTypographyBuckets } = require('./naming');
 const {
   getNativeMapping,
+  isBootstrapTypographyTokenMappable,
   normalizeTokenName,
   resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapRadiusVariable,
   resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole,
 } = require('./target-mappings');
@@ -61,16 +63,28 @@ function generateBootstrap(tokens) {
     return pickBaseValue(bucket);
   }
 
-  function buildScssMap(variableName, bucket) {
+  function buildScssMap(variableName, bucket, keyFilter) {
     const keys = getSortedKeys(bucket);
-    if (keys.length === 0) {
+    const lines = [];
+
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+
+      if (keyFilter && !keyFilter(key)) {
+        continue;
+      }
+
+      if (lines.length === 0) {
+        lines.push(variableName + ': (');
+      }
+
+      lines.push('  "' + key + '": ' + bucket[key] + ',');
+    }
+
+    if (lines.length === 0) {
       return null;
     }
 
-    const lines = [variableName + ': ('];
-    for (let i = 0; i < keys.length; i += 1) {
-      lines.push('  "' + keys[i] + '": ' + bucket[keys[i]] + ',');
-    }
     lines.push(');');
     return lines;
   }
@@ -185,9 +199,9 @@ function generateBootstrap(tokens) {
     );
   }
 
-  const fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize);
-  const fontWeightsMap = buildScssMap('$font-weights', typographyBuckets.fontWeight);
-  const lineHeightsMap = buildScssMap('$line-heights', typographyBuckets.lineHeight);
+  const fontSizesMap = buildScssMap('$font-sizes', typographyBuckets.fontSize, isBootstrapTypographyTokenMappable);
+  const fontWeightsMap = buildScssMap('$font-weights', typographyBuckets.fontWeight, isBootstrapTypographyTokenMappable);
+  const lineHeightsMap = buildScssMap('$line-heights', typographyBuckets.lineHeight, isBootstrapTypographyTokenMappable);
 
   if (fontSizesMap) {
     typographyMapLines.push(...fontSizesMap);
@@ -219,28 +233,40 @@ function generateBootstrap(tokens) {
   }
 
   if (radiusEntries.length > 0) {
-    if (lines.length > 0) {
-      lines.push('');
-    }
-    lines.push('/* Radius */');
-    for (let i = 0; i < radiusEntries.length; i += 1) {
-      lines.push('$border-radius-' + radiusEntries[i].name + ': ' + radiusEntries[i].value + ';');
-    }
-
     const radiusMap = {};
+    const radiusLines = [];
+
     for (let i = 0; i < radiusEntries.length; i += 1) {
       radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
     }
+
+    if (radiusMap.sm) {
+      radiusLines.push((getNativeMapping('bootstrap', 'radius.sm') || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
+    }
+
+    if (radiusMap.lg) {
+      radiusLines.push((getNativeMapping('bootstrap', 'radius.lg') || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
+    }
+
     if (radiusMap.base || radiusMap.default || radiusMap.md) {
-      const nativeRadius = getNativeMapping('bootstrap', 'radius.md') || '$border-radius';
-      lines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
+      const nativeRadius =
+        getNativeMapping('bootstrap', 'radius.md') ||
+        getNativeMapping('bootstrap', 'radius.default') ||
+        resolveBootstrapRadiusVariable('md') ||
+        '$border-radius';
+      radiusLines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
+    }
+
+    if (radiusLines.length > 0) {
+      if (lines.length > 0) {
+        lines.push('');
+      }
+      lines.push('/* Radius */');
+      lines.push(...radiusLines);
     }
   }
 
   if (shadowEntries.length > 0) {
-    if (lines.length > 0) {
-      lines.push('');
-    }
     const globalShadowAssignments = {};
     const globalShadowOrder = ['$box-shadow-sm', '$box-shadow'];
 
@@ -264,6 +290,9 @@ function generateBootstrap(tokens) {
     }
 
     if (Object.keys(globalShadowAssignments).length > 0) {
+      if (lines.length > 0) {
+        lines.push('');
+      }
       lines.push('/* Shadows */');
 
       for (let i = 0; i < globalShadowOrder.length; i += 1) {

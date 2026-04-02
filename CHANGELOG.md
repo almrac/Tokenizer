@@ -9,9 +9,9 @@ Todos los cambios importantes de este proyecto se documentan en este archivo.
 - Expansión de la capa de plantillas de mapping para cubrir no solo `colors`, sino también `typography`, `radius`, `shadows` y `spacing` con la misma filosofía (mapeo seguro, probable, y omisión/fallback según target).
 - Bootstrap:
   - mapeos nativos explícitos añadidos para `typography.fontSize.body`, `typography.fontWeight.regular`, `typography.lineHeight.body`, `radius.sm/default/lg`, `shadows.sm/md/default`, `spacing -> $spacers`.
-  - generación de tipografía base alineada a mapeos semánticos (`body`/`regular`).
+  - generación de tipografía base alineada a mapeos semánticos (`body`/`regular`) y omisión con warning para claves tipográficas sin equivalente global claro.
   - `shadows` ahora usa mapeo global claro (`$box-shadow-sm`, `$box-shadow`) y omite variantes ambiguas.
-  - warnings de validación refinados para reportar sombras Bootstrap sin equivalencia global clara.
+  - warnings de validación refinados para reportar `typography`, `radius` y `shadows` Bootstrap sin equivalencia global clara.
 - Alineación completa entre CLI y preview web para esta expansión de mappings y warnings.
 
 ## [v0.8.1] - 2026-04-02

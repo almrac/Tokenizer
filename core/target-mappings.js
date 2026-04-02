@@ -41,6 +41,29 @@ const BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS = {
   default: '$box-shadow',
   base: '$box-shadow',
 };
+const BOOTSTRAP_SAFE_TYPOGRAPHY_TOKENS = {
+  base: true,
+  body: true,
+  caption: true,
+  title: true,
+  display: true,
+  regular: true,
+  medium: true,
+  semibold: true,
+  bold: true,
+  light: true,
+  normal: true,
+  xxs: true,
+  xs: true,
+  sm: true,
+  md: true,
+  lg: true,
+  xl: true,
+  '2xl': true,
+  '3xl': true,
+  '4xl': true,
+  '5xl': true,
+};
 
 function normalizeTokenName(value) {
   return String(value || '')
@@ -272,17 +295,60 @@ function resolveBootstrapShadowGlobalVariable(tokenName) {
   return null;
 }
 
+function isBootstrapTypographyTokenMappable(tokenName) {
+  const normalized = normalizeTokenName(tokenName);
+
+  if (!normalized) {
+    return false;
+  }
+
+  if (/^(hover|active|focus|disabled|pressed|selected|visited)(-|$)/.test(normalized)) {
+    return false;
+  }
+
+  if (/(hover|active|focus|disabled|overlay|component|button|input|card|modal|tooltip|popover|chip|badge|table|link)/.test(normalized)) {
+    return false;
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    return true;
+  }
+
+  return !!BOOTSTRAP_SAFE_TYPOGRAPHY_TOKENS[normalized];
+}
+
+function resolveBootstrapRadiusVariable(tokenName) {
+  const normalized = normalizeTokenName(tokenName);
+
+  if (normalized === 'sm') {
+    return '$border-radius-sm';
+  }
+
+  if (normalized === 'lg') {
+    return '$border-radius-lg';
+  }
+
+  if (normalized === 'md' || normalized === 'default' || normalized === 'base') {
+    return '$border-radius';
+  }
+
+  return null;
+}
+
 module.exports = {
   BOOTSTRAP_SEMANTIC_COLOR_ROLES: BOOTSTRAP_SEMANTIC_COLOR_ROLES,
   BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS: BOOTSTRAP_PROBABLE_GLOBAL_COLOR_TARGETS,
   BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS: BOOTSTRAP_SAFE_SHADOW_GLOBAL_TARGETS,
+  BOOTSTRAP_SAFE_TYPOGRAPHY_TOKENS: BOOTSTRAP_SAFE_TYPOGRAPHY_TOKENS,
   IONIC_NATIVE_COLOR_ROLES: IONIC_NATIVE_COLOR_ROLES,
   TARGET_MAPPING_TEMPLATES: TARGET_MAPPING_TEMPLATES,
   getNativeMapping: getNativeMapping,
   getTargetGroupSupportMap: getTargetGroupSupportMap,
   getTargetTemplate: getTargetTemplate,
+  isBootstrapTypographyTokenMappable: isBootstrapTypographyTokenMappable,
   normalizeTokenName: normalizeTokenName,
   resolveBootstrapProbableGlobalColorVariable: resolveBootstrapProbableGlobalColorVariable,
+  resolveBootstrapRadiusVariable: resolveBootstrapRadiusVariable,
   resolveBootstrapShadowGlobalVariable: resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole: resolveBootstrapSemanticColorRole,
   resolveIonicNativeColorRole: resolveIonicNativeColorRole,
