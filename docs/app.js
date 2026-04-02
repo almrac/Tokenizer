@@ -3010,29 +3010,15 @@
     var rootUsed = details && details.rootUsed ? details.rootUsed : 'top-level';
     var supported = details && details.supportedGroups ? details.supportedGroups : [];
     var ignored = details && details.ignoredGroups ? details.ignoredGroups : [];
-    var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
-    var importNotes = details && details.importNotes ? details.importNotes : [];
-    var omissions = details && details.omissions ? details.omissions : [];
-    var selectedVariant = details && details.selectedVariant ? details.selectedVariant : '';
+    var omissionCount = details && details.omissions ? details.omissions.length : 0;
     var warningCount = details && details.warningCount ? details.warningCount : 0;
-    var meaningfulImportNotes = importNotes.filter(function (note) {
-      return note.indexOf('Import summary:') !== 0;
-    });
-
-    if (selectedVariant) {
-      meaningfulImportNotes.unshift('Variante seleccionada: ' + selectedVariant);
-    }
-    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || normalizationNotes.length > 0 || meaningfulImportNotes.length > 0 || omissions.length > 0;
+    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || omissionCount > 0;
     var status = 'Sin advertencias';
 
-    if (omissions.length > 0) {
+    if (omissionCount > 0) {
       status = 'Con omisiones';
     } else if (warningCount > 0) {
       status = 'Con advertencias';
-    } else if (normalizationNotes.length > 0) {
-      status = 'Normalizado';
-    } else if (meaningfulImportNotes.length > 0) {
-      status = 'Importación ajustada';
     }
 
     inspector.hidden = false;
@@ -3047,32 +3033,12 @@
       inspectorIgnored.textContent = '-';
     }
 
-    if (hasMeaningfulDetails && normalizationNotes.length > 0) {
-      inspectorNormalizationRow.hidden = false;
-      inspectorNormalization.textContent =
-        normalizationNotes.length > 4 ?
-          normalizationNotes.slice(0, 4).join(' | ') + ' | +' + (normalizationNotes.length - 4) + ' más' :
-          normalizationNotes.join(' | ');
-    } else {
-      inspectorNormalizationRow.hidden = true;
-      inspectorNormalization.textContent = '-';
-    }
-
-    if (hasMeaningfulDetails && meaningfulImportNotes.length > 0) {
-      inspectorImportRow.hidden = false;
-      inspectorImport.textContent = meaningfulImportNotes.length > 2 ? meaningfulImportNotes.slice(0, 2).join(' | ') : meaningfulImportNotes.join(' | ');
-    } else {
-      inspectorImportRow.hidden = true;
-      inspectorImport.textContent = '-';
-    }
-
-    if (hasMeaningfulDetails && omissions.length > 0) {
-      inspectorOmissionRow.hidden = false;
-      inspectorOmission.textContent = omissions.length > 4 ? omissions.slice(0, 4).join(' | ') + ' | +' + (omissions.length - 4) + ' más' : omissions.join(' | ');
-    } else {
-      inspectorOmissionRow.hidden = true;
-      inspectorOmission.textContent = '-';
-    }
+    inspectorNormalizationRow.hidden = true;
+    inspectorNormalization.textContent = '-';
+    inspectorImportRow.hidden = true;
+    inspectorImport.textContent = '-';
+    inspectorOmissionRow.hidden = true;
+    inspectorOmission.textContent = '-';
 
     inspectorWarningState.textContent = status;
   }
@@ -3252,6 +3218,16 @@
       }
     }
 
+    if (normalization.summary && normalization.summary.importNotes) {
+      for (i = 0; i < normalization.summary.importNotes.length; i += 1) {
+        var importNote = normalization.summary.importNotes[i];
+        if (importNote.indexOf('Import summary:') === 0) {
+          continue;
+        }
+        warningsMap[importNote] = true;
+      }
+    }
+
     for (i = 0; i < targets.length; i += 1) {
       target = targets[i];
       validation = validateTokenInput(parsedTokens, target);
@@ -3268,6 +3244,9 @@
       if (validation.omissions && validation.omissions.length > 0) {
         for (j = 0; j < validation.omissions.length; j += 1) {
           var omission = validation.omissions[j];
+          if (omission.reason === 'grupo no soportado') {
+            continue;
+          }
           var omissionText = 'Se omitió ' + omission.path + ' por ' + omission.reason + '.';
           if (targets.length > 1) {
             omissionText = '[' + target + '] ' + omissionText;
