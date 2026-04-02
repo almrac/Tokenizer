@@ -17,7 +17,7 @@
   --color-outline: #727c82;
   --color-outline-variant: #a9b4b9;
   --color-on-surface: #2a3439;
-  --color-on-surface-variant: #566166;
+  --color-on-surface-variant: #3f4a51;
   --color-error: #9f403d;
   --color-error-container: #fe8983;
   --color-on-error-container: #752121;
@@ -36,6 +36,25 @@
 
 * {
   box-sizing: border-box;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #102a43;
+  border: 2px solid #005bc0;
+  text-decoration: none;
+  transform: translateY(-140%);
+  transition: transform 0.16s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 [hidden] {
@@ -379,6 +398,14 @@ textarea:focus,
 button:focus-visible {
   border-color: rgba(0, 91, 192, 0.42);
   box-shadow: 0 0 0 4px rgba(0, 91, 192, 0.12);
+}
+
+.upload-card:focus-within,
+.multi-export-toggle:focus-within,
+.target-item:focus-within,
+.preview-tab:focus-visible {
+  outline: 3px solid rgba(0, 91, 192, 0.38);
+  outline-offset: 2px;
 }
 
 select {
