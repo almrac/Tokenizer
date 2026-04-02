@@ -470,7 +470,27 @@ function validateTokenInput(tokens, target) {
   }
 
   const topLevelKeys = Object.keys(tokens);
-  unsupportedGroups = topLevelKeys.filter((key) => SUPPORTED_GROUPS.indexOf(key) === -1);
+  const nonCanonicalTopLevel = topLevelKeys.filter((key) => SUPPORTED_GROUPS.indexOf(key) === -1);
+  const alternativeRootGroups = nonCanonicalTopLevel.filter((key) => {
+    if (!WRAPPER_KEYS[key] && !WRAPPER_KEYS[String(key).toLowerCase()]) {
+      return false;
+    }
+
+    return isObjectRecord(tokens[key]);
+  });
+  unsupportedGroups = nonCanonicalTopLevel.filter((key) => alternativeRootGroups.indexOf(key) === -1);
+
+  if (alternativeRootGroups.length > 0) {
+    if (alternativeRootGroups.length === 1) {
+      warnings.push(
+        'Se detectó una rama alternativa en ' + joinList(alternativeRootGroups) + ', pero se priorizó la estructura canónica de nivel principal.'
+      );
+    } else {
+      warnings.push(
+        'Se detectaron ramas alternativas en ' + joinList(alternativeRootGroups) + ', pero se priorizó la estructura canónica de nivel principal.'
+      );
+    }
+  }
 
   if (unsupportedGroups.length > 0) {
     warnings.push('Grupos no soportados: ' + joinList(unsupportedGroups) + '. Se ignorarán en la generación.');

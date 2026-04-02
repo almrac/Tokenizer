@@ -1340,9 +1340,31 @@
     }
 
     topLevelKeys = Object.keys(tokens);
-    unsupportedTopLevel = topLevelKeys.filter(function (key) {
+    var nonCanonicalTopLevel = topLevelKeys.filter(function (key) {
       return supportedGroups.indexOf(key) === -1;
     });
+    var alternativeRootGroups = nonCanonicalTopLevel.filter(function (key) {
+      if (!wrapperKeys[key] && !wrapperKeys[String(key).toLowerCase()]) {
+        return false;
+      }
+
+      return isPlainObject(tokens[key]);
+    });
+    unsupportedTopLevel = nonCanonicalTopLevel.filter(function (key) {
+      return alternativeRootGroups.indexOf(key) === -1;
+    });
+
+    if (alternativeRootGroups.length > 0) {
+      if (alternativeRootGroups.length === 1) {
+        warnings.push(
+          'Se detectó una rama alternativa en ' + joinQuoted(alternativeRootGroups) + ', pero se priorizó la estructura canónica de nivel principal.'
+        );
+      } else {
+        warnings.push(
+          'Se detectaron ramas alternativas en ' + joinQuoted(alternativeRootGroups) + ', pero se priorizó la estructura canónica de nivel principal.'
+        );
+      }
+    }
 
     if (unsupportedTopLevel.length > 0) {
       warnings.push('Grupos no soportados: ' + joinQuoted(unsupportedTopLevel) + '. Se ignorarán en la generación.');
