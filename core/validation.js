@@ -381,6 +381,7 @@ function normalizeTypographyLengthValues(typographySource) {
 function normalizeTokenInput(rawTokens) {
   const importNotes = [];
   const normalizationNotes = [];
+  const omissions = [];
   const info = [];
   const errors = [];
   let normalized = rawTokens;
@@ -409,6 +410,7 @@ function normalizeTokenInput(rawTokens) {
         rootUsed: summaryRootUsed,
         detectedGroups,
         normalizationNotes,
+        omissions,
         importNotes,
         sourcePattern: adapterMetadata.sourcePattern,
         selectedVariant: adapterMetadata.selectedVariant,
@@ -429,6 +431,7 @@ function normalizeTokenInput(rawTokens) {
         rootUsed: summaryRootUsed,
         detectedGroups,
         normalizationNotes,
+        omissions,
         importNotes,
         sourcePattern: adapterMetadata.sourcePattern,
         selectedVariant: adapterMetadata.selectedVariant,
@@ -493,27 +496,48 @@ function normalizeTokenInput(rawTokens) {
   const invalidShadowPaths = [];
 
   if (isObjectRecord(normalized.colors)) {
-    normalized.colors = sanitizeLeafGroup(normalized.colors, isColorValue, 'colors', invalidColorPaths);
+    normalized.colors = sanitizeLeafGroup(normalized.colors, getColorOmissionReason, 'colors', invalidColorPaths);
   }
 
   if (isObjectRecord(normalized.spacing)) {
-    normalized.spacing = sanitizeLeafGroup(normalized.spacing, isSpacingValue, 'spacing', invalidSpacingPaths);
+    normalized.spacing = sanitizeLeafGroup(normalized.spacing, getSpacingOmissionReason, 'spacing', invalidSpacingPaths);
   }
 
   if (isObjectRecord(normalized.shadows)) {
-    normalized.shadows = sanitizeLeafGroup(normalized.shadows, isShadowValue, 'shadows', invalidShadowPaths);
+    normalized.shadows = sanitizeLeafGroup(normalized.shadows, getShadowOmissionReason, 'shadows', invalidShadowPaths);
   }
 
   if (invalidColorPaths.length > 0) {
-    normalizationNotes.push('Se omiten tokens inválidos en "colors": ' + joinList(invalidColorPaths) + '.');
+    normalizationNotes.push('Se omiten tokens inválidos en "colors": ' + joinList(invalidColorPaths.map((item) => item.path)) + '.');
+    for (let i = 0; i < invalidColorPaths.length; i += 1) {
+      omissions.push({
+        kind: 'token',
+        path: invalidColorPaths[i].path,
+        reason: invalidColorPaths[i].reason,
+      });
+    }
   }
 
   if (invalidSpacingPaths.length > 0) {
-    normalizationNotes.push('Se omiten tokens inválidos en "spacing": ' + joinList(invalidSpacingPaths) + '.');
+    normalizationNotes.push('Se omiten tokens inválidos en "spacing": ' + joinList(invalidSpacingPaths.map((item) => item.path)) + '.');
+    for (let i = 0; i < invalidSpacingPaths.length; i += 1) {
+      omissions.push({
+        kind: 'token',
+        path: invalidSpacingPaths[i].path,
+        reason: invalidSpacingPaths[i].reason,
+      });
+    }
   }
 
   if (invalidShadowPaths.length > 0) {
-    normalizationNotes.push('Se omiten tokens inválidos en "shadows": ' + joinList(invalidShadowPaths) + '.');
+    normalizationNotes.push('Se omiten tokens inválidos en "shadows": ' + joinList(invalidShadowPaths.map((item) => item.path)) + '.');
+    for (let i = 0; i < invalidShadowPaths.length; i += 1) {
+      omissions.push({
+        kind: 'token',
+        path: invalidShadowPaths[i].path,
+        reason: invalidShadowPaths[i].reason,
+      });
+    }
   }
 
   detectedGroups = SUPPORTED_GROUPS.filter((groupName) => groupHasValues(normalized, groupName));
@@ -536,6 +560,7 @@ function normalizeTokenInput(rawTokens) {
       rootUsed: adapterMetadata.rootUsed || rootSelection.path,
       detectedGroups: detectedGroups,
       normalizationNotes: normalizationNotes,
+      omissions: omissions,
       importNotes: importNotes,
       sourcePattern: adapterMetadata.sourcePattern,
       selectedVariant: adapterMetadata.selectedVariant,
@@ -586,6 +611,18 @@ function isColorValue(value) {
   return false;
 }
 
+function getColorOmissionReason(value) {
+  if (value === null || typeof value === 'undefined') {
+    return 'valor nulo';
+  }
+
+  if (!isColorValue(value)) {
+    return 'valor de color inválido';
+  }
+
+  return null;
+}
+
 function isSpacingValue(value) {
   if (typeof value === 'number') {
     return Number.isFinite(value);
@@ -616,6 +653,18 @@ function isSpacingValue(value) {
   return false;
 }
 
+function getSpacingOmissionReason(value) {
+  if (value === null || typeof value === 'undefined') {
+    return 'valor nulo';
+  }
+
+  if (!isSpacingValue(value)) {
+    return 'valor de spacing inválido';
+  }
+
+  return null;
+}
+
 function isShadowValue(value) {
   if (typeof value !== 'string') {
     return false;
@@ -641,7 +690,19 @@ function isShadowValue(value) {
   return false;
 }
 
-function sanitizeLeafGroup(source, predicate, pathPrefix, invalidPaths) {
+function getShadowOmissionReason(value) {
+  if (value === null || typeof value === 'undefined') {
+    return 'valor nulo';
+  }
+
+  if (!isShadowValue(value)) {
+    return 'formato de shadow inválido';
+  }
+
+  return null;
+}
+
+function sanitizeLeafGroup(source, reasonResolver, pathPrefix, invalidPaths) {
   if (!isObjectRecord(source)) {
     return source;
   }
@@ -655,17 +716,22 @@ function sanitizeLeafGroup(source, predicate, pathPrefix, invalidPaths) {
     const path = pathPrefix ? pathPrefix + '.' + key : key;
 
     if (isObjectRecord(value)) {
-      const nested = sanitizeLeafGroup(value, predicate, path, invalidPaths);
+      const nested = sanitizeLeafGroup(value, reasonResolver, path, invalidPaths);
       if (isObjectRecord(nested) && Object.keys(nested).length > 0) {
         sanitized[key] = nested;
       }
       continue;
     }
 
-    if (predicate(value)) {
+    const reason = reasonResolver(value);
+
+    if (!reason) {
       sanitized[key] = value;
     } else {
-      invalidPaths.push(path);
+      invalidPaths.push({
+        path: path,
+        reason: reason,
+      });
     }
   }
 
@@ -675,6 +741,7 @@ function sanitizeLeafGroup(source, predicate, pathPrefix, invalidPaths) {
 function validateTokenInput(tokens, target) {
   const errors = [];
   const warnings = [];
+  const omissions = [];
   const support = TARGET_GROUP_SUPPORT[target] || TARGET_GROUP_SUPPORT.css;
   let supportedGroups = [];
   let unsupportedGroups = [];
@@ -685,6 +752,7 @@ function validateTokenInput(tokens, target) {
     return {
       errors,
       warnings,
+      omissions,
       supportedGroups,
       unsupportedGroups,
       ignoredByTarget,
@@ -716,6 +784,13 @@ function validateTokenInput(tokens, target) {
 
   if (unsupportedGroups.length > 0) {
     warnings.push('Grupos no soportados: ' + joinList(unsupportedGroups) + '. Se ignorarán en la generación.');
+    for (let i = 0; i < unsupportedGroups.length; i += 1) {
+      omissions.push({
+        kind: 'group',
+        path: unsupportedGroups[i],
+        reason: 'grupo no soportado',
+      });
+    }
   }
 
   for (let i = 0; i < SUPPORTED_GROUPS.length; i += 1) {
@@ -730,6 +805,7 @@ function validateTokenInput(tokens, target) {
     return {
       errors,
       warnings,
+      omissions,
       supportedGroups,
       unsupportedGroups,
       ignoredByTarget,
@@ -758,6 +834,7 @@ function validateTokenInput(tokens, target) {
     return {
       errors,
       warnings,
+      omissions,
       supportedGroups,
       unsupportedGroups,
       ignoredByTarget,
@@ -766,6 +843,13 @@ function validateTokenInput(tokens, target) {
 
   if (ignoredByTarget.length > 0) {
     warnings.push('El target "' + target + '" ignora los grupos: ' + joinList(ignoredByTarget) + '.');
+    for (let i = 0; i < ignoredByTarget.length; i += 1) {
+      omissions.push({
+        kind: 'group',
+        path: ignoredByTarget[i],
+        reason: 'sin mapeo útil para el target seleccionado',
+      });
+    }
   }
 
   if (isObjectRecord(tokens.typography)) {
@@ -788,6 +872,7 @@ function validateTokenInput(tokens, target) {
   return {
     errors: errors,
     warnings: warnings,
+    omissions: omissions,
     supportedGroups: supportedGroups,
     unsupportedGroups: unsupportedGroups,
     ignoredByTarget: ignoredByTarget,

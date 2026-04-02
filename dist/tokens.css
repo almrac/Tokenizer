@@ -19,8 +19,8 @@
   --tk-font-size-title: 1.25rem;
   --tk-font-weight-regular: 400;
   --tk-font-weight-semibold: 600;
-  --tk-line-height-body: 1.5;
-  --tk-line-height-title: 1.2;
+  --tk-line-height-body: 1.5px;
+  --tk-line-height-title: 1.2px;
 
   /* Radius */
   --tk-radius-sm: 4px;

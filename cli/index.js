@@ -173,6 +173,13 @@ function main() {
     process.stderr.write('Info: ' + normalization.info[i] + '\n');
   }
 
+  if (summary.omissions && summary.omissions.length > 0) {
+    for (let i = 0; i < summary.omissions.length; i += 1) {
+      const omission = summary.omissions[i];
+      process.stderr.write('Omisión: Se omitió ' + omission.path + ' por ' + omission.reason + '.\n');
+    }
+  }
+
   if (summary.rootUsed) {
     process.stderr.write('Info: Root used: ' + summary.rootUsed + '\n');
   }
@@ -206,6 +213,19 @@ function main() {
         process.stderr.write('Warning [' + target + ']: ' + validation.warnings[j] + '\n');
       } else {
         process.stderr.write('Warning: ' + validation.warnings[j] + '\n');
+      }
+    }
+
+    if (validation.omissions && validation.omissions.length > 0) {
+      for (let j = 0; j < validation.omissions.length; j += 1) {
+        const omission = validation.omissions[j];
+        if (isMultiTarget) {
+          process.stderr.write(
+            'Omisión [' + target + ']: Se omitió ' + omission.path + ' por ' + omission.reason + '.\n'
+          );
+        } else {
+          process.stderr.write('Omisión: Se omitió ' + omission.path + ' por ' + omission.reason + '.\n');
+        }
       }
     }
 

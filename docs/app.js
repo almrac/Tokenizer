@@ -260,6 +260,7 @@
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
   var warningMessage = document.querySelector('[data-ui="warning-message"]');
+  var omissionMessage = document.querySelector('[data-ui="omission-message"]');
   var inspector = document.querySelector('[data-ui="inspector"]');
   var inspectorRoot = document.querySelector('[data-ui="inspector-root"]');
   var inspectorSupported = document.querySelector('[data-ui="inspector-supported"]');
@@ -269,6 +270,8 @@
   var inspectorNormalization = document.querySelector('[data-ui="inspector-normalization"]');
   var inspectorImportRow = document.querySelector('[data-ui="inspector-import-row"]');
   var inspectorImport = document.querySelector('[data-ui="inspector-import"]');
+  var inspectorOmissionRow = document.querySelector('[data-ui="inspector-omission-row"]');
+  var inspectorOmission = document.querySelector('[data-ui="inspector-omission"]');
   var inspectorWarningState = document.querySelector('[data-ui="inspector-warning-state"]');
   var copyButton = document.querySelector('[data-ui="copy-button"]');
   var downloadButton = document.querySelector('[data-ui="download-button"]');
@@ -570,6 +573,18 @@
     return false;
   }
 
+  function getColorOmissionReason(value) {
+    if (value === null || typeof value === 'undefined') {
+      return 'valor nulo';
+    }
+
+    if (!isColorValue(value)) {
+      return 'valor de color inválido';
+    }
+
+    return null;
+  }
+
   function isSpacingValue(value) {
     var text;
 
@@ -602,6 +617,18 @@
     return false;
   }
 
+  function getSpacingOmissionReason(value) {
+    if (value === null || typeof value === 'undefined') {
+      return 'valor nulo';
+    }
+
+    if (!isSpacingValue(value)) {
+      return 'valor de spacing inválido';
+    }
+
+    return null;
+  }
+
   function isShadowValue(value) {
     var text;
 
@@ -629,7 +656,19 @@
     return false;
   }
 
-  function sanitizeLeafGroup(source, predicate, pathPrefix, invalidPaths) {
+  function getShadowOmissionReason(value) {
+    if (value === null || typeof value === 'undefined') {
+      return 'valor nulo';
+    }
+
+    if (!isShadowValue(value)) {
+      return 'formato de shadow inválido';
+    }
+
+    return null;
+  }
+
+  function sanitizeLeafGroup(source, reasonResolver, pathPrefix, invalidPaths) {
     var keys;
     var i;
     var key;
@@ -651,17 +690,22 @@
       path = pathPrefix ? pathPrefix + '.' + key : key;
 
       if (isPlainObject(value)) {
-        nested = sanitizeLeafGroup(value, predicate, path, invalidPaths);
+        nested = sanitizeLeafGroup(value, reasonResolver, path, invalidPaths);
         if (isPlainObject(nested) && Object.keys(nested).length > 0) {
           sanitized[key] = nested;
         }
         continue;
       }
 
-      if (predicate(value)) {
+      var reason = reasonResolver(value);
+
+      if (!reason) {
         sanitized[key] = value;
       } else {
-        invalidPaths.push(path);
+        invalidPaths.push({
+          path: path,
+          reason: reason
+        });
       }
     }
 
@@ -1388,6 +1432,7 @@
   function normalizeTokenInput(rawTokens) {
     var importNotes = [];
     var normalizationNotes = [];
+    var omissions = [];
     var info = [];
     var errors = [];
     var normalized;
@@ -1429,6 +1474,7 @@
           rootUsed: summaryRootUsed,
           detectedGroups: [],
           normalizationNotes: normalizationNotes,
+          omissions: omissions,
           importNotes: importNotes,
           sourcePattern: adapterMetadata.sourcePattern,
           selectedVariant: adapterMetadata.selectedVariant
@@ -1449,6 +1495,7 @@
           rootUsed: adapterMetadata.rootUsed || rootSelection.path,
           detectedGroups: [],
           normalizationNotes: normalizationNotes,
+          omissions: omissions,
           importNotes: importNotes,
           sourcePattern: adapterMetadata.sourcePattern,
           selectedVariant: adapterMetadata.selectedVariant
@@ -1513,33 +1560,54 @@
     var invalidShadowPaths = [];
 
     if (isPlainObject(normalized.colors)) {
-      normalized.colors = sanitizeLeafGroup(normalized.colors, isColorValue, 'colors', invalidColorPaths);
+      normalized.colors = sanitizeLeafGroup(normalized.colors, getColorOmissionReason, 'colors', invalidColorPaths);
     }
 
     if (isPlainObject(normalized.spacing)) {
-      normalized.spacing = sanitizeLeafGroup(normalized.spacing, isSpacingValue, 'spacing', invalidSpacingPaths);
+      normalized.spacing = sanitizeLeafGroup(normalized.spacing, getSpacingOmissionReason, 'spacing', invalidSpacingPaths);
     }
 
     if (isPlainObject(normalized.shadows)) {
-      normalized.shadows = sanitizeLeafGroup(normalized.shadows, isShadowValue, 'shadows', invalidShadowPaths);
+      normalized.shadows = sanitizeLeafGroup(normalized.shadows, getShadowOmissionReason, 'shadows', invalidShadowPaths);
     }
 
     if (invalidColorPaths.length > 0) {
       normalizationNotes.push(
-        'Se omiten tokens inválidos en "colors": ' + joinQuoted(invalidColorPaths) + '.'
+        'Se omiten tokens inválidos en "colors": ' + joinQuoted(invalidColorPaths.map(function (item) { return item.path; })) + '.'
       );
+      for (i = 0; i < invalidColorPaths.length; i += 1) {
+        omissions.push({
+          kind: 'token',
+          path: invalidColorPaths[i].path,
+          reason: invalidColorPaths[i].reason
+        });
+      }
     }
 
     if (invalidSpacingPaths.length > 0) {
       normalizationNotes.push(
-        'Se omiten tokens inválidos en "spacing": ' + joinQuoted(invalidSpacingPaths) + '.'
+        'Se omiten tokens inválidos en "spacing": ' + joinQuoted(invalidSpacingPaths.map(function (item) { return item.path; })) + '.'
       );
+      for (i = 0; i < invalidSpacingPaths.length; i += 1) {
+        omissions.push({
+          kind: 'token',
+          path: invalidSpacingPaths[i].path,
+          reason: invalidSpacingPaths[i].reason
+        });
+      }
     }
 
     if (invalidShadowPaths.length > 0) {
       normalizationNotes.push(
-        'Se omiten tokens inválidos en "shadows": ' + joinQuoted(invalidShadowPaths) + '.'
+        'Se omiten tokens inválidos en "shadows": ' + joinQuoted(invalidShadowPaths.map(function (item) { return item.path; })) + '.'
       );
+      for (i = 0; i < invalidShadowPaths.length; i += 1) {
+        omissions.push({
+          kind: 'token',
+          path: invalidShadowPaths[i].path,
+          reason: invalidShadowPaths[i].reason
+        });
+      }
     }
 
     detectedGroups = supportedGroups.filter(function (groupName) {
@@ -1564,6 +1632,7 @@
         rootUsed: adapterMetadata.rootUsed || rootSelection.path,
         detectedGroups: detectedGroups,
         normalizationNotes: normalizationNotes,
+        omissions: omissions,
         importNotes: importNotes,
         sourcePattern: adapterMetadata.sourcePattern,
         selectedVariant: adapterMetadata.selectedVariant
@@ -1575,6 +1644,7 @@
   function validateTokenInput(tokens, target) {
     var errors = [];
     var warnings = [];
+    var omissions = [];
     var support = targetGroupSupport[target] || targetGroupSupport.css;
     var topLevelKeys;
     var unsupportedTopLevel;
@@ -1588,6 +1658,7 @@
       return {
         errors: errors,
         warnings: warnings,
+        omissions: omissions,
         supportedGroups: [],
         unsupportedGroups: [],
         ignoredGroups: []
@@ -1623,6 +1694,13 @@
 
     if (unsupportedTopLevel.length > 0) {
       warnings.push('Grupos no soportados: ' + joinQuoted(unsupportedTopLevel) + '. Se ignorarán en la generación.');
+      for (i = 0; i < unsupportedTopLevel.length; i += 1) {
+        omissions.push({
+          kind: 'group',
+          path: unsupportedTopLevel[i],
+          reason: 'grupo no soportado'
+        });
+      }
     }
 
     for (i = 0; i < supportedGroups.length; i += 1) {
@@ -1637,6 +1715,7 @@
       return {
         errors: errors,
         warnings: warnings,
+        omissions: omissions,
         supportedGroups: [],
         unsupportedGroups: unsupportedTopLevel,
         ignoredGroups: []
@@ -1670,6 +1749,7 @@
       return {
         errors: errors,
         warnings: warnings,
+        omissions: omissions,
         supportedGroups: supportedPresentGroups,
         unsupportedGroups: unsupportedTopLevel,
         ignoredGroups: ignoredGroups
@@ -1678,6 +1758,13 @@
 
     if (ignoredGroups.length > 0) {
       warnings.push('El target "' + target + '" ignora los grupos: ' + joinQuoted(ignoredGroups) + '.');
+      for (i = 0; i < ignoredGroups.length; i += 1) {
+        omissions.push({
+          kind: 'group',
+          path: ignoredGroups[i],
+          reason: 'sin mapeo útil para el target seleccionado'
+        });
+      }
     }
 
     if (isPlainObject(tokens.typography)) {
@@ -1700,6 +1787,7 @@
     return {
       errors: errors,
       warnings: warnings,
+      omissions: omissions,
       supportedGroups: supportedPresentGroups,
       unsupportedGroups: unsupportedTopLevel,
       ignoredGroups: ignoredGroups
@@ -2892,6 +2980,17 @@
     warningMessage.textContent = message;
   }
 
+  function setOmission(message) {
+    if (!message) {
+      omissionMessage.hidden = true;
+      omissionMessage.textContent = '';
+      return;
+    }
+
+    omissionMessage.hidden = false;
+    omissionMessage.textContent = message;
+  }
+
   function hideInspector() {
     inspector.hidden = true;
     inspectorRoot.textContent = '-';
@@ -2902,6 +3001,8 @@
     inspectorNormalization.textContent = '-';
     inspectorImportRow.hidden = true;
     inspectorImport.textContent = '-';
+    inspectorOmissionRow.hidden = true;
+    inspectorOmission.textContent = '-';
     inspectorWarningState.textContent = 'Sin advertencias';
   }
 
@@ -2911,6 +3012,7 @@
     var ignored = details && details.ignoredGroups ? details.ignoredGroups : [];
     var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
     var importNotes = details && details.importNotes ? details.importNotes : [];
+    var omissions = details && details.omissions ? details.omissions : [];
     var selectedVariant = details && details.selectedVariant ? details.selectedVariant : '';
     var warningCount = details && details.warningCount ? details.warningCount : 0;
     var meaningfulImportNotes = importNotes.filter(function (note) {
@@ -2920,10 +3022,12 @@
     if (selectedVariant) {
       meaningfulImportNotes.unshift('Variante seleccionada: ' + selectedVariant);
     }
-    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || normalizationNotes.length > 0 || meaningfulImportNotes.length > 0;
+    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || normalizationNotes.length > 0 || meaningfulImportNotes.length > 0 || omissions.length > 0;
     var status = 'Sin advertencias';
 
-    if (warningCount > 0) {
+    if (omissions.length > 0) {
+      status = 'Con omisiones';
+    } else if (warningCount > 0) {
       status = 'Con advertencias';
     } else if (normalizationNotes.length > 0) {
       status = 'Normalizado';
@@ -2960,6 +3064,14 @@
     } else {
       inspectorImportRow.hidden = true;
       inspectorImport.textContent = '-';
+    }
+
+    if (hasMeaningfulDetails && omissions.length > 0) {
+      inspectorOmissionRow.hidden = false;
+      inspectorOmission.textContent = omissions.length > 4 ? omissions.slice(0, 4).join(' | ') + ' | +' + (omissions.length - 4) + ' más' : omissions.join(' | ');
+    } else {
+      inspectorOmissionRow.hidden = true;
+      inspectorOmission.textContent = '-';
     }
 
     inspectorWarningState.textContent = status;
@@ -3064,6 +3176,8 @@
     var validation;
     var warnings = [];
     var warningsMap = {};
+    var omissions = [];
+    var omissionsMap = {};
     var errorsMap = {};
     var ignoredGroupMap = {};
     var warningCount = 0;
@@ -3090,6 +3204,7 @@
     } catch (error) {
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
       setWarning('');
+      setOmission('');
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
@@ -3099,6 +3214,7 @@
           supportedGroups: [],
           ignoredGroups: [],
           normalizationNotes: [],
+          omissions: [],
           selectedVariant: '',
           warningCount: 0
         });
@@ -3112,6 +3228,7 @@
     if (normalization.errors.length > 0) {
       setError(normalization.errors.join('\n'));
       setWarning('');
+      setOmission('');
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
@@ -3120,11 +3237,19 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: [],
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        omissions: [],
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: 0
       });
       return;
+    }
+
+    if (normalization.summary && normalization.summary.omissions) {
+      for (i = 0; i < normalization.summary.omissions.length; i += 1) {
+        var normOmission = normalization.summary.omissions[i];
+        omissionsMap['Se omitió ' + normOmission.path + ' por ' + normOmission.reason + '.'] = true;
+      }
     }
 
     for (i = 0; i < targets.length; i += 1) {
@@ -3138,6 +3263,17 @@
       for (j = 0; j < validation.warnings.length; j += 1) {
         validationWarning = targets.length > 1 ? '[' + target + '] ' + validation.warnings[j] : validation.warnings[j];
         warningsMap[validationWarning] = true;
+      }
+
+      if (validation.omissions && validation.omissions.length > 0) {
+        for (j = 0; j < validation.omissions.length; j += 1) {
+          var omission = validation.omissions[j];
+          var omissionText = 'Se omitió ' + omission.path + ' por ' + omission.reason + '.';
+          if (targets.length > 1) {
+            omissionText = '[' + target + '] ' + omissionText;
+          }
+          omissionsMap[omissionText] = true;
+        }
       }
 
       for (j = 0; j < validation.unsupportedGroups.length; j += 1) {
@@ -3160,6 +3296,12 @@
       }
     }
 
+    for (key in omissionsMap) {
+      if (Object.prototype.hasOwnProperty.call(omissionsMap, key)) {
+        omissions.push(key);
+      }
+    }
+
     if (hasErrors) {
       var errors = [];
       for (key in errorsMap) {
@@ -3169,6 +3311,7 @@
       }
       setError(errors.join('\n'));
       setWarning(warnings.join('\n'));
+      setOmission(omissions.join('\n'));
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
@@ -3177,6 +3320,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        omissions: omissions,
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: warningCount
@@ -3195,9 +3339,11 @@
       }
       setError('');
       setWarning(warnings.join('\n'));
+      setOmission(omissions.join('\n'));
     } catch (error) {
       setError('No se pudo generar la salida para alguno de los targets seleccionados. Revisa el contenido de los tokens e inténtalo de nuevo.');
       setWarning(warnings.join('\n'));
+      setOmission(omissions.join('\n'));
       generatedOutputs = {};
       updatePreviewSelector();
       renderActivePreview();
@@ -3206,6 +3352,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        omissions: omissions,
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: warningCount
@@ -3222,6 +3369,7 @@
         supportedGroups: normalization.summary && normalization.summary.detectedGroups,
         ignoredGroups: Object.keys(ignoredGroupMap),
         normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        omissions: omissions,
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
         warningCount: warningCount
