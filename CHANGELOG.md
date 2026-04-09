@@ -2,6 +2,22 @@
 
 Todos los cambios importantes de este proyecto se documentan en este archivo.
 
+## [Unreleased]
+
+### Added
+
+- CLI: nuevo flag `--variant=<name>` para selección explícita de variante en imports multi-variante compatibles.
+
+### Changed
+
+- La normalización por CLI ahora acepta selección explícita de variante y la prioriza frente a la selección automática cuando se proporciona.
+- Se mantiene el comportamiento seguro actual cuando no se proporciona `--variant`:
+  - selección automática donde ya existía (por ejemplo `light/dark` -> `light`)
+  - bloqueo con error cuando no hay resolución automática segura.
+- Si la variante solicitada no existe, se devuelve error claro con variantes disponibles.
+- Feedback CLI mejorado para selección explícita:
+  `Info: explicit variant selected: "<name>"`.
+
 ## [v0.8.3] - 2026-04-02
 
 ### Changed

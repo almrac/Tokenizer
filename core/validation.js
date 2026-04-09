@@ -432,7 +432,7 @@ function normalizeLineHeightTree(value) {
   return normalizeLineHeightLeaf(value);
 }
 
-function normalizeTokenInput(rawTokens) {
+function normalizeTokenInput(rawTokens, options) {
   const importNotes = [];
   const normalizationNotes = [];
   const omissions = [];
@@ -441,7 +441,7 @@ function normalizeTokenInput(rawTokens) {
   let normalized = rawTokens;
   let extractedRoot = rawTokens;
   let detectedGroups = [];
-  const adapterResult = applyFlatVariantCollectionAdapter(rawTokens);
+  const adapterResult = applyFlatVariantCollectionAdapter(rawTokens, options);
   const adaptedInput = adapterResult.adapted;
   const adapterMetadata = adapterResult.metadata;
   const summaryRootUsed = adapterMetadata.rootUsed || 'top-level';
@@ -468,6 +468,7 @@ function normalizeTokenInput(rawTokens) {
         importNotes,
         sourcePattern: adapterMetadata.sourcePattern,
         selectedVariant: adapterMetadata.selectedVariant,
+        variantSelectionMode: adapterMetadata.variantSelectionMode,
       },
       errors: errors,
     };
@@ -489,6 +490,7 @@ function normalizeTokenInput(rawTokens) {
         importNotes,
         sourcePattern: adapterMetadata.sourcePattern,
         selectedVariant: adapterMetadata.selectedVariant,
+        variantSelectionMode: adapterMetadata.variantSelectionMode,
       },
       errors: errors,
     };
@@ -618,6 +620,7 @@ function normalizeTokenInput(rawTokens) {
       importNotes: importNotes,
       sourcePattern: adapterMetadata.sourcePattern,
       selectedVariant: adapterMetadata.selectedVariant,
+      variantSelectionMode: adapterMetadata.variantSelectionMode,
     },
     errors: errors,
   };

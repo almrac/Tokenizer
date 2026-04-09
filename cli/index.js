@@ -6,6 +6,7 @@ Usage examples:
   node index.js --target bootstrap --input ./tokens.json
   node index.js --target tailwind --output ./dist
   node index.js --target css,tailwind --output ./dist
+  node index.js --target css --variant=dark
 */
 
 const fs = require('fs');
@@ -24,6 +25,7 @@ const SUPPORTED_OPTIONS = {
   prefix: true,
   input: true,
   output: true,
+  variant: true,
 };
 
 const SUPPORTED_TARGETS = {
@@ -156,11 +158,14 @@ function main() {
   validateOptionValue('input', args.input);
   validateOptionValue('output', args.output);
   validateOptionValue('prefix', args.prefix);
+  validateOptionValue('variant', args.variant);
 
   const inputPath = path.resolve(args.input || './tokens.json');
   const outputDir = path.resolve(args.output || './dist');
   const rawTokens = readTokens(inputPath);
-  const normalization = normalizeTokenInput(rawTokens);
+  const normalization = normalizeTokenInput(rawTokens, {
+    explicitVariant: args.variant,
+  });
   const tokens = normalization.normalized;
   const summary = normalization.summary || {};
   ensureDirExists(outputDir);
@@ -187,7 +192,11 @@ function main() {
     process.stderr.write('Info: Source pattern: ' + summary.sourcePattern + '\n');
   }
   if (summary.selectedVariant) {
-    process.stderr.write('Info: Selected variant: ' + summary.selectedVariant + '\n');
+    if (summary.variantSelectionMode === 'explicit') {
+      process.stderr.write('Info: explicit variant selected: "' + summary.selectedVariant + '"\n');
+    } else {
+      process.stderr.write('Info: Selected variant: ' + summary.selectedVariant + '\n');
+    }
   }
   if (summary.detectedGroups && summary.detectedGroups.length > 0) {
     process.stderr.write('Info: Supported groups detected: ' + summary.detectedGroups.join(', ') + '\n');

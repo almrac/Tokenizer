@@ -206,11 +206,60 @@ function resolveAutoVariant(variantKeys) {
   return null;
 }
 
-function applyFlatVariantCollectionAdapter(rawTokens) {
+function resolveExplicitVariant(variantKeys, requestedVariant) {
+  const available = Array.isArray(variantKeys) ? variantKeys.slice() : [];
+  const requested = typeof requestedVariant === 'string' ? requestedVariant.trim() : '';
+
+  if (!requested) {
+    return {
+      selectedVariant: null,
+      error: null,
+    };
+  }
+
+  if (available.indexOf(requested) !== -1) {
+    return {
+      selectedVariant: requested,
+      error: null,
+    };
+  }
+
+  const requestedLower = requested.toLowerCase();
+  const caseInsensitiveMatches = available.filter((key) => String(key).toLowerCase() === requestedLower);
+
+  if (caseInsensitiveMatches.length === 1) {
+    return {
+      selectedVariant: caseInsensitiveMatches[0],
+      error: null,
+    };
+  }
+
+  if (caseInsensitiveMatches.length > 1) {
+    return {
+      selectedVariant: null,
+      error:
+        'La variante explícita "' +
+        requested +
+        '" coincide con múltiples variantes por mayúsculas/minúsculas (' +
+        caseInsensitiveMatches.join(', ') +
+        '). Usa el nombre exacto.',
+    };
+  }
+
+  return {
+    selectedVariant: null,
+    error: null,
+  };
+}
+
+function applyFlatVariantCollectionAdapter(rawTokens, options) {
+  const importOptions = isObjectRecord(options) ? options : {};
+  const explicitVariant = typeof importOptions.explicitVariant === 'string' ? importOptions.explicitVariant.trim() : '';
   const metadata = {
     sourcePattern: null,
     rootUsed: null,
     selectedVariant: null,
+    variantSelectionMode: null,
     warnings: [],
     errors: [],
     applied: false,
@@ -252,10 +301,35 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
       metadata.sourcePattern = 'flatVariantCollection';
       const collectionPath = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
       metadata.rootUsed = collectionPath;
+      const requestedVariant = resolveExplicitVariant(inspection.variantKeys, explicitVariant);
+
+      if (requestedVariant.error) {
+        metadata.errors.push(requestedVariant.error);
+        return {
+          adapted: rawTokens,
+          metadata: metadata,
+        };
+      }
+
+      if (explicitVariant && !requestedVariant.selectedVariant) {
+        metadata.errors.push(
+          'La variante explícita "' +
+            explicitVariant +
+            '" no existe en "' +
+            collectionPath +
+            '". Variantes disponibles: ' +
+            inspection.variantKeys.join(', ') +
+            '.'
+        );
+        return {
+          adapted: rawTokens,
+          metadata: metadata,
+        };
+      }
 
       const autoVariant = resolveAutoVariant(inspection.variantKeys);
 
-      if (!autoVariant) {
+      if (!autoVariant && !requestedVariant.selectedVariant) {
         metadata.errors.push(
           'Se detectó una colección con múltiples variantes en "' +
             collectionPath +
@@ -269,7 +343,7 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
         };
       }
 
-      const selectedVariant = autoVariant.selectedVariant;
+      const selectedVariant = requestedVariant.selectedVariant || autoVariant.selectedVariant;
       const colorTokens = {};
       const tokenNames = Object.keys(maybeCollection);
 
@@ -285,6 +359,7 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
       }
 
       metadata.selectedVariant = selectedVariant;
+      metadata.variantSelectionMode = requestedVariant.selectedVariant ? 'explicit' : autoVariant.reason;
       metadata.applied = true;
 
       const siblingKeys = keys.filter((item) => item !== key);
@@ -295,7 +370,9 @@ function applyFlatVariantCollectionAdapter(rawTokens) {
         metadata.rootUsed = rootCandidate.path;
       }
 
-      if (autoVariant.reason === 'light-dark-default') {
+      if (requestedVariant.selectedVariant) {
+        metadata.warnings.push('Se usó la variante explícita "' + selectedVariant + '" en "' + metadata.rootUsed + '".');
+      } else if (autoVariant.reason === 'light-dark-default') {
         metadata.warnings.push(
             'Se ha seleccionado automáticamente la variante "light" en "' + metadata.rootUsed + '".'
         );

@@ -68,7 +68,7 @@ node index.js --target bootstrap --prefix nb
 Comando base:
 
 ```bash
-node index.js --target <target> [--input ./tokens.json] [--output ./dist] [--prefix tk]
+node index.js --target <target> [--input ./tokens.json] [--output ./dist] [--prefix tk] [--variant <name>]
 ```
 
 Ejemplos:
@@ -80,6 +80,8 @@ node index.js --target bootstrap
 node index.js --target tailwind --output ./dist
 node index.js --target css,tailwind --output ./dist
 node index.js --target css,ionic,bootstrap --prefix tk
+node index.js --target css --variant=light
+node index.js --target css --variant=projectA
 ```
 
 ### Parámetros
@@ -91,6 +93,11 @@ node index.js --target css,ionic,bootstrap --prefix tk
 - `--output` (opcional): carpeta de salida
   - por defecto `./dist`
 - `--prefix` (opcional): prefijo para salidas fallback
+- `--variant` (opcional): selecciona explícitamente una variante para imports multi-variante compatibles
+  - formato recomendado: `--variant=<name>`
+  - en colecciones multi-variante, la selección explícita tiene prioridad sobre la selección automática
+  - si no se indica y no hay resolución automática segura, se mantiene el bloqueo con error
+  - si la variante no existe, se devuelve error con el listado de variantes disponibles
 
 ## Uso web (`docs/`)
 
