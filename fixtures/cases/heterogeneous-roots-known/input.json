@@ -1,0 +1,23 @@
+{
+  "colors": {
+    "primary": "#111827",
+    "surface": "#f9fafb"
+  },
+  "spacing": {
+    "md": 20
+  },
+  "theme": {
+    "global": {
+      "color": {
+        "primary": "#ef4444",
+        "secondary": "#f59e0b"
+      },
+      "space": {
+        "md": 99
+      }
+    }
+  },
+  "metadata": {
+    "name": "mixed-root"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "color": {
+    "primaryColor": "#1b84ff",
+    "neutralText": "#232a31"
+  },
+  "space": {
+    "sm": 8,
+    "xl": 32
+  },
+  "type": {
+    "font-family": {
+      "base": "System UI"
+    },
+    "font-size": {
+      "body": 15
+    },
+    "font-weight": {
+      "regular": 500
+    },
+    "line-height": {
+      "body": "normal"
+    },
+    "letter-spacing": {
+      "tight": "-0.01em"
+    }
+  },
+  "borderRadius": {
+    "base": 6
+  },
+  "boxShadow": {
+    "soft": "0 4px 10px rgba(0, 0, 0, 0.12)"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "colors": {
+    "primary": "#0d6efd",
+    "broken": "not-a-color"
+  },
+  "spacing": {
+    "sm": 8,
+    "broken": "wide"
+  },
+  "shadows": {
+    "soft": "0 2px 6px rgba(0, 0, 0, 0.12)",
+    "broken": 24
+  }
+}

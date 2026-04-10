@@ -1,121 +1,10 @@
 # Tokenizer
 
-Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos listos para distintos targets de frontend. Incluye una CLI para generar archivos en local y una interfaz web estática en `docs/`, preparada para publicarse con GitHub Pages.
+Tokenizer convierte un `tokens.json` en archivos listos para `css`, `ionic`, `bootstrap` y `tailwind`. El repo incluye una CLI para generación local y una web estática en `docs/` para previsualizar, copiar y descargar resultados.
 
-## Versionado
+## Qué soporta
 
-El archivo `VERSION` es la fuente de verdad de la versión pública actual. Debe coincidir con la versión visible en la UI web y con el último bloque publicado de `CHANGELOG.md`.
-
-Para actualizar la versión de forma consistente:
-
-```bash
-node scripts/bump-version.js <next-version>
-```
-
-## Qué hace
-
-- Lee un JSON de tokens.
-- Normaliza estructura y aliases comunes.
-- Valida y limpia valores inválidos por token.
-- Genera salida para uno o varios targets:
-  - `css`
-  - `ionic`
-  - `bootstrap`
-  - `tailwind`
-
-## Targets y archivos de salida
-
-- `css` -> `tokens.css`
-- `ionic` -> `variables.scss`
-- `bootstrap` -> `bootstrap-overrides.scss`
-- `tailwind` -> `tailwind.tokens.js`
-
-## Política de exportación
-
-Tokenizer aplica una política consistente:
-
-1. `native-first`: usa mapping nativo cuando existe un slot claro.
-2. fallback explícito: si no hay slot nativo pero el token sigue siendo útil.
-3. warning + omisión como último recurso.
-
-### Resumen por target
-
-- `css`: salida basada en custom properties con prefijo configurable.
-- `ionic`: usa slots nativos reales (`--ion-color-*`, `--ion-font-family`) cuando aplica; fallback custom para el resto.
-- `bootstrap`: Sass-first. Usa variables/mapas nativos y fallback extendido explícito (`$<prefix>-*`) para tokens útiles fuera de slots nativos.
-- `tailwind`: mapeo nativo a `theme.extend.*`.
-
-## Prefijo (`--prefix`)
-
-`--prefix` es opcional y se aplica a:
-
-- variables custom en `css` (`--<prefix>-*`)
-- fallback custom en `ionic` (`--<prefix>-*`)
-- fallback extendido en `bootstrap` (`$<prefix>-*`)
-
-Si no se indica, se usa `tk`.
-
-Ejemplos:
-
-```bash
-node index.js --target css --prefix nb
-node index.js --target ionic --prefix nb
-node index.js --target bootstrap --prefix nb
-```
-
-## Uso CLI
-
-Comando base:
-
-```bash
-node index.js --target <target> [--input ./tokens.json] [--output ./dist] [--prefix tk] [--variant <name>]
-```
-
-Ejemplos:
-
-```bash
-node index.js --target css
-node index.js --target ionic --input ./tokens.json --output ./dist
-node index.js --target bootstrap
-node index.js --target tailwind --output ./dist
-node index.js --target css,tailwind --output ./dist
-node index.js --target css,ionic,bootstrap --prefix tk
-node index.js --target css --variant=light
-node index.js --target css --variant=projectA
-```
-
-### Parámetros
-
-- `--target` (obligatorio): `css`, `ionic`, `bootstrap`, `tailwind`
-  - también acepta lista separada por comas (`css,tailwind`)
-- `--input` (opcional): ruta del JSON de entrada
-  - por defecto `./tokens.json`
-- `--output` (opcional): carpeta de salida
-  - por defecto `./dist`
-- `--prefix` (opcional): prefijo para salidas fallback
-- `--variant` (opcional): selecciona explícitamente una variante para imports multi-variante compatibles
-  - formato recomendado: `--variant=<name>`
-  - en colecciones multi-variante, la selección explícita tiene prioridad sobre la selección automática
-  - si no se indica y no hay resolución automática segura, se mantiene el bloqueo con error
-  - si la variante no existe, se devuelve error con el listado de variantes disponibles
-
-## Uso web (`docs/`)
-
-La interfaz web permite:
-
-- cargar archivo `.json` o pegar contenido manualmente
-- elegir target principal o usar modo multi-export
-- previsualizar salida por target
-- copiar o descargar resultados
-- revisar feedback en cuatro categorías:
-  - `Información`
-  - `Advertencias`
-  - `Omisiones`
-  - `Errores`
-
-## Estructura de entrada soportada
-
-Grupos canónicos soportados:
+Grupos de entrada:
 
 - `colors`
 - `spacing`
@@ -123,55 +12,88 @@ Grupos canónicos soportados:
 - `radius`
 - `shadows`
 
-También se aceptan aliases comunes (por ejemplo `color`, `space`, `borderRadius`, `boxShadow`, `type`) y wrappers frecuentes (`tokens`, `theme`, `global`, etc.), manteniendo prioridad por estructura canónica top-level cuando existe.
+Entradas compatibles hoy:
 
-## Normalización de valores
+- estructura canónica top-level
+- wrappers comunes como `tokens`, `global`, `theme`, `collection`, `semanticTokens`
+- aliases top-level como `color`, `space`, `borderRadius`, `boxShadow`, `type`
+- flat collections compatibles con variantes, incluida selección explícita cuando hace falta
 
-Tokenizer normaliza antes de generar:
+## Targets
 
-- `spacing` y `radius`:
-  - números no cero -> `px`
-  - `0` -> `"0"`
-- `typography.fontSize`:
-  - números no cero -> `px`
-  - `0` -> `"0"`
-- `typography.lineHeight`:
-  - valores unitless válidos se preservan unitless (`1.1`)
-  - `"normal"` se preserva
-  - valores con unidad se preservan
-- `typography.fontWeight`:
-  - se mantiene unitless (ej. `400`, `600`)
+- `css` -> `tokens.css`
+- `ionic` -> `variables.scss`
+- `bootstrap` -> `bootstrap-overrides.scss`
+- `tailwind` -> `tailwind.tokens.js`
 
-## Validación y limpieza
+Resumen de salida:
 
-- Se validan formato de grupos y tipos esperados.
-- Tokens inválidos de `colors`, `spacing` y `shadows` se omiten por path (sin bloquear todo el proceso).
-- Grupos no soportados se reportan como advertencia.
-- Si hay errores bloqueantes (JSON inválido, raíz inválida, ambigüedad de raíz, variante no resuelta), no se genera salida.
+- `css`: custom properties con prefijo configurable
+- `ionic`: variables nativas cuando existe slot claro y fallback custom para el resto
+- `bootstrap`: estrategia Sass-first con fallback explícito para tokens útiles fuera de slots nativos
+- `tailwind`: mapeo a `theme.extend.*`
+
+## Uso rápido
+
+CLI:
+
+```bash
+node index.js --target css
+node index.js --target css,tailwind --output ./dist
+node index.js --target css --variant=dark
+```
+
+Web:
+
+- carga o pega un JSON
+- elige un target o modo multi-export
+- selecciona variante cuando la importación detecte varias opciones compatibles
+- copia o descarga la salida generada
+
+Parámetros principales de CLI:
+
+- `--target`: `css`, `ionic`, `bootstrap`, `tailwind` o lista separada por comas
+- `--input`: ruta del JSON, por defecto `./tokens.json`
+- `--output`: carpeta de salida, por defecto `./dist`
+- `--prefix`: prefijo para variables fallback, por defecto `tk`
+- `--variant=<name>`: fuerza una variante explícita en imports multi-variante compatibles
+
+## Comportamiento actual
+
+- normaliza aliases comunes y ciertos valores tipográficos y de longitud
+- omite tokens inválidos de `colors`, `spacing` y `shadows` sin bloquear toda la ejecución
+- bloquea con error cuando la raíz es ambigua o una colección multi-variante no se puede resolver de forma segura
+- emite `Información`, `Advertencias`, `Omisiones` y `Errores`
+
+## CLI y web
+
+- La CLI genera archivos en `dist/`.
+- La web usa la misma lógica de importación y generación para previsualización.
+- Ambas soportan selección explícita de variante en los casos compatibles actuales.
 
 ## Límites actuales
 
-- El selector explícito de variante está disponible solo en la CLI.
-- La UI web no expone selector explícito de variante.
-- No soporta todavía todos los dumps crudos o complejos de Figma.
-- El soporte de text styles compuestos sigue siendo parcial.
+- no soporta todavía todos los dumps crudos o complejos de Figma
+- el soporte de text styles compuestos sigue siendo parcial
+- no resuelve automáticamente variantes arbitrarias cuando no hay una selección segura
+- en roots muy heterogéneos sigue priorizando bloqueo seguro antes que inferencia agresiva
 
-## Feedback que emite Tokenizer
+## Versionado
 
-- `Información`: resumen neutral de importación/estado.
-- `Advertencias`: incidencias no bloqueantes.
-- `Omisiones`: tokens o grupos omitidos y motivo.
-- `Errores`: incidencias bloqueantes.
+`VERSION` es la referencia pública de versión y debe coincidir con la versión visible en la UI web y con el último bloque publicado de `CHANGELOG.md`.
 
-## Estructura del proyecto
+```bash
+node scripts/bump-version.js <next-version>
+```
 
-- `index.js`: entrada CLI.
-- `cli/`: parsing de argumentos y orquestación de generación.
-- `core/`: normalización, validación, mappings y generadores por target.
-- `docs/`: interfaz web estática.
-- `scripts/`: utilidades de mantenimiento (por ejemplo versión).
+## Estructura documental
+
+- `README.md`: uso público del proyecto
+- `docs/`: web pública estática
+- `project/`: documentación operativa interna, con índice en `project/README.md`
+- `fixtures/`: fixtures y snapshots de verificación
 
 ## Notas
 
-- No requiere dependencias externas para ejecutarse con Node.
-- El historial detallado de cambios vive en `CHANGELOG.md`.
+- no requiere dependencias externas para ejecutarse con Node
+- `CHANGELOG.md` contiene el historial publicado de cambios

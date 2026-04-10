@@ -1,0 +1,10 @@
+{
+  "description": "Caso canónico con todos los grupos soportados.",
+  "covers": [
+    "canonical",
+    "all-supported-groups",
+    "all-targets"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

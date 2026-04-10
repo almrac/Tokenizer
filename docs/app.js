@@ -256,6 +256,9 @@
   var previewTabs = document.querySelector('[data-ui="preview-tabs"]');
   var prefixField = document.querySelector('[data-ui="prefix-field"]');
   var prefixInput = document.querySelector('[data-ui="prefix-input"]');
+  var variantField = document.querySelector('[data-ui="variant-field"]');
+  var variantSelect = document.querySelector('[data-ui="variant-select"]');
+  var variantHint = document.querySelector('[data-ui="variant-hint"]');
   var filename = document.querySelector('[data-ui="filename"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
@@ -284,6 +287,51 @@
   var generatedOutputs = {};
   var activePreviewTarget = 'css';
   var preferredPreviewTarget = '';
+
+  function setVariantOptions(variants, selectedValue, autoVariant) {
+    var nextVariants = Array.isArray(variants) ? variants.slice() : [];
+    var nextSelected = typeof selectedValue === 'string' ? selectedValue : '';
+    var option;
+    var i;
+
+    variantSelect.textContent = '';
+    option = document.createElement('option');
+    option.value = '';
+    option.textContent = autoVariant ? 'Automática (' + autoVariant + ')' : 'Selecciona una variante';
+    variantSelect.appendChild(option);
+
+    for (i = 0; i < nextVariants.length; i += 1) {
+      option = document.createElement('option');
+      option.value = nextVariants[i];
+      option.textContent = nextVariants[i];
+      variantSelect.appendChild(option);
+    }
+
+    variantSelect.value = nextSelected;
+  }
+
+  function updateVariantField(summary) {
+    var variants = summary && summary.availableVariants ? summary.availableVariants : [];
+    var autoVariant = summary && summary.autoSelectedVariant ? summary.autoSelectedVariant : '';
+    var selectedVariant = summary && summary.variantSelectionMode === 'explicit' ? summary.selectedVariant : '';
+
+    if (!variants || variants.length === 0) {
+      variantField.hidden = true;
+      setVariantOptions([], '', '');
+      variantHint.textContent = 'Selecciona una variante explícita cuando la importación detecte varias opciones compatibles.';
+      return;
+    }
+
+    variantField.hidden = false;
+    setVariantOptions(variants, selectedVariant, autoVariant);
+
+    if (autoVariant) {
+      variantHint.textContent = 'Puedes mantener la selección automática o forzar una variante explícita.';
+      return;
+    }
+
+    variantHint.textContent = 'Este caso no se resuelve automáticamente. Selecciona una variante válida para generar salida.';
+  }
 
   function getTargetTemplate(target) {
     return targetMappingTemplates[target] || targetMappingTemplates.css;
@@ -922,11 +970,66 @@
     return null;
   }
 
-  function applyFlatVariantCollectionAdapter(rawTokens) {
+  function resolveExplicitVariant(variantKeys, requestedVariant) {
+    var available = Array.isArray(variantKeys) ? variantKeys.slice() : [];
+    var requested = typeof requestedVariant === 'string' ? requestedVariant.trim() : '';
+    var requestedLower;
+    var caseInsensitiveMatches;
+
+    if (!requested) {
+      return {
+        selectedVariant: null,
+        error: null
+      };
+    }
+
+    if (available.indexOf(requested) !== -1) {
+      return {
+        selectedVariant: requested,
+        error: null
+      };
+    }
+
+    requestedLower = requested.toLowerCase();
+    caseInsensitiveMatches = available.filter(function (key) {
+      return String(key).toLowerCase() === requestedLower;
+    });
+
+    if (caseInsensitiveMatches.length === 1) {
+      return {
+        selectedVariant: caseInsensitiveMatches[0],
+        error: null
+      };
+    }
+
+    if (caseInsensitiveMatches.length > 1) {
+      return {
+        selectedVariant: null,
+        error:
+          'La variante explícita "' +
+          requested +
+          '" coincide con múltiples variantes por mayúsculas/minúsculas (' +
+          caseInsensitiveMatches.join(', ') +
+          '). Usa el nombre exacto.'
+      };
+    }
+
+    return {
+      selectedVariant: null,
+      error: null
+    };
+  }
+
+  function applyFlatVariantCollectionAdapter(rawTokens, options) {
+    var importOptions = isPlainObject(options) ? options : {};
+    var explicitVariant = typeof importOptions.explicitVariant === 'string' ? importOptions.explicitVariant.trim() : '';
     var metadata = {
       sourcePattern: null,
       rootUsed: null,
       selectedVariant: null,
+      availableVariants: [],
+      autoSelectedVariant: null,
+      variantSelectionMode: null,
       warnings: [],
       errors: [],
       applied: false
@@ -940,6 +1043,7 @@
     var key;
     var maybeCollection;
     var inspection;
+    var requestedVariant;
     var autoVariant;
     var selectedVariant;
     var siblingKeys;
@@ -981,12 +1085,39 @@
         }
 
         metadata.sourcePattern = 'flatVariantCollection';
+        metadata.availableVariants = inspection.variantKeys.slice();
         var collectionPath = rootCandidate.path === 'top-level' ? key : rootCandidate.path + '.' + key;
         metadata.rootUsed = collectionPath;
+        requestedVariant = resolveExplicitVariant(inspection.variantKeys, explicitVariant);
+
+        if (requestedVariant.error) {
+          metadata.errors.push(requestedVariant.error);
+          return {
+            adapted: rawTokens,
+            metadata: metadata
+          };
+        }
+
+        if (explicitVariant && !requestedVariant.selectedVariant) {
+          metadata.errors.push(
+            'La variante explícita "' +
+            explicitVariant +
+            '" no existe en "' +
+            collectionPath +
+            '". Variantes disponibles: ' +
+            inspection.variantKeys.join(', ') +
+            '.'
+          );
+          return {
+            adapted: rawTokens,
+            metadata: metadata
+          };
+        }
 
         autoVariant = resolveAutoVariant(inspection.variantKeys);
+        metadata.autoSelectedVariant = autoVariant ? autoVariant.selectedVariant : null;
 
-        if (!autoVariant) {
+        if (!autoVariant && !requestedVariant.selectedVariant) {
           metadata.errors.push(
             'Se detectó una colección con múltiples variantes en "' +
             collectionPath +
@@ -1000,7 +1131,7 @@
           };
         }
 
-        selectedVariant = autoVariant.selectedVariant;
+        selectedVariant = requestedVariant.selectedVariant || autoVariant.selectedVariant;
         colorTokens = {};
         tokenNames = Object.keys(maybeCollection);
 
@@ -1016,6 +1147,7 @@
         }
 
         metadata.selectedVariant = selectedVariant;
+        metadata.variantSelectionMode = requestedVariant.selectedVariant ? 'explicit' : autoVariant.reason;
         metadata.applied = true;
         siblingKeys = keys.filter(function (item) { return item !== key; });
         siblingGroupSignals = siblingKeys.filter(function (siblingKey) {
@@ -1027,7 +1159,11 @@
           metadata.rootUsed = rootCandidate.path;
         }
 
-        if (autoVariant.reason === 'light-dark-default') {
+        if (requestedVariant.selectedVariant) {
+          metadata.warnings.push(
+            'Se usó la variante explícita "' + selectedVariant + '" en "' + metadata.rootUsed + '".'
+          );
+        } else if (autoVariant.reason === 'light-dark-default') {
           metadata.warnings.push(
             'Se ha seleccionado automáticamente la variante "light" en "' + metadata.rootUsed + '".'
           );
@@ -1490,7 +1626,7 @@
     return normalizeLineHeightLeaf(value);
   }
 
-  function normalizeTokenInput(rawTokens) {
+  function normalizeTokenInput(rawTokens, options) {
     var importNotes = [];
     var normalizationNotes = [];
     var omissions = [];
@@ -1512,7 +1648,7 @@
     var isCanonical;
     var normalizedValue;
 
-    adapterResult = applyFlatVariantCollectionAdapter(rawTokens);
+    adapterResult = applyFlatVariantCollectionAdapter(rawTokens, options);
     adaptedInput = adapterResult.adapted;
     adapterMetadata = adapterResult.metadata;
     summaryRootUsed = adapterMetadata.rootUsed || 'top-level';
@@ -1538,7 +1674,10 @@
           omissions: omissions,
           importNotes: importNotes,
           sourcePattern: adapterMetadata.sourcePattern,
-          selectedVariant: adapterMetadata.selectedVariant
+          selectedVariant: adapterMetadata.selectedVariant,
+          availableVariants: adapterMetadata.availableVariants,
+          autoSelectedVariant: adapterMetadata.autoSelectedVariant,
+          variantSelectionMode: adapterMetadata.variantSelectionMode
         },
         errors: errors
       };
@@ -1559,7 +1698,10 @@
           omissions: omissions,
           importNotes: importNotes,
           sourcePattern: adapterMetadata.sourcePattern,
-          selectedVariant: adapterMetadata.selectedVariant
+          selectedVariant: adapterMetadata.selectedVariant,
+          availableVariants: adapterMetadata.availableVariants,
+          autoSelectedVariant: adapterMetadata.autoSelectedVariant,
+          variantSelectionMode: adapterMetadata.variantSelectionMode
         },
         errors: errors
       };
@@ -1696,7 +1838,10 @@
         omissions: omissions,
         importNotes: importNotes,
         sourcePattern: adapterMetadata.sourcePattern,
-        selectedVariant: adapterMetadata.selectedVariant
+        selectedVariant: adapterMetadata.selectedVariant,
+        availableVariants: adapterMetadata.availableVariants,
+        autoSelectedVariant: adapterMetadata.autoSelectedVariant,
+        variantSelectionMode: adapterMetadata.variantSelectionMode
       },
       errors: errors
     };
@@ -3071,15 +3216,23 @@
     var rootUsed = details && details.rootUsed ? details.rootUsed : 'top-level';
     var supported = details && details.supportedGroups ? details.supportedGroups : [];
     var ignored = details && details.ignoredGroups ? details.ignoredGroups : [];
+    var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
+    var importNotes = details && details.importNotes ? details.importNotes : [];
+    var selectedVariant = details && details.selectedVariant ? details.selectedVariant : '';
     var omissionCount = details && details.omissions ? details.omissions.length : 0;
     var warningCount = details && details.warningCount ? details.warningCount : 0;
-    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || omissionCount > 0;
+    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || omissionCount > 0 || normalizationNotes.length > 0 || importNotes.length > 0 || !!selectedVariant;
+    var importSummary = importNotes.slice();
     var status = 'Sin advertencias';
 
     if (omissionCount > 0) {
       status = 'Con omisiones';
     } else if (warningCount > 0) {
       status = 'Con advertencias';
+    }
+
+    if (selectedVariant) {
+      importSummary.push('Variante activa: "' + selectedVariant + '".');
     }
 
     inspector.hidden = false;
@@ -3094,12 +3247,29 @@
       inspectorIgnored.textContent = '-';
     }
 
-    inspectorNormalizationRow.hidden = true;
-    inspectorNormalization.textContent = '-';
-    inspectorImportRow.hidden = true;
-    inspectorImport.textContent = '-';
-    inspectorOmissionRow.hidden = true;
-    inspectorOmission.textContent = '-';
+    if (hasMeaningfulDetails && normalizationNotes.length > 0) {
+      inspectorNormalizationRow.hidden = false;
+      inspectorNormalization.textContent = normalizationNotes.join(' ');
+    } else {
+      inspectorNormalizationRow.hidden = true;
+      inspectorNormalization.textContent = '-';
+    }
+
+    if (hasMeaningfulDetails && importSummary.length > 0) {
+      inspectorImportRow.hidden = false;
+      inspectorImport.textContent = importSummary.join(' ');
+    } else {
+      inspectorImportRow.hidden = true;
+      inspectorImport.textContent = '-';
+    }
+
+    if (hasMeaningfulDetails && omissionCount > 0) {
+      inspectorOmissionRow.hidden = false;
+      inspectorOmission.textContent = details.omissions.join(' ');
+    } else {
+      inspectorOmissionRow.hidden = true;
+      inspectorOmission.textContent = '-';
+    }
 
     inspectorWarningState.textContent = status;
   }
@@ -3216,6 +3386,9 @@
     var hasErrors = false;
     var newOutputs = {};
     var validationWarning;
+    var currentVariantSelection;
+    var discoverySummary;
+    var explicitVariant;
 
     updateMultiExportVisibility();
     updatePrefixVisibility();
@@ -3229,6 +3402,7 @@
     try {
       rawTokens = JSON.parse(tokensInput.value);
     } catch (error) {
+      updateVariantField(null);
       setError(tokensInput.value.trim() ? 'El JSON no es válido. Revisa comas, comillas y llaves antes de generar la salida.' : '');
       setWarning('');
       setOmission('');
@@ -3249,7 +3423,21 @@
       return;
     }
 
+    currentVariantSelection = variantSelect.value;
     normalization = normalizeTokenInput(rawTokens);
+    discoverySummary = normalization.summary || {};
+    explicitVariant =
+      discoverySummary.availableVariants && discoverySummary.availableVariants.indexOf(currentVariantSelection) !== -1
+        ? currentVariantSelection
+        : '';
+
+    if (explicitVariant) {
+      normalization = normalizeTokenInput(rawTokens, {
+        explicitVariant: explicitVariant
+      });
+    }
+
+    updateVariantField(normalization.summary);
     parsedTokens = normalization.normalized;
 
     if (normalization.errors.length > 0) {
@@ -3548,6 +3736,7 @@
     renderActivePreview();
   });
   prefixInput.addEventListener('input', renderOutput);
+  variantSelect.addEventListener('change', renderOutput);
   fileInput.addEventListener('change', handleFileUpload);
   copyButton.addEventListener('click', copyOutput);
   downloadButton.addEventListener('click', downloadOutput);

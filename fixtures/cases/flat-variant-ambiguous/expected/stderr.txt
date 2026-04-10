@@ -1,0 +1,1 @@
+Error: Se detectó una colección con múltiples variantes en "collection". Variantes disponibles: projectA, projectB. Selecciona una variante explícita para continuar.
