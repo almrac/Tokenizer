@@ -19,6 +19,7 @@ Base mínima de fixtures y snapshots para detectar regresiones en la CLI de Toke
 - wrapper común
 - aliases top-level
 - flat variant resoluble
+- flat variant con selección explícita
 - flat variant ambigua
 - valores inválidos con omisiones
 - roots heterogéneos conocidos
