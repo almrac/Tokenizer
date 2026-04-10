@@ -3,6 +3,7 @@
 ## Cerrado
 - Normalización de aliases top-level
 - Detección de roots y wrappers comunes
+- Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Flat variant collection (base)
 - Selección explícita de variante en CLI
 - Selección explícita de variante en UI
@@ -19,7 +20,7 @@
 - Documentación de límites con ejemplos reales adicionales
 
 ## Abierto
-- Compatibilidad ampliada con dumps complejos de Figma
+- Compatibilidad ampliada con dumps complejos y heterogéneos de Figma
 - Mejora de heurísticas para roots muy heterogéneos
 
 ## Más adelante
