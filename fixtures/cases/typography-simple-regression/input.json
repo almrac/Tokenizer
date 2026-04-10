@@ -1,0 +1,21 @@
+{
+  "typography": {
+    "fontFamily": {
+      "base": "Inter, sans-serif"
+    },
+    "fontSize": {
+      "body": 16,
+      "display": 32
+    },
+    "fontWeight": {
+      "regular": 400,
+      "bold": 700
+    },
+    "lineHeight": {
+      "body": 1.5
+    },
+    "letterSpacing": {
+      "wide": "0.04em"
+    }
+  }
+}

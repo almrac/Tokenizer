@@ -1,0 +1,9 @@
+{
+  "description": "Text styles compuestos envueltos con $value/$type bajo typography.",
+  "covers": [
+    "figma-typography-compound-dollar",
+    "typography-compound-envelope"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

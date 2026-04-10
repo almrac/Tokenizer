@@ -1,0 +1,15 @@
+{
+  "typography": {
+    "body": {
+      "value": {
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": {
+          "mobile": 16,
+          "desktop": 18
+        },
+        "fontWeight": 400
+      },
+      "type": "typography"
+    }
+  }
+}

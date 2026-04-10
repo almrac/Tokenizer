@@ -1,0 +1,9 @@
+{
+  "description": "Typography simple canónica para asegurar que no cambia el comportamiento ya estable.",
+  "covers": [
+    "typography-simple-regression",
+    "typography-simple"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

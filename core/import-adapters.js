@@ -35,6 +35,33 @@ const TOKEN_METADATA_KEYS = {
   name: true,
   id: true,
 };
+const TYPOGRAPHY_CATEGORY_KEYS = {
+  fontFamily: true,
+  fontSize: true,
+  fontWeight: true,
+  lineHeight: true,
+  letterSpacing: true,
+  'font-family': true,
+  font_family: true,
+  fontsize: true,
+  'font-size': true,
+  font_size: true,
+  fontweight: true,
+  'font-weight': true,
+  font_weight: true,
+  lineheight: true,
+  'line-height': true,
+  line_height: true,
+  letterspacing: true,
+  'letter-spacing': true,
+  letter_spacing: true,
+};
+const TYPOGRAPHY_IGNORED_EXTRA_KEYS = {
+  paragraphSpacing: true,
+  paragraphIndent: true,
+  textCase: true,
+  textDecoration: true,
+};
 
 function isColorLike(value) {
   const text = String(value || '').trim();
@@ -328,6 +355,96 @@ function unwrapLeafTokenEnvelopesDeep(value, metadata) {
   return clone;
 }
 
+function unwrapTypographyCompoundEnvelope(value, metadata) {
+  if (!isObjectRecord(value)) {
+    return value;
+  }
+
+  const keys = Object.keys(value);
+  let valueKey = null;
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+
+    if (TOKEN_VALUE_KEYS[key]) {
+      if (valueKey) {
+        return value;
+      }
+      valueKey = key;
+      continue;
+    }
+
+    if (!TOKEN_METADATA_KEYS[key]) {
+      return value;
+    }
+  }
+
+  if (!valueKey) {
+    return value;
+  }
+
+  const innerValue = value[valueKey];
+  if (!isObjectRecord(innerValue)) {
+    return value;
+  }
+
+  const innerKeys = Object.keys(innerValue);
+  if (innerKeys.length === 0) {
+    return value;
+  }
+
+  let hasSupportedTypographyCategory = false;
+
+  for (let i = 0; i < innerKeys.length; i += 1) {
+    const key = innerKeys[i];
+    const innerLeaf = innerValue[key];
+
+    if (TYPOGRAPHY_CATEGORY_KEYS[key]) {
+      if (isObjectRecord(innerLeaf) || Array.isArray(innerLeaf)) {
+        return value;
+      }
+      hasSupportedTypographyCategory = true;
+      continue;
+    }
+
+    if (TYPOGRAPHY_IGNORED_EXTRA_KEYS[key]) {
+      if (isObjectRecord(innerLeaf) || Array.isArray(innerLeaf)) {
+        return value;
+      }
+      continue;
+    }
+
+    return value;
+  }
+
+  if (!hasSupportedTypographyCategory) {
+    return value;
+  }
+
+  metadata.unwrappedCount += 1;
+  metadata.applied = true;
+  return Object.assign({}, innerValue);
+}
+
+function unwrapTypographyCompoundEnvelopesDeep(value, metadata, underTypography) {
+  const direct = underTypography ? unwrapTypographyCompoundEnvelope(value, metadata) : value;
+
+  if (!isObjectRecord(direct)) {
+    return direct;
+  }
+
+  const clone = {};
+  const keys = Object.keys(direct);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    const childUnderTypography = underTypography || resolveCanonicalGroupName(key) === 'typography';
+    clone[key] = unwrapTypographyCompoundEnvelopesDeep(direct[key], metadata, childUnderTypography);
+  }
+
+  return clone;
+}
+
 function applyLeafTokenEnvelopeAdapter(rawTokens) {
   const metadata = {
     sourcePattern: null,
@@ -353,6 +470,40 @@ function applyLeafTokenEnvelopeAdapter(rawTokens) {
     metadata.sourcePattern = 'leafTokenEnvelope';
     metadata.warnings.push(
       'Leaf token envelopes normalizados: ' + metadata.unwrappedCount + ' hoja(s) convertida(s) a valor escalar.'
+    );
+  }
+
+  return {
+    adapted: adapted,
+    metadata: metadata,
+  };
+}
+
+function applyTypographyCompoundAdapter(rawTokens) {
+  const metadata = {
+    sourcePattern: null,
+    rootUsed: null,
+    selectedVariant: null,
+    variantSelectionMode: null,
+    warnings: [],
+    errors: [],
+    applied: false,
+    unwrappedCount: 0,
+  };
+
+  if (!isObjectRecord(rawTokens)) {
+    return {
+      adapted: rawTokens,
+      metadata: metadata,
+    };
+  }
+
+  const adapted = unwrapTypographyCompoundEnvelopesDeep(rawTokens, metadata, false);
+
+  if (metadata.applied) {
+    metadata.sourcePattern = 'typographyCompoundEnvelope';
+    metadata.warnings.push(
+      'Typography compound envelopes normalizados: ' + metadata.unwrappedCount + ' estilo(s) convertidos a objeto plano.'
     );
   }
 
@@ -523,5 +674,6 @@ function applyFlatVariantCollectionAdapter(rawTokens, options) {
 
 module.exports = {
   applyLeafTokenEnvelopeAdapter: applyLeafTokenEnvelopeAdapter,
+  applyTypographyCompoundAdapter: applyTypographyCompoundAdapter,
   applyFlatVariantCollectionAdapter: applyFlatVariantCollectionAdapter,
 };

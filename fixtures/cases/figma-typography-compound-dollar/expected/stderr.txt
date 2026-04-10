@@ -1,0 +1,5 @@
+Info: Typography compound envelopes normalizados: 2 estilo(s) convertidos a objeto plano.
+Info: Import summary: root "top-level", grupos detectados: typography.
+Info: Root used: top-level
+Info: Source pattern: typographyCompoundEnvelope
+Info: Supported groups detected: typography

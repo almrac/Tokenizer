@@ -1,0 +1,19 @@
+{
+  "typography": {
+    "body": {
+      "value": {
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "0.02em",
+        "paragraphSpacing": 24,
+        "paragraphIndent": 0,
+        "textCase": "none",
+        "textDecoration": "none"
+      },
+      "type": "typography",
+      "description": "Body text style"
+    }
+  }
+}

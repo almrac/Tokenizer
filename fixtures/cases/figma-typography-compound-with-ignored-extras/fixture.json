@@ -1,0 +1,9 @@
+{
+  "description": "Text styles compuestos envueltos con extras ignorables preservados sin reinterpretar.",
+  "covers": [
+    "figma-typography-compound-with-ignored-extras",
+    "typography-compound-envelope"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

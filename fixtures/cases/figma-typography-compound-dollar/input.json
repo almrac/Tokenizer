@@ -1,0 +1,21 @@
+{
+  "typography": {
+    "body": {
+      "$value": {
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": "0.02em"
+      },
+      "$type": "typography"
+    },
+    "display": {
+      "$value": {
+        "fontSize": 32,
+        "fontWeight": 700
+      },
+      "$type": "typography"
+    }
+  }
+}

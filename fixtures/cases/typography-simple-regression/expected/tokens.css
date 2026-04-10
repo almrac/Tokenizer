@@ -1,0 +1,10 @@
+:root {
+  /* Typography */
+  --font-family-base: Inter, sans-serif;
+  --font-size-body: 16px;
+  --font-size-display: 32px;
+  --font-weight-bold: 700;
+  --font-weight-regular: 400;
+  --line-height-body: 1.5;
+  --letter-spacing-wide: 0.04em;
+}

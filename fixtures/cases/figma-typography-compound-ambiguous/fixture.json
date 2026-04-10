@@ -1,0 +1,9 @@
+{
+  "description": "Text style compuesto envuelto con nested objects que no debe aplanarse de forma insegura.",
+  "covers": [
+    "figma-typography-compound-ambiguous",
+    "safe-non-flattening"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

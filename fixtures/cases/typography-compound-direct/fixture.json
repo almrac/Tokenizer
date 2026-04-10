@@ -1,0 +1,9 @@
+{
+  "description": "Typography compuesta directa ya soportada bajo estilos como body/display.",
+  "covers": [
+    "typography-compound-direct",
+    "typography-compound"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

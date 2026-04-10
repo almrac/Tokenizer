@@ -1,6 +1,10 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
 const { getTypographyBuckets } = require('./naming');
-const { applyLeafTokenEnvelopeAdapter, applyFlatVariantCollectionAdapter } = require('./import-adapters');
+const {
+  applyLeafTokenEnvelopeAdapter,
+  applyTypographyCompoundAdapter,
+  applyFlatVariantCollectionAdapter,
+} = require('./import-adapters');
 const { getTargetGroupSupportMap } = require('./target-mappings');
 const TOP_LEVEL_ALIASES = {
   color: 'colors',
@@ -641,17 +645,36 @@ function normalizeTokenInput(rawTokens, options) {
   let extractedRoot = rawTokens;
   let detectedGroups = [];
   const leafAdapterResult = applyLeafTokenEnvelopeAdapter(rawTokens, options);
-  const flatVariantAdapterResult = applyFlatVariantCollectionAdapter(leafAdapterResult.adapted, options);
+  const typographyCompoundAdapterResult = applyTypographyCompoundAdapter(leafAdapterResult.adapted, options);
+  const flatVariantAdapterResult = applyFlatVariantCollectionAdapter(typographyCompoundAdapterResult.adapted, options);
   const adaptedInput = flatVariantAdapterResult.adapted;
   const adapterMetadata = {
-    sourcePattern: flatVariantAdapterResult.metadata.sourcePattern || leafAdapterResult.metadata.sourcePattern,
-    rootUsed: flatVariantAdapterResult.metadata.rootUsed || leafAdapterResult.metadata.rootUsed,
-    selectedVariant: flatVariantAdapterResult.metadata.selectedVariant || leafAdapterResult.metadata.selectedVariant,
+    sourcePattern:
+      flatVariantAdapterResult.metadata.sourcePattern ||
+      typographyCompoundAdapterResult.metadata.sourcePattern ||
+      leafAdapterResult.metadata.sourcePattern,
+    rootUsed:
+      flatVariantAdapterResult.metadata.rootUsed ||
+      typographyCompoundAdapterResult.metadata.rootUsed ||
+      leafAdapterResult.metadata.rootUsed,
+    selectedVariant:
+      flatVariantAdapterResult.metadata.selectedVariant ||
+      typographyCompoundAdapterResult.metadata.selectedVariant ||
+      leafAdapterResult.metadata.selectedVariant,
     variantSelectionMode:
-      flatVariantAdapterResult.metadata.variantSelectionMode || leafAdapterResult.metadata.variantSelectionMode,
-    warnings: leafAdapterResult.metadata.warnings.concat(flatVariantAdapterResult.metadata.warnings),
-    errors: leafAdapterResult.metadata.errors.concat(flatVariantAdapterResult.metadata.errors),
-    applied: leafAdapterResult.metadata.applied || flatVariantAdapterResult.metadata.applied,
+      flatVariantAdapterResult.metadata.variantSelectionMode ||
+      typographyCompoundAdapterResult.metadata.variantSelectionMode ||
+      leafAdapterResult.metadata.variantSelectionMode,
+    warnings: leafAdapterResult.metadata.warnings
+      .concat(typographyCompoundAdapterResult.metadata.warnings)
+      .concat(flatVariantAdapterResult.metadata.warnings),
+    errors: leafAdapterResult.metadata.errors
+      .concat(typographyCompoundAdapterResult.metadata.errors)
+      .concat(flatVariantAdapterResult.metadata.errors),
+    applied:
+      leafAdapterResult.metadata.applied ||
+      typographyCompoundAdapterResult.metadata.applied ||
+      flatVariantAdapterResult.metadata.applied,
   };
   const summaryRootUsed = adapterMetadata.rootUsed || 'top-level';
 
