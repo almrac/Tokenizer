@@ -80,11 +80,13 @@ Parámetros principales de CLI:
 
 ## Versionado
 
-`VERSION` es la referencia pública de versión y debe coincidir con la versión visible en la UI web y con el último bloque publicado de `CHANGELOG.md`.
+`VERSION` es la referencia pública de versión. La web carga la versión visible desde `docs/version.json`, que debe mantenerse sincronizado con `VERSION` y con el último bloque publicado de `CHANGELOG.md`.
 
 ```bash
 node scripts/bump-version.js <next-version>
 ```
+
+Ese script actualiza `VERSION` y `docs/version.json`. La UI web lee ese archivo al arrancar, sin edición manual de `docs/index.html`.
 
 ## Estructura documental
 

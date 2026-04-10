@@ -259,6 +259,7 @@
   var variantField = document.querySelector('[data-ui="variant-field"]');
   var variantSelect = document.querySelector('[data-ui="variant-select"]');
   var variantHint = document.querySelector('[data-ui="variant-hint"]');
+  var versionLabel = document.querySelector('[data-ui="version-label"]');
   var filename = document.querySelector('[data-ui="filename"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
@@ -287,6 +288,32 @@
   var generatedOutputs = {};
   var activePreviewTarget = 'css';
   var preferredPreviewTarget = '';
+
+  function loadVisibleVersion() {
+    if (!versionLabel || typeof fetch !== 'function') {
+      return;
+    }
+
+    fetch('./version.json', { cache: 'no-store' })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error('version file not available');
+        }
+        return response.json();
+      })
+      .then(function (payload) {
+        var version = payload && typeof payload.version === 'string' ? payload.version.trim() : '';
+
+        if (!version) {
+          return;
+        }
+
+        versionLabel.textContent = 'v' + version;
+      })
+      .catch(function () {
+        // Keep the fallback label already rendered in the HTML.
+      });
+  }
 
   function setVariantOptions(variants, selectedValue, autoVariant) {
     var nextVariants = Array.isArray(variants) ? variants.slice() : [];
@@ -3743,5 +3770,6 @@
   exampleButton.addEventListener('click', loadExample);
   clearButton.addEventListener('click', clearAll);
 
+  loadVisibleVersion();
   renderOutput();
 }());

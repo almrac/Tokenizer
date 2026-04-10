@@ -5,7 +5,7 @@ const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
 const versionFile = path.join(rootDir, 'VERSION');
-const webIndexFile = path.join(rootDir, 'docs', 'index.html');
+const webVersionFile = path.join(rootDir, 'docs', 'version.json');
 const changelogFile = path.join(rootDir, 'CHANGELOG.md');
 
 function fail(message) {
@@ -42,16 +42,7 @@ function main() {
   }
 
   writeText(versionFile, nextVersion + '\n');
-
-  const indexHtml = readText(webIndexFile);
-  const versionLabelPattern = /(<span class="version-label"[^>]*>)([^<]+)(<\/span>)/;
-
-  if (!versionLabelPattern.test(indexHtml)) {
-    fail('No se encontró la etiqueta visible de versión en docs/index.html');
-  }
-
-  const nextIndexHtml = indexHtml.replace(versionLabelPattern, '$1v' + nextVersion + '$3');
-  writeText(webIndexFile, nextIndexHtml);
+  writeText(webVersionFile, JSON.stringify({ version: nextVersion }, null, 2) + '\n');
 
   const changelogText = readText(changelogFile);
   const changelogHasVersion = new RegExp('^## \\[v' + nextVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\] - ', 'm')
@@ -59,7 +50,7 @@ function main() {
 
   process.stdout.write('Version bump completed:\n');
   process.stdout.write('- VERSION -> ' + nextVersion + '\n');
-  process.stdout.write('- docs/index.html -> v' + nextVersion + '\n');
+  process.stdout.write('- docs/version.json -> v' + nextVersion + '\n');
   if (changelogHasVersion) {
     process.stdout.write('- CHANGELOG.md -> ya contiene v' + nextVersion + '\n');
   } else {
