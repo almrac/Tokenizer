@@ -17,6 +17,7 @@ Entradas compatibles hoy:
 - estructura canónica top-level
 - wrappers comunes como `tokens`, `global`, `theme`, `collection`, `semanticTokens`
 - aliases top-level como `color`, `space`, `borderRadius`, `boxShadow`, `type`
+- roots heterogéneos conocidos cuando existe una rama dominante clara o una agregación segura bajo wrapper conocido
 - hojas envueltas estilo Figma con `value/type` o `$value/$type`, incluida typography compatible y metadatos laterales permitidos
 - flat collections compatibles con variantes, incluida selección explícita cuando hace falta
 
@@ -75,6 +76,7 @@ Parámetros principales de CLI:
 ## Límites actuales
 
 - soporta un subconjunto seguro de hojas envueltas estilo Figma, pero no todos los dumps crudos o heterogéneos
+- soporta un subconjunto conocido de roots heterogéneos, pero no casos profundos o generales
 - no resuelve automáticamente modos o variantes complejas dentro de dumps estilo Figma
 - el soporte de text styles compuestos sigue siendo parcial
 - no resuelve automáticamente variantes arbitrarias cuando no hay una selección segura

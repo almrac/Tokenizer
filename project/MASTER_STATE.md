@@ -8,6 +8,7 @@
 
 ## Capacidades estables
 - Importación con detección de roots y wrappers comunes
+- Soporte verificable para roots heterogéneos conocidos con reglas conservadoras
 - Normalización de aliases top-level y typography
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Soporte parcial para flat collections con variantes
@@ -30,6 +31,7 @@
 ## Estado de robustez actual
 - Casos canónicos: estables
 - Wrappers comunes: estables
+- Roots heterogéneos con rama dominante o agregación segura bajo wrapper conocido: funcional
 - Hojas envueltas `value/$value` con metadata permitida: funcional
 - Conflicto top-level vs root anidado: resuelto
 - Flat collection multi-variante no trivial: bloquea correctamente
@@ -47,11 +49,13 @@
 
 ## Problemas abiertos
 - Compatibilidad más profunda con dumps complejos y heterogéneos de Figma
-- Heurísticas más finas para colecciones heterogéneas
+- Heurísticas más finas para roots heterogéneos profundos o generales
+- Mejora de mensajes de ambigüedad en selección de root
 - Posible pulido adicional de naming en algunos casos edge
 
 ## Límites actuales
 - Soporta un subconjunto seguro de hojas envueltas con `value/$value`, pero no todos los exports crudos de Figma
+- Soporta un subconjunto conocido de roots heterogéneos, pero no casos profundos o generales
 - No resuelve automáticamente modos o variantes complejas en dumps estilo Figma
 - No resuelve automáticamente variantes arbitrarias (`projectA/projectB/...`)
 - El soporte de text styles compuestos sigue siendo parcial

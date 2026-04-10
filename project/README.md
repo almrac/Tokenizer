@@ -14,3 +14,9 @@ Entrada única para seguir el estado real del proyecto.
 - `docs/`: web pública estática y assets de la UI.
 - `project/`: documentación operativa interna.
 - `fixtures/`: fixtures y snapshots de verificación.
+
+## Verificación
+
+- Validación normal: `node scripts/verify-fixtures.js`
+- Regeneración manual de snapshots: `node scripts/verify-fixtures.js --update`
+- La automatización del repo ejecuta solo la validación normal y debe fallar ante regresiones.

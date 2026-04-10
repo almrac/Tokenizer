@@ -3,6 +3,7 @@
 ## Cerrado
 - Normalización de aliases top-level
 - Detección de roots y wrappers comunes
+- Soporte verificable para roots heterogéneos conocidos con rama dominante o agregación segura
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Flat variant collection (base)
 - Selección explícita de variante en CLI
@@ -21,7 +22,8 @@
 
 ## Abierto
 - Compatibilidad ampliada con dumps complejos y heterogéneos de Figma
-- Mejora de heurísticas para roots muy heterogéneos
+- Mejora de heurísticas para roots heterogéneos profundos o generales
+- Mejora de mensajes de ambigüedad en selección de root
 
 ## Más adelante
 - Fixtures de test reales más amplios

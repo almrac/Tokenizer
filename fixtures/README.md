@@ -33,8 +33,16 @@ Base mínima de fixtures y snapshots para detectar regresiones en la CLI de Toke
 node scripts/verify-fixtures.js
 ```
 
+Uso normal:
+
+- valida la salida actual frente a los snapshots esperados
+- falla si hay regresiones en outputs o errores bloqueantes
+- es el comando que debe ejecutar la automatización del repo
+
 Para regenerar snapshots esperados a partir del comportamiento actual:
 
 ```bash
 node scripts/verify-fixtures.js --update
 ```
+
+Usa `--update` solo cuando el cambio esperado en comportamiento ya ha sido revisado y quieres actualizar la base de snapshots manualmente.
