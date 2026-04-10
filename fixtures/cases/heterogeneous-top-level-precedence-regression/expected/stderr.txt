@@ -1,0 +1,7 @@
+Info: Flat variant collection detectada en "theme.global.brand" y normalizada a "colors" usando la variante "primary".
+Info: Using top-level token groups; wrapped candidates were ignored.
+Info: Import summary: root "theme.global.brand", grupos detectados: colors.
+Info: Root used: theme.global.brand
+Info: Source pattern: flatVariantCollection
+Info: Selected variant: primary
+Info: Supported groups detected: colors

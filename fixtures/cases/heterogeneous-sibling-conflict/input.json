@@ -1,0 +1,22 @@
+{
+  "theme": {
+    "global": {
+      "primitives": {
+        "colors": {
+          "primary": "#005bc0"
+        },
+        "spacing": {
+          "sm": 8
+        }
+      },
+      "semantic": {
+        "colors": {
+          "secondary": "#6c757d"
+        },
+        "spacing": {
+          "md": 16
+        }
+      }
+    }
+  }
+}

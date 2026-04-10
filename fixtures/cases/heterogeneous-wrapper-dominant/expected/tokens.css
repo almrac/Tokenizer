@@ -1,0 +1,8 @@
+:root {
+  /* Colors */
+  --color-primary: #005bc0;
+  --color-surface: #ffffff;
+
+  /* Spacing */
+  --spacing-md: 16px;
+}

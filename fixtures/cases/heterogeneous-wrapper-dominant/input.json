@@ -1,0 +1,22 @@
+{
+  "theme": {
+    "global": {
+      "colors": {
+        "primary": "#005bc0",
+        "surface": "#ffffff"
+      },
+      "spacing": {
+        "md": 16
+      },
+      "meta": {
+        "name": "Global tokens"
+      },
+      "collections": {
+        "main": "base"
+      }
+    },
+    "draft": {
+      "notes": "work in progress"
+    }
+  }
+}

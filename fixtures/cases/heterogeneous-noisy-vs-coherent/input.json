@@ -1,0 +1,28 @@
+{
+  "theme": {
+    "global": {
+      "colors": {
+        "primary": "#005bc0"
+      },
+      "meta": {
+        "name": "Global noisy branch"
+      },
+      "modes": {
+        "light": "default",
+        "dark": "contrast"
+      },
+      "collections": {
+        "main": "shared"
+      },
+      "details": {
+        "copy": "branch with extra noise"
+      }
+    },
+    "brand": {
+      "colors": {
+        "primary": "#111827"
+      },
+      "meta": {}
+    }
+  }
+}

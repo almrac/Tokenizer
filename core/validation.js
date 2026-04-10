@@ -124,9 +124,173 @@ function countKnownGroupKeys(value) {
   };
 }
 
+function computeRootCoherenceScore(counts) {
+  const knownCount = counts.canonicalCount + counts.aliasCount;
+  const totalKeys = counts.totalKeys || 0;
+
+  if (knownCount === 0 || totalKeys === 0) {
+    return 0;
+  }
+
+  const knownRatio = knownCount / totalKeys;
+  let score = 0;
+
+  if (knownRatio >= 0.75) {
+    score += 6;
+  } else if (knownRatio >= 0.5) {
+    score += 3;
+  }
+
+  if (knownCount <= 1 && counts.unrelatedCount >= 2) {
+    score -= Math.min(counts.unrelatedCount, 4) + 2;
+  }
+
+  return score;
+}
+
+function computeRootCandidateScore(counts, depth, wrapperHint, preferredHint) {
+  return (
+    counts.canonicalCount * 12 +
+    counts.aliasCount * 6 +
+    (counts.canonicalCount + counts.aliasCount >= 2 ? 8 : 0) +
+    (preferredHint ? 6 : 0) +
+    (wrapperHint ? 4 : 0) +
+    computeRootCoherenceScore(counts) -
+    Math.min(counts.unrelatedCount, 4) * 2 -
+    depth * 2
+  );
+}
+
+function collectKnownGroupsForAggregation(source) {
+  if (!isObjectRecord(source)) {
+    return null;
+  }
+
+  const keys = Object.keys(source);
+  const groups = {};
+  const groupSources = {};
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const originalKey = keys[i];
+    const value = source[originalKey];
+    const canonicalKey = getAliasTargetKey(originalKey, TOP_LEVEL_ALIASES) || originalKey;
+    const isKnownGroup = SUPPORTED_GROUPS.indexOf(canonicalKey) !== -1;
+    const isCanonical = SUPPORTED_GROUPS.indexOf(originalKey) !== -1;
+
+    if (!isKnownGroup || !isObjectRecord(value)) {
+      continue;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(groups, canonicalKey)) {
+      groups[canonicalKey] = value;
+      groupSources[canonicalKey] = {
+        originalKey,
+        isCanonical,
+      };
+      continue;
+    }
+
+    if (isCanonical && !groupSources[canonicalKey].isCanonical) {
+      groups[canonicalKey] = value;
+      groupSources[canonicalKey] = {
+        originalKey,
+        isCanonical: true,
+      };
+      continue;
+    }
+
+    if (!isCanonical && groupSources[canonicalKey].isCanonical) {
+      continue;
+    }
+
+    return null;
+  }
+
+  if (Object.keys(groups).length === 0) {
+    return null;
+  }
+
+  return groups;
+}
+
+function buildAggregatedWrapperCandidate(source, basePath, depth) {
+  if (!isObjectRecord(source) || !basePath) {
+    return null;
+  }
+
+  const pathParts = basePath.split('.');
+  const leaf = pathParts[pathParts.length - 1];
+  const counts = countKnownGroupKeys(source);
+  const isWrapper = !!WRAPPER_KEYS[leaf] || !!WRAPPER_KEYS[String(leaf).toLowerCase()];
+  const knownCount = counts.canonicalCount + counts.aliasCount;
+
+  if (!isWrapper || knownCount > 0) {
+    return null;
+  }
+
+  const keys = Object.keys(source);
+  const mergedGroups = {};
+  const contributingChildren = [];
+  let maxChildKnownCount = 0;
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const childKey = keys[i];
+    const childValue = source[childKey];
+    const childGroups = collectKnownGroupsForAggregation(childValue);
+
+    if (!childGroups) {
+      continue;
+    }
+
+    const childGroupKeys = Object.keys(childGroups);
+
+    for (let j = 0; j < childGroupKeys.length; j += 1) {
+      const groupKey = childGroupKeys[j];
+
+      if (Object.prototype.hasOwnProperty.call(mergedGroups, groupKey)) {
+        return null;
+      }
+
+      mergedGroups[groupKey] = childGroups[groupKey];
+    }
+
+    contributingChildren.push(childKey);
+    if (childGroupKeys.length > maxChildKnownCount) {
+      maxChildKnownCount = childGroupKeys.length;
+    }
+  }
+
+  const mergedGroupKeys = Object.keys(mergedGroups);
+  if (contributingChildren.length < 2 || mergedGroupKeys.length < 2 || mergedGroupKeys.length <= maxChildKnownCount) {
+    return null;
+  }
+
+  const preferredHint = PREFERRED_ROOT_NAMES[leaf] || PREFERRED_ROOT_NAMES[String(leaf).toLowerCase()];
+  const aggregatedCounts = countKnownGroupKeys(mergedGroups);
+
+  return {
+    path: basePath,
+    value: mergedGroups,
+    canonicalCount: aggregatedCounts.canonicalCount,
+    aliasCount: aggregatedCounts.aliasCount,
+    unrelatedCount: aggregatedCounts.unrelatedCount,
+    totalKeys: aggregatedCounts.totalKeys,
+    preferredHint: !!preferredHint,
+    wrapperHint: true,
+    depth,
+    aggregated: true,
+    score: computeRootCandidateScore(aggregatedCounts, depth, true, !!preferredHint),
+  };
+}
+
 function collectTokenRootCandidates(source, basePath, depth, candidates) {
   if (!isObjectRecord(source) || depth > 3) {
     return;
+  }
+
+  const aggregatedCandidate = buildAggregatedWrapperCandidate(source, basePath, depth);
+  if (aggregatedCandidate) {
+    candidates.push(aggregatedCandidate);
   }
 
   const keys = Object.keys(source);
@@ -147,14 +311,7 @@ function collectTokenRootCandidates(source, basePath, depth, candidates) {
       const leafLower = String(leaf).toLowerCase();
       const wrapperHint = WRAPPER_KEYS[key] || WRAPPER_KEYS[String(key).toLowerCase()];
       const preferredHint = PREFERRED_ROOT_NAMES[leaf] || PREFERRED_ROOT_NAMES[leafLower];
-      const score =
-        counts.canonicalCount * 12 +
-        counts.aliasCount * 6 +
-        (counts.canonicalCount + counts.aliasCount >= 2 ? 8 : 0) +
-        (preferredHint ? 6 : 0) +
-        (wrapperHint ? 4 : 0) -
-        Math.min(counts.unrelatedCount, 4) * 2 -
-        depth * 2;
+      const score = computeRootCandidateScore(counts, depth, !!wrapperHint, !!preferredHint);
 
       candidates.push({
         path,

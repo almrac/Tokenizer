@@ -23,6 +23,7 @@ Base mínima de fixtures y snapshots para detectar regresiones en la CLI de Toke
 - flat variant ambigua
 - valores inválidos con omisiones
 - roots heterogéneos conocidos
+- roots heterogéneos con rama dominante, agregación segura y bloqueos por conflicto
 - hojas envueltas estilo Figma con `value/type` y `$value/$type`
 - casos ambiguos de hoja envuelta que no deben aplanarse
 

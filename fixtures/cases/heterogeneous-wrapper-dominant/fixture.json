@@ -1,0 +1,9 @@
+{
+  "description": "Wrapper conocido con una rama dominante y ruido lateral no token.",
+  "covers": [
+    "heterogeneous-wrapper-dominant",
+    "wrapper-root-selection"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

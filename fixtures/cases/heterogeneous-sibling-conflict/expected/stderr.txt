@@ -1,0 +1,1 @@
+Error: Se detectaron múltiples posibles raíces de tokens: "theme.global.primitives", "theme.global.semantic". La diferencia de confianza es baja; deja una raíz clara (por ejemplo, "global" o "default").
