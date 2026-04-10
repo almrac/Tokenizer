@@ -44,7 +44,7 @@
 - Prefijo configurable aplica a css y fallbacks de ionic/bootstrap
 
 ## Problemas abiertos
-- Selección explícita de variante en UI/CLI
+- Selección explícita de variante en UI
 - Compatibilidad más profunda con dumps complejos de Figma
 - Heurísticas más finas para colecciones heterogéneas
 - Posible pulido adicional de naming en algunos casos edge

@@ -4,12 +4,12 @@ Tokenizer es una herramienta ligera para convertir un `tokens.json` en archivos 
 
 ## Versionado
 
-El archivo `VERSION` es la fuente de verdad de la versión actual.
+El archivo `VERSION` es la fuente de verdad de la versión pública actual. Debe coincidir con la versión visible en la UI web y con el último bloque publicado de `CHANGELOG.md`.
 
 Para actualizar la versión de forma consistente:
 
 ```bash
-node scripts/bump-version.js 0.7.1
+node scripts/bump-version.js <next-version>
 ```
 
 ## Qué hace
@@ -148,6 +148,13 @@ Tokenizer normaliza antes de generar:
 - Tokens inválidos de `colors`, `spacing` y `shadows` se omiten por path (sin bloquear todo el proceso).
 - Grupos no soportados se reportan como advertencia.
 - Si hay errores bloqueantes (JSON inválido, raíz inválida, ambigüedad de raíz, variante no resuelta), no se genera salida.
+
+## Límites actuales
+
+- El selector explícito de variante está disponible solo en la CLI.
+- La UI web no expone selector explícito de variante.
+- No soporta todavía todos los dumps crudos o complejos de Figma.
+- El soporte de text styles compuestos sigue siendo parcial.
 
 ## Feedback que emite Tokenizer
 
