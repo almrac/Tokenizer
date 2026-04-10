@@ -33,5 +33,6 @@
 ## Más adelante
 - Fixtures de test reales más amplios
 - Suite de verificación semiautomática por target
+- Selección opcional de versión o perfil del target cuando la versión cambie mappings, compatibilidad o salida generada
 - Documentación avanzada con casos reales de entrada/salida
 - Supervisor operativo integrado en flujo del proyecto

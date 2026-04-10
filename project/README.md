@@ -5,7 +5,7 @@ Entrada única para seguir el estado real del proyecto.
 ## Contenido
 
 - `MASTER_STATE.md`: estado actual, límites y decisiones vigentes.
-- `BACKLOG.md`: trabajo cerrado, abierto y diferido.
+- `BACKLOG.md`: trabajo cerrado, abierto y diferido; incluye la línea de roadmap futura cuando una capacidad no es inmediata.
 - `examples.md`: casos reales de entrada/salida respaldados por fixtures.
 - `TASK_TEMPLATE.md`: plantilla breve para abrir tareas acotadas.
 

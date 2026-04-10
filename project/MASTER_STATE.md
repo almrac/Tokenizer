@@ -67,6 +67,7 @@
 - Soporta `typography.<style> = { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing }` y la misma estructura envuelta en `value/$value`
 - Permite `paragraphSpacing`, `paragraphIndent`, `textCase` y `textDecoration` como extras ignorados, sin reinterpretarlos ni exportarlos
 - No soporta todavía modos internos, objetos anidados complejos ni typography arbitraria más amplia
+- No existe todavía selección de versión o perfil del target; hoy la exportación usa un único comportamiento por target
 
 ## Último estado conocido
 - Hardening reciente completado
