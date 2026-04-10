@@ -124,6 +124,25 @@ function countKnownGroupKeys(value) {
   };
 }
 
+function getKnownGroupKeys(value) {
+  if (!isObjectRecord(value)) {
+    return [];
+  }
+
+  const keys = Object.keys(value);
+  const knownKeys = [];
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const canonicalKey = getAliasTargetKey(keys[i], TOP_LEVEL_ALIASES) || keys[i];
+
+    if (SUPPORTED_GROUPS.indexOf(canonicalKey) !== -1 && knownKeys.indexOf(canonicalKey) === -1) {
+      knownKeys.push(canonicalKey);
+    }
+  }
+
+  return knownKeys.sort();
+}
+
 function computeRootCoherenceScore(counts) {
   const knownCount = counts.canonicalCount + counts.aliasCount;
   const totalKeys = counts.totalKeys || 0;
@@ -159,6 +178,24 @@ function computeRootCandidateScore(counts, depth, wrapperHint, preferredHint) {
     Math.min(counts.unrelatedCount, 4) * 2 -
     depth * 2
   );
+}
+
+function describeRootAmbiguity(best, second) {
+  const bestGroups = Array.isArray(best.knownGroupKeys) ? best.knownGroupKeys : [];
+  const secondGroups = Array.isArray(second.knownGroupKeys) ? second.knownGroupKeys : [];
+  const overlappingGroups = bestGroups.filter((group) => secondGroups.indexOf(group) !== -1);
+  const bestKnownCount = best.canonicalCount + best.aliasCount;
+  const secondKnownCount = second.canonicalCount + second.aliasCount;
+
+  if (overlappingGroups.length > 0) {
+    return 'Hay grupos solapados entre las candidatas (' + overlappingGroups.join(', ') + ') y no hay dominancia clara.';
+  }
+
+  if (bestKnownCount === secondKnownCount) {
+    return 'Las candidatas principales tienen una cobertura similar de grupos.';
+  }
+
+  return 'No hay una raíz dominante lo bastante clara entre las candidatas principales.';
 }
 
 function collectKnownGroupsForAggregation(source) {
@@ -277,6 +314,7 @@ function buildAggregatedWrapperCandidate(source, basePath, depth) {
     totalKeys: aggregatedCounts.totalKeys,
     preferredHint: !!preferredHint,
     wrapperHint: true,
+    knownGroupKeys: getKnownGroupKeys(mergedGroups),
     depth,
     aggregated: true,
     score: computeRootCandidateScore(aggregatedCounts, depth, true, !!preferredHint),
@@ -322,6 +360,7 @@ function collectTokenRootCandidates(source, basePath, depth, candidates) {
         totalKeys: counts.totalKeys,
         preferredHint: !!preferredHint,
         wrapperHint: !!wrapperHint,
+        knownGroupKeys: getKnownGroupKeys(value),
         depth,
         score,
       });
@@ -380,10 +419,13 @@ function pickTokenRoot(rawTokens, info, errors) {
 
   if (scoreDelta < 4) {
     const topCandidates = sorted.slice(0, 3);
+    const ambiguityReason = describeRootAmbiguity(best, second);
     errors.push(
       'Se detectaron múltiples posibles raíces de tokens: ' +
         topCandidates.map((item) => '"' + item.path + '"').join(', ') +
-        '. La diferencia de confianza es baja; deja una raíz clara (por ejemplo, "global" o "default").'
+        '. ' +
+        ambiguityReason +
+        ' Deja una raíz clara (por ejemplo, "global" o "default") o elimina la rama competidora.'
     );
     return rootResult;
   }

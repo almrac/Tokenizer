@@ -254,7 +254,7 @@ function resolveExplicitVariant(variantKeys, requestedVariant) {
         requested +
         '" coincide con múltiples variantes por mayúsculas/minúsculas (' +
         caseInsensitiveMatches.join(', ') +
-        '). Usa el nombre exacto.',
+        '). No hay una coincidencia única; usa el nombre exacto.',
     };
   }
 
@@ -429,7 +429,7 @@ function applyFlatVariantCollectionAdapter(rawTokens, options) {
             collectionPath +
             '". Variantes disponibles: ' +
             inspection.variantKeys.join(', ') +
-            '.'
+            '. Usa una de las variantes listadas.'
         );
         return {
           adapted: rawTokens,
@@ -445,7 +445,7 @@ function applyFlatVariantCollectionAdapter(rawTokens, options) {
             collectionPath +
             '". Variantes disponibles: ' +
             inspection.variantKeys.join(', ') +
-            '. Selecciona una variante explícita para continuar.'
+            '. No hay una selección automática segura. Selecciona una variante explícita para continuar.'
         );
         return {
           adapted: rawTokens,

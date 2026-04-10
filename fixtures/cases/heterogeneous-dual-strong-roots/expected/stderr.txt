@@ -1,1 +1,1 @@
-Error: Se detectaron múltiples posibles raíces de tokens: "theme.global", "theme.default". La diferencia de confianza es baja; deja una raíz clara (por ejemplo, "global" o "default").
+Error: Se detectaron múltiples posibles raíces de tokens: "theme.global", "theme.default". Hay grupos solapados entre las candidatas (colors, spacing) y no hay dominancia clara. Deja una raíz clara (por ejemplo, "global" o "default") o elimina la rama competidora.
