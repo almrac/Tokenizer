@@ -19,6 +19,9 @@ Entradas compatibles hoy:
 - aliases top-level como `color`, `space`, `borderRadius`, `boxShadow`, `type`
 - roots heterogéneos conocidos cuando existe una rama dominante clara o una agregación segura bajo wrapper conocido
 - hojas envueltas estilo Figma con `value/type` o `$value/$type`, incluida typography compatible y metadatos laterales permitidos
+- `typography.<style> = { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing }`
+- la misma estructura de `typography` envuelta en `value/type` o `$value/$type`
+- text styles compuestos con `paragraphSpacing`, `paragraphIndent`, `textCase` o `textDecoration` como extras ignorados, sin reinterpretarlos
 - flat collections compatibles con variantes, incluida selección explícita cuando hace falta
 
 ## Targets
@@ -78,7 +81,9 @@ Parámetros principales de CLI:
 - soporta un subconjunto seguro de hojas envueltas estilo Figma, pero no todos los dumps crudos o heterogéneos
 - soporta un subconjunto conocido de roots heterogéneos, pero no casos profundos o generales
 - no resuelve automáticamente modos o variantes complejas dentro de dumps estilo Figma
-- el soporte de text styles compuestos sigue siendo parcial
+- en text styles compuestos no resuelve modos o variantes internas
+- en text styles compuestos no soporta objetos anidados complejos ni typography arbitraria más amplia
+- los extras ignorados de text style no se reinterpretan ni se exportan
 - no resuelve automáticamente variantes arbitrarias cuando no hay una selección segura
 - en roots muy heterogéneos sigue priorizando bloqueo seguro antes que inferencia agresiva
 
@@ -97,6 +102,7 @@ Ese script actualiza `VERSION` y `docs/version.json`. La UI web lee ese archivo 
 - `README.md`: uso público del proyecto
 - `docs/`: web pública estática
 - `project/`: documentación operativa interna, con índice en `project/README.md`
+- `project/examples.md`: ejemplos reales verificados de entrada, salida y bloqueos
 - `fixtures/`: fixtures y snapshots de verificación
 
 ## Notas

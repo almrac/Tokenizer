@@ -11,6 +11,7 @@
 - Soporte verificable para roots heterogéneos conocidos con reglas conservadoras
 - Normalización de aliases top-level y typography
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
+- Soporte verificable para text styles compuestos en `typography` dentro de un subconjunto seguro
 - Soporte parcial para flat collections con variantes
 - Política de exportación:
     - native-first
@@ -33,6 +34,7 @@
 - Wrappers comunes: estables
 - Roots heterogéneos con rama dominante o agregación segura bajo wrapper conocido: funcional
 - Hojas envueltas `value/$value` con metadata permitida: funcional
+- Text styles compuestos directos o envueltos bajo `typography`: funcional en el subconjunto soportado
 - Conflicto top-level vs root anidado: resuelto
 - Flat collection multi-variante no trivial: bloquea correctamente
 - Root mixto con aliases y variantes: funcional
@@ -51,6 +53,10 @@
 - Compatibilidad más profunda con dumps complejos y heterogéneos de Figma
 - Heurísticas más finas para roots heterogéneos profundos o generales
 - Mejora de mensajes de ambigüedad en selección de root
+- Soporte de modos o variantes internas dentro de text styles compuestos
+- Soporte para objetos anidados complejos dentro de text styles compuestos
+- Cobertura más amplia para typography arbitraria o DTCG
+- Exportación de extras ignorados en text styles compuestos
 - Posible pulido adicional de naming en algunos casos edge
 
 ## Límites actuales
@@ -58,7 +64,9 @@
 - Soporta un subconjunto conocido de roots heterogéneos, pero no casos profundos o generales
 - No resuelve automáticamente modos o variantes complejas en dumps estilo Figma
 - No resuelve automáticamente variantes arbitrarias (`projectA/projectB/...`)
-- El soporte de text styles compuestos sigue siendo parcial
+- Soporta `typography.<style> = { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing }` y la misma estructura envuelta en `value/$value`
+- Permite `paragraphSpacing`, `paragraphIndent`, `textCase` y `textDecoration` como extras ignorados, sin reinterpretarlos ni exportarlos
+- No soporta todavía modos internos, objetos anidados complejos ni typography arbitraria más amplia
 
 ## Último estado conocido
 - Hardening reciente completado
