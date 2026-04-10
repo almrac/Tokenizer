@@ -5,7 +5,6 @@
 - Detección de roots y wrappers comunes
 - Flat variant collection (base)
 - Selección explícita de variante en CLI
-- Selección explícita de variante en UI
 - Política formal de exportación
 - Plantillas de mapeo por framework
 - Expansión a typography, radius, shadows y spacing
@@ -19,6 +18,7 @@
 - Documentación de límites con ejemplos reales adicionales
 
 ## Abierto
+- Selección explícita de variante en UI
 - Compatibilidad ampliada con dumps complejos de Figma
 - Mejora de heurísticas para roots muy heterogéneos
 
