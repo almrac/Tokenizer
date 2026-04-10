@@ -1,0 +1,8 @@
+:root {
+  /* Colors */
+  --color-primary: [object Object];
+  --color-secondary: #6c757d;
+
+  /* Spacing */
+  --spacing-sm: 8px;
+}

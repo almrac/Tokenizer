@@ -1,0 +1,21 @@
+{
+  "typography": {
+    "fontFamily": {
+      "base": { "value": "Inter, sans-serif", "type": "fontFamilies" }
+    },
+    "fontSize": {
+      "body": { "value": 16, "type": "fontSizes" },
+      "display": { "value": 32, "type": "fontSizes" }
+    },
+    "fontWeight": {
+      "regular": { "value": 400, "type": "fontWeights" },
+      "bold": { "value": 700, "type": "fontWeights" }
+    },
+    "lineHeight": {
+      "body": { "value": 1.5, "type": "lineHeights" }
+    },
+    "letterSpacing": {
+      "wide": { "value": "0.04em", "type": "letterSpacing" }
+    }
+  }
+}

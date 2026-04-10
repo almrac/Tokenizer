@@ -1,0 +1,22 @@
+{
+  "tokens": {
+    "global": {
+      "colors": {
+        "primary": {
+          "value": "#0f766e",
+          "type": "color",
+          "description": "Brand primary color",
+          "name": "Primary",
+          "id": "color-primary"
+        }
+      },
+      "spacing": {
+        "md": {
+          "value": 16,
+          "type": "number",
+          "$description": "Base spacing token"
+        }
+      }
+    }
+  }
+}

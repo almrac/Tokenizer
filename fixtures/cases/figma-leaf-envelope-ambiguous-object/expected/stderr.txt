@@ -1,0 +1,9 @@
+Info: Leaf token envelopes normalizados: 2 hoja(s) convertida(s) a valor escalar.
+Info: Using top-level token groups; wrapped candidates were ignored.
+Info: Import summary: root "top-level", grupos detectados: colors, spacing.
+Info: Se omiten tokens inválidos en "colors": "colors.primary.type".
+Omisión: Se omitió colors.primary.type por valor de color inválido.
+Info: Root used: top-level
+Info: Source pattern: leafTokenEnvelope
+Info: Supported groups detected: colors, spacing
+Info: Normalization applied: 1 ajuste(s)

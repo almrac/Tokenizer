@@ -1,0 +1,6 @@
+Info: Leaf token envelopes normalizados: 2 hoja(s) convertida(s) a valor escalar.
+Info: Using token root from "tokens.global" (2 grupos canónicos, 0 aliases).
+Info: Import summary: root "tokens.global", grupos detectados: colors, spacing.
+Info: Root used: tokens.global
+Info: Source pattern: leafTokenEnvelope
+Info: Supported groups detected: colors, spacing

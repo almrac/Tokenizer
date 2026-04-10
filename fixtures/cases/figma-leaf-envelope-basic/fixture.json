@@ -1,0 +1,10 @@
+{
+  "description": "Hojas envueltas con value/type en grupos básicos compatibles.",
+  "covers": [
+    "figma-leaf-envelope-basic",
+    "leaf-envelope",
+    "safe-unwrap"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

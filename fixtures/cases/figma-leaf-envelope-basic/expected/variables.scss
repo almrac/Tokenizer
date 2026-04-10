@@ -1,0 +1,21 @@
+:root {
+  /* Colors */
+  --ion-color-primary: #0d6efd;
+  --ion-color-primary-rgb: 13, 110, 253;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #005ceb;
+  --ion-color-primary-tint: #1f80ff;
+
+  --color-surface: #ffffff;
+
+  /* Spacing */
+  --spacing-sm: 8px;
+  --spacing-lg: 24px;
+
+  /* Radius */
+  --radius-default: 6px;
+
+  /* Shadows */
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.12);
+}

@@ -23,6 +23,18 @@ const TOP_LEVEL_ALIASES = {
   type: 'typography',
   text: 'typography',
 };
+const TOKEN_VALUE_KEYS = {
+  value: true,
+  $value: true,
+};
+const TOKEN_METADATA_KEYS = {
+  type: true,
+  $type: true,
+  description: true,
+  $description: true,
+  name: true,
+  id: true,
+};
 
 function isColorLike(value) {
   const text = String(value || '').trim();
@@ -252,6 +264,104 @@ function resolveExplicitVariant(variantKeys, requestedVariant) {
   };
 }
 
+function isScalarValue(value) {
+  return (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
+}
+
+function unwrapLeafTokenEnvelope(value, metadata) {
+  if (!isObjectRecord(value)) {
+    return value;
+  }
+
+  const keys = Object.keys(value);
+  let valueKey = null;
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+
+    if (TOKEN_VALUE_KEYS[key]) {
+      if (valueKey) {
+        return value;
+      }
+      valueKey = key;
+      continue;
+    }
+
+    if (!TOKEN_METADATA_KEYS[key]) {
+      return value;
+    }
+  }
+
+  if (!valueKey) {
+    return value;
+  }
+
+  if (!isScalarValue(value[valueKey])) {
+    return value;
+  }
+
+  metadata.unwrappedCount += 1;
+  metadata.applied = true;
+  return value[valueKey];
+}
+
+function unwrapLeafTokenEnvelopesDeep(value, metadata) {
+  const direct = unwrapLeafTokenEnvelope(value, metadata);
+
+  if (!isObjectRecord(direct)) {
+    return direct;
+  }
+
+  const clone = {};
+  const keys = Object.keys(direct);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    clone[key] = unwrapLeafTokenEnvelopesDeep(direct[key], metadata);
+  }
+
+  return clone;
+}
+
+function applyLeafTokenEnvelopeAdapter(rawTokens) {
+  const metadata = {
+    sourcePattern: null,
+    rootUsed: null,
+    selectedVariant: null,
+    variantSelectionMode: null,
+    warnings: [],
+    errors: [],
+    applied: false,
+    unwrappedCount: 0,
+  };
+
+  if (!isObjectRecord(rawTokens)) {
+    return {
+      adapted: rawTokens,
+      metadata: metadata,
+    };
+  }
+
+  const adapted = unwrapLeafTokenEnvelopesDeep(rawTokens, metadata);
+
+  if (metadata.applied) {
+    metadata.sourcePattern = 'leafTokenEnvelope';
+    metadata.warnings.push(
+      'Leaf token envelopes normalizados: ' + metadata.unwrappedCount + ' hoja(s) convertida(s) a valor escalar.'
+    );
+  }
+
+  return {
+    adapted: adapted,
+    metadata: metadata,
+  };
+}
+
 function applyFlatVariantCollectionAdapter(rawTokens, options) {
   const importOptions = isObjectRecord(options) ? options : {};
   const explicitVariant = typeof importOptions.explicitVariant === 'string' ? importOptions.explicitVariant.trim() : '';
@@ -412,5 +522,6 @@ function applyFlatVariantCollectionAdapter(rawTokens, options) {
 }
 
 module.exports = {
+  applyLeafTokenEnvelopeAdapter: applyLeafTokenEnvelopeAdapter,
   applyFlatVariantCollectionAdapter: applyFlatVariantCollectionAdapter,
 };

@@ -1,0 +1,5 @@
+Info: Leaf token envelopes normalizados: 6 hoja(s) convertida(s) a valor escalar.
+Info: Import summary: root "top-level", grupos detectados: colors, spacing, radius, shadows.
+Info: Root used: top-level
+Info: Source pattern: leafTokenEnvelope
+Info: Supported groups detected: colors, spacing, radius, shadows

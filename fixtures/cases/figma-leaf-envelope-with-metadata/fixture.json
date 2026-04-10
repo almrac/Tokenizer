@@ -1,0 +1,10 @@
+{
+  "description": "Hojas envueltas con metadatos laterales permitidos además de value/type.",
+  "covers": [
+    "figma-leaf-envelope-with-metadata",
+    "leaf-envelope",
+    "metadata-allowed"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}
