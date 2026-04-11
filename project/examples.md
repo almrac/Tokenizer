@@ -10,9 +10,15 @@ Referencia: `node scripts/verify-fixtures.js`
 - La salida mostrada resume el snapshot `css`; el resto de targets verificados viven en los mismos fixtures.
 - Cuando aplica, se incluye el mensaje real de `Información`, `Advertencias` o `Errores`.
 
+Resultado operativo posible en estos ejemplos:
+
+- `Genera`: la entrada entra en el subconjunto soportado actual.
+- `Omite`: genera salida, pero descarta tokens inválidos con motivo explícito.
+- `Bloquea`: no genera salida cuando no hay una interpretación segura.
+
 ## 1. Caso canónico
 
-Fixture: [canonical-full](/mnt/proyectos/dev/Tokenizer/fixtures/cases/canonical-full/fixture.json)
+Fixture: [canonical-full](../fixtures/cases/canonical-full/fixture.json)
 
 Entrada:
 
@@ -52,7 +58,7 @@ Feedback esperado:
 
 ## 2. Wrapper común
 
-Fixture: [wrapper-common](/mnt/proyectos/dev/Tokenizer/fixtures/cases/wrapper-common/fixture.json)
+Fixture: [wrapper-common](../fixtures/cases/wrapper-common/fixture.json)
 
 Entrada:
 
@@ -87,7 +93,7 @@ Feedback esperado:
 
 ## 3. Aliases top-level
 
-Fixture: [aliases-top-level](/mnt/proyectos/dev/Tokenizer/fixtures/cases/aliases-top-level/fixture.json)
+Fixture: [aliases-top-level](../fixtures/cases/aliases-top-level/fixture.json)
 
 Entrada:
 
@@ -126,7 +132,7 @@ Feedback esperado:
 
 ## 4. Variante explícita
 
-Fixture: [flat-variant-explicit](/mnt/proyectos/dev/Tokenizer/fixtures/cases/flat-variant-explicit/fixture.json)
+Fixture: [flat-variant-explicit](../fixtures/cases/flat-variant-explicit/fixture.json)
 
 Entrada:
 
@@ -164,7 +170,7 @@ Feedback esperado:
 
 ## 5. Flat variant ambigua que bloquea
 
-Fixture: [flat-variant-ambiguous](/mnt/proyectos/dev/Tokenizer/fixtures/cases/flat-variant-ambiguous/fixture.json)
+Fixture: [flat-variant-ambiguous](../fixtures/cases/flat-variant-ambiguous/fixture.json)
 
 Entrada:
 
@@ -193,7 +199,7 @@ Error: Se detectó una colección con múltiples variantes en "collection". Vari
 
 ## 6. Leaf envelopes Figma seguros
 
-Fixture: [figma-leaf-envelope-basic](/mnt/proyectos/dev/Tokenizer/fixtures/cases/figma-leaf-envelope-basic/fixture.json)
+Fixture: [figma-leaf-envelope-basic](../fixtures/cases/figma-leaf-envelope-basic/fixture.json)
 
 Entrada:
 
@@ -226,7 +232,7 @@ Feedback esperado:
 
 ## 7. Typography compuesta envuelta
 
-Fixture: [figma-typography-compound-value](/mnt/proyectos/dev/Tokenizer/fixtures/cases/figma-typography-compound-value/fixture.json)
+Fixture: [figma-typography-compound-value](../fixtures/cases/figma-typography-compound-value/fixture.json)
 
 Entrada:
 
@@ -272,7 +278,7 @@ Nota:
 
 ## 8. Root heterogéneo conocido soportado
 
-Fixture: [heterogeneous-parent-aggregate-safe](/mnt/proyectos/dev/Tokenizer/fixtures/cases/heterogeneous-parent-aggregate-safe/fixture.json)
+Fixture: [heterogeneous-parent-aggregate-safe](../fixtures/cases/heterogeneous-parent-aggregate-safe/fixture.json)
 
 Entrada:
 
@@ -310,6 +316,50 @@ Salida esperada:
 
 Feedback esperado:
 - `Info: Detected multiple candidates; selected "theme.global" because it has stronger token-group signals ...`
+
+## 9. Valores inválidos que se omiten sin bloquear
+
+Fixture: [invalid-values](../fixtures/cases/invalid-values/fixture.json)
+
+Entrada:
+
+```json
+{
+  "colors": {
+    "primary": "#0d6efd",
+    "broken": "not-a-color"
+  },
+  "spacing": {
+    "sm": 8,
+    "broken": "wide"
+  },
+  "shadows": {
+    "soft": "0 2px 6px rgba(0, 0, 0, 0.12)",
+    "broken": 24
+  }
+}
+```
+
+Qué interpreta:
+- root `top-level`
+- algunos tokens válidos y otros inválidos por tipo
+- la importación no bloquea; sanea y omite solo lo que no puede exportar
+
+Salida esperada:
+
+```css
+:root {
+  --color-primary: #0d6efd;
+  --spacing-sm: 8px;
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+```
+
+Feedback esperado:
+- `Info: Se omiten tokens inválidos en "colors": "colors.broken".`
+- `Info: Se omiten tokens inválidos en "spacing": "spacing.broken".`
+- `Info: Se omiten tokens inválidos en "shadows": "shadows.broken".`
+- `Omisión: Se omitió colors.broken por valor de color inválido.`
 
 ## Qué sigue bloqueando o queda fuera
 
