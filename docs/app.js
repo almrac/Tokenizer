@@ -641,11 +641,7 @@
       return true;
     }
 
-    if (/^var\(--[^)]+\)$/.test(text) || /^oklch\(.+\)$/i.test(text)) {
-      return true;
-    }
-
-    return false;
+    return /^var\(--[^)]+\)$/.test(text) || /^oklch\(.+\)$/i.test(text);
   }
 
   function getColorOmissionReason(value) {
@@ -681,15 +677,11 @@
       return true;
     }
 
-    if (
+    return (
       /^-?\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)$/i.test(text) ||
       /^(calc|min|max|clamp)\(.+\)$/i.test(text) ||
       /^var\(--[^)]+\)$/.test(text)
-    ) {
-      return true;
-    }
-
-    return false;
+    );
   }
 
   function getSpacingOmissionReason(value) {
@@ -721,14 +713,10 @@
       return true;
     }
 
-    if (
+    return (
       /(^|[\s,(])-?\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|cm|mm|in|pt|pc|q)(?=[\s,)])/i.test(text) ||
       /(^|[\s,(])0(?=[\s,)])/i.test(text)
-    ) {
-      return true;
-    }
-
-    return false;
+    );
   }
 
   function getShadowOmissionReason(value) {
