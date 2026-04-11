@@ -238,13 +238,74 @@ const TARGET_MAPPING_TEMPLATES = {
     },
   },
 };
+const TARGET_PROFILE_TEMPLATES = {
+  bootstrap: {
+    default: TARGET_MAPPING_TEMPLATES.bootstrap,
+  },
+};
 
-function getTargetTemplate(target) {
+function supportsTargetProfiles(target) {
+  return !!TARGET_PROFILE_TEMPLATES[target];
+}
+
+function getSupportedTargetProfiles(target) {
+  if (!supportsTargetProfiles(target)) {
+    return [];
+  }
+
+  return Object.keys(TARGET_PROFILE_TEMPLATES[target]).sort();
+}
+
+function resolveTargetProfile(target, requestedProfile) {
+  const requested = typeof requestedProfile === 'string' ? requestedProfile.trim() : '';
+
+  if (!supportsTargetProfiles(target)) {
+    return {
+      targetProfileUsed: null,
+      error: requested ? 'El target "' + target + '" no soporta perfiles de target.' : null,
+    };
+  }
+
+  if (!requested) {
+    return {
+      targetProfileUsed: 'default',
+      error: null,
+    };
+  }
+
+  if (Object.prototype.hasOwnProperty.call(TARGET_PROFILE_TEMPLATES[target], requested)) {
+    return {
+      targetProfileUsed: requested,
+      error: null,
+    };
+  }
+
+  return {
+    targetProfileUsed: null,
+    error:
+      'El perfil de target "' +
+      requested +
+      '" no existe para "' +
+      target +
+      '". Perfiles disponibles: ' +
+      getSupportedTargetProfiles(target).join(', ') +
+      '.',
+  };
+}
+
+function getTargetTemplate(target, targetProfile) {
+  if (supportsTargetProfiles(target)) {
+    const resolved = resolveTargetProfile(target, targetProfile);
+    if (resolved.targetProfileUsed) {
+      return TARGET_PROFILE_TEMPLATES[target][resolved.targetProfileUsed];
+    }
+  }
+
   return TARGET_MAPPING_TEMPLATES[target] || TARGET_MAPPING_TEMPLATES.css;
 }
 
-function getNativeMapping(target, tokenPath) {
-  const template = getTargetTemplate(target);
+function getNativeMapping(target, tokenPath, targetProfile) {
+  const template = getTargetTemplate(target, targetProfile);
 
   if (!template || !template.nativeMappings) {
     return null;
@@ -378,14 +439,18 @@ module.exports = {
   BOOTSTRAP_SAFE_TYPOGRAPHY_TOKENS: BOOTSTRAP_SAFE_TYPOGRAPHY_TOKENS,
   IONIC_NATIVE_COLOR_ROLES: IONIC_NATIVE_COLOR_ROLES,
   TARGET_MAPPING_TEMPLATES: TARGET_MAPPING_TEMPLATES,
+  TARGET_PROFILE_TEMPLATES: TARGET_PROFILE_TEMPLATES,
   getNativeMapping: getNativeMapping,
+  getSupportedTargetProfiles: getSupportedTargetProfiles,
   getTargetGroupSupportMap: getTargetGroupSupportMap,
   getTargetTemplate: getTargetTemplate,
   isBootstrapTypographyTokenMappable: isBootstrapTypographyTokenMappable,
   normalizeTokenName: normalizeTokenName,
+  resolveTargetProfile: resolveTargetProfile,
   resolveBootstrapProbableGlobalColorVariable: resolveBootstrapProbableGlobalColorVariable,
   resolveBootstrapRadiusVariable: resolveBootstrapRadiusVariable,
   resolveBootstrapShadowGlobalVariable: resolveBootstrapShadowGlobalVariable,
   resolveBootstrapSemanticColorRole: resolveBootstrapSemanticColorRole,
   resolveIonicNativeColorRole: resolveIonicNativeColorRole,
+  supportsTargetProfiles: supportsTargetProfiles,
 };

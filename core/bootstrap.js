@@ -47,6 +47,7 @@ function normalizeSassPrefix(prefix) {
 function generateBootstrap(tokens, options) {
   const groups = getTokenGroups(tokens);
   const fallbackPrefix = normalizeSassPrefix(options && options.prefix);
+  const targetProfile = options && options.targetProfile;
   const lines = [];
   const spacingKeys = getSortedKeys(groups.spacing);
   const typographyBuckets = getTypographyBuckets(groups.typography);
@@ -174,7 +175,7 @@ function generateBootstrap(tokens, options) {
     }
 
     if (BOOTSTRAP_COLOR_NAMES[role]) {
-      const colorVariable = getNativeMapping('bootstrap', 'colors.' + role) || '$' + role;
+      const colorVariable = getNativeMapping('bootstrap', 'colors.' + role, targetProfile) || '$' + role;
       colorEntries.push(colorVariable + ': ' + assignment.value + ';');
       consumedColorKeys[assignment.key] = true;
     }
@@ -236,25 +237,25 @@ function generateBootstrap(tokens, options) {
 
   if (fontFamilyBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase.value + ';'
+      (getNativeMapping('bootstrap', 'typography.fontFamily.base', targetProfile) || '$font-family-base') + ': ' + fontFamilyBase.value + ';'
     );
     consumedTypography.fontFamily[fontFamilyBase.name] = true;
   }
   if (fontSizeBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase.value + ';'
+      (getNativeMapping('bootstrap', 'typography.fontSize.body', targetProfile) || '$font-size-base') + ': ' + fontSizeBase.value + ';'
     );
     consumedTypography.fontSize[fontSizeBase.name] = true;
   }
   if (fontWeightBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase.value + ';'
+      (getNativeMapping('bootstrap', 'typography.fontWeight.regular', targetProfile) || '$font-weight-base') + ': ' + fontWeightBase.value + ';'
     );
     consumedTypography.fontWeight[fontWeightBase.name] = true;
   }
   if (lineHeightBase) {
     typographyBaseLines.push(
-      (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase.value + ';'
+      (getNativeMapping('bootstrap', 'typography.lineHeight.body', targetProfile) || '$line-height-base') + ': ' + lineHeightBase.value + ';'
     );
     consumedTypography.lineHeight[lineHeightBase.name] = true;
   }
@@ -373,19 +374,19 @@ function generateBootstrap(tokens, options) {
     }
 
     if (radiusMap.sm) {
-      radiusLines.push((getNativeMapping('bootstrap', 'radius.sm') || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
+      radiusLines.push((getNativeMapping('bootstrap', 'radius.sm', targetProfile) || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
       consumedRadiusKeys.sm = true;
     }
 
     if (radiusMap.lg) {
-      radiusLines.push((getNativeMapping('bootstrap', 'radius.lg') || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
+      radiusLines.push((getNativeMapping('bootstrap', 'radius.lg', targetProfile) || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
       consumedRadiusKeys.lg = true;
     }
 
     if (radiusMap.base || radiusMap.default || radiusMap.md) {
       const nativeRadius =
-        getNativeMapping('bootstrap', 'radius.md') ||
-        getNativeMapping('bootstrap', 'radius.default') ||
+        getNativeMapping('bootstrap', 'radius.md', targetProfile) ||
+        getNativeMapping('bootstrap', 'radius.default', targetProfile) ||
         resolveBootstrapRadiusVariable('md') ||
         '$border-radius';
       radiusLines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');

@@ -1,0 +1,12 @@
+{
+  "description": "Bootstrap con target profile explícito default mantiene la salida actual.",
+  "covers": [
+    "bootstrap-target-profile-default",
+    "target-profile"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "default"
+  }
+}

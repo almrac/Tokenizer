@@ -7,6 +7,7 @@ Usage examples:
   node index.js --target tailwind --output ./dist
   node index.js --target css,tailwind --output ./dist
   node index.js --target css --variant=dark
+  node index.js --target bootstrap --target-profile=default
 */
 
 const fs = require('fs');
@@ -18,6 +19,7 @@ const generateIonic = require('../core/ionic');
 const generateBootstrap = require('../core/bootstrap');
 const generateTailwind = require('../core/tailwind');
 const { normalizeTokenInput, validateTokenInput } = require('../core/validation');
+const { resolveTargetProfile, supportsTargetProfiles } = require('../core/target-mappings');
 const { cleanOutputDir, ensureDirExists, writeFile } = require('../utils/file');
 
 const SUPPORTED_OPTIONS = {
@@ -26,6 +28,7 @@ const SUPPORTED_OPTIONS = {
   input: true,
   output: true,
   variant: true,
+  'target-profile': true,
 };
 
 const SUPPORTED_TARGETS = {
@@ -150,6 +153,33 @@ function parseTargetList(targetArg) {
   return targets;
 }
 
+function resolveRequestedTargetProfile(targetList, requestedProfile) {
+  const requested = typeof requestedProfile === 'string' ? requestedProfile.trim() : '';
+  const target = targetList.length === 1 ? targetList[0] : null;
+
+  if (!requested) {
+    return {
+      targetProfileUsed: target && supportsTargetProfiles(target) ? 'default' : null,
+    };
+  }
+
+  if (targetList.length !== 1) {
+    exitWithError('El parámetro --target-profile solo está disponible cuando se usa un único target.');
+  }
+
+  if (!supportsTargetProfiles(target)) {
+    exitWithError('El target "' + target + '" no soporta perfiles de target.');
+  }
+
+  const resolution = resolveTargetProfile(target, requested);
+
+  if (resolution.error) {
+    exitWithError(resolution.error);
+  }
+
+  return resolution;
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const targetList = parseTargetList(args.target);
@@ -159,15 +189,18 @@ function main() {
   validateOptionValue('output', args.output);
   validateOptionValue('prefix', args.prefix);
   validateOptionValue('variant', args.variant);
+  validateOptionValue('target-profile', args['target-profile']);
 
   const inputPath = path.resolve(args.input || './tokens.json');
   const outputDir = path.resolve(args.output || './dist');
+  const targetProfileResolution = resolveRequestedTargetProfile(targetList, args['target-profile']);
   const rawTokens = readTokens(inputPath);
   const normalization = normalizeTokenInput(rawTokens, {
     explicitVariant: args.variant,
   });
   const tokens = normalization.normalized;
   const summary = normalization.summary || {};
+  summary.targetProfileUsed = targetProfileResolution.targetProfileUsed;
   ensureDirExists(outputDir);
 
   if (normalization.errors.length > 0) {
@@ -197,6 +230,9 @@ function main() {
     } else {
       process.stderr.write('Info: Selected variant: ' + summary.selectedVariant + '\n');
     }
+  }
+  if (summary.targetProfileUsed) {
+    process.stderr.write('Info: Target profile used: ' + summary.targetProfileUsed + '\n');
   }
   if (summary.detectedGroups && summary.detectedGroups.length > 0) {
     process.stderr.write('Info: Supported groups detected: ' + summary.detectedGroups.join(', ') + '\n');
@@ -245,6 +281,7 @@ function main() {
 
     const content = selectedTarget.generator(tokens, {
       prefix: args.prefix,
+      targetProfile: target === 'bootstrap' ? targetProfileResolution.targetProfileUsed : null,
     });
     const outputPath = path.join(outputDir, selectedTarget.fileName);
 
