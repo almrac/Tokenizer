@@ -4,19 +4,24 @@ Todos los cambios importantes de este proyecto se documentan en este archivo.
 
 ## [Unreleased]
 
+## [v0.9.0] - 2026-04-11
+
 ### Added
 
-- CLI: nuevo flag `--variant=<name>` para selección explícita de variante en imports multi-variante compatibles.
+- Selección explícita de variante también en la UI web para imports multi-variante compatibles.
+- Base de fixtures y snapshots verificables para entradas canónicas, wrappers comunes, aliases, variantes, roots heterogéneos, leaf envelopes Figma y typography compuesta.
+- Comando único `node scripts/verify-fixtures.js` para detectar regresiones y workflow automático del repo para ejecutarlo sin regenerar snapshots.
+- Soporte seguro para hojas envueltas estilo Figma con `value/$value`, incluida typography compatible en el subconjunto soportado.
+- Soporte verificable para text styles compuestos bajo `typography`, tanto directos como envueltos con `value/$value` en el subconjunto seguro.
+- Documentación avanzada con ejemplos reales de entrada, salida, omisiones y bloqueos respaldados por fixtures.
 
 ### Changed
 
-- La normalización por CLI ahora acepta selección explícita de variante y la prioriza frente a la selección automática cuando se proporciona.
-- Se mantiene el comportamiento seguro actual cuando no se proporciona `--variant`:
-  - selección automática donde ya existía (por ejemplo `light/dark` -> `light`)
-  - bloqueo con error cuando no hay resolución automática segura.
-- Si la variante solicitada no existe, se devuelve error claro con variantes disponibles.
-- Feedback CLI mejorado para selección explícita:
-  `Info: explicit variant selected: "<name>"`.
+- La selección explícita de variante queda alineada entre CLI y web, manteniendo selección automática segura solo donde ya existía y bloqueo cuando no hay resolución segura.
+- La versión visible de la web pasa a cargarse automáticamente desde `docs/version.json`, sincronizada con `VERSION` mediante el flujo de bump.
+- La detección de roots mejora para casos heterogéneos conocidos con rama dominante o agregación segura bajo wrapper conocido, preservando la precedencia top-level.
+- Los mensajes de ambigüedad en selección de root e importación ahora explican mejor candidatas en conflicto, solapamiento y acción esperada.
+- La documentación pública y operativa se alinea con el estado real del proyecto, sus límites y la cobertura verificada por fixtures.
 
 ## [v0.8.3] - 2026-04-02
 

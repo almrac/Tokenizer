@@ -9,6 +9,7 @@
 ## Capacidades estables
 - Importación con detección de roots y wrappers comunes
 - Soporte verificable para roots heterogéneos conocidos con reglas conservadoras
+- Mensajes de ambigüedad e importación más claros y accionables
 - Normalización de aliases top-level y typography
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Soporte verificable para text styles compuestos en `typography` dentro de un subconjunto seguro
@@ -52,7 +53,6 @@
 ## Problemas abiertos
 - Compatibilidad más profunda con dumps complejos y heterogéneos de Figma
 - Heurísticas más finas para roots heterogéneos profundos o generales
-- Mejora de mensajes de ambigüedad en selección de root
 - Soporte de modos o variantes internas dentro de text styles compuestos
 - Soporte para objetos anidados complejos dentro de text styles compuestos
 - Cobertura más amplia para typography arbitraria o DTCG
