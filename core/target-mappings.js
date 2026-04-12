@@ -238,9 +238,22 @@ const TARGET_MAPPING_TEMPLATES = {
     },
   },
 };
+const BOOTSTRAP_V4_TEMPLATE = {
+  target: TARGET_MAPPING_TEMPLATES.bootstrap.target,
+  strategy: TARGET_MAPPING_TEMPLATES.bootstrap.strategy,
+  exportPolicy: Object.assign({}, TARGET_MAPPING_TEMPLATES.bootstrap.exportPolicy),
+  nativeMappings: Object.assign({}, TARGET_MAPPING_TEMPLATES.bootstrap.nativeMappings),
+  probableMappings: Object.assign({}, TARGET_MAPPING_TEMPLATES.bootstrap.probableMappings),
+  groupRules: Object.assign({}, TARGET_MAPPING_TEMPLATES.bootstrap.groupRules),
+  groupFallbacks: Object.assign({}, TARGET_MAPPING_TEMPLATES.bootstrap.groupFallbacks),
+};
+
+delete BOOTSTRAP_V4_TEMPLATE.nativeMappings['radius.lg'];
+
 const TARGET_PROFILE_TEMPLATES = {
   bootstrap: {
     default: TARGET_MAPPING_TEMPLATES.bootstrap,
+    v4: BOOTSTRAP_V4_TEMPLATE,
   },
 };
 

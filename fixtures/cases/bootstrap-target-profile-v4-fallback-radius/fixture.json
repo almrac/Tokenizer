@@ -1,0 +1,13 @@
+{
+  "description": "Bootstrap v4 degrada radius.lg a fallback cuando no existe mapping nativo fiable.",
+  "covers": [
+    "bootstrap-target-profile-v4-fallback-radius",
+    "target-profile",
+    "bootstrap-v4"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "v4"
+  }
+}

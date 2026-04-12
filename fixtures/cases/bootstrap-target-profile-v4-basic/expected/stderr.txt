@@ -1,0 +1,4 @@
+Info: Import summary: root "top-level", grupos detectados: colors, typography, radius.
+Info: Root used: top-level
+Info: Target profile used: v4
+Info: Supported groups detected: colors, typography, radius

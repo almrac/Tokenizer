@@ -1,0 +1,13 @@
+{
+  "description": "Bootstrap v4 frente a default con la misma entrada, cambiando solo el mapping de radius.lg.",
+  "covers": [
+    "bootstrap-target-profile-v4-vs-default",
+    "target-profile",
+    "bootstrap-v4"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "v4"
+  }
+}

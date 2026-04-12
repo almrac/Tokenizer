@@ -1,0 +1,13 @@
+{
+  "description": "Bootstrap v4 mantiene colors y typography base, y degrada radius.lg a fallback explícito.",
+  "covers": [
+    "bootstrap-target-profile-v4-basic",
+    "target-profile",
+    "bootstrap-v4"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "v4"
+  }
+}

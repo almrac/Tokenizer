@@ -1,0 +1,24 @@
+/* Colors */
+$primary: #0d6efd;
+$body-bg: #ffffff;
+
+/* Typography */
+$font-family-base: Inter, sans-serif;
+$font-size-base: 16px;
+$font-weight-base: 400;
+$line-height-base: 1.5;
+
+$font-sizes: (
+  "body": 16px,
+);
+$font-weights: (
+  "regular": 400,
+);
+$line-heights: (
+  "body": 1.5,
+);
+
+/* Radius */
+$border-radius-sm: 0.125rem;
+$border-radius: 0.25rem;
+$tk-radius-lg: 0.5rem;

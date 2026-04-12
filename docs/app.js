@@ -245,6 +245,22 @@
     }
   };
   var targetGroupSupport = buildTargetGroupSupport();
+  var bootstrapV4Template = {
+    target: targetMappingTemplates.bootstrap.target,
+    strategy: targetMappingTemplates.bootstrap.strategy,
+    exportPolicy: Object.assign({}, targetMappingTemplates.bootstrap.exportPolicy),
+    nativeMappings: Object.assign({}, targetMappingTemplates.bootstrap.nativeMappings),
+    probableMappings: Object.assign({}, targetMappingTemplates.bootstrap.probableMappings),
+    groupRules: Object.assign({}, targetMappingTemplates.bootstrap.groupRules),
+    groupFallbacks: Object.assign({}, targetMappingTemplates.bootstrap.groupFallbacks)
+  };
+  delete bootstrapV4Template.nativeMappings['radius.lg'];
+  var targetProfileTemplates = {
+    bootstrap: {
+      default: targetMappingTemplates.bootstrap,
+      v4: bootstrapV4Template
+    }
+  };
 
   var tokensInput = document.querySelector('[data-ui="tokens-input"]');
   var fileInput = document.querySelector('[data-ui="file-input"]');
@@ -259,6 +275,9 @@
   var variantField = document.querySelector('[data-ui="variant-field"]');
   var variantSelect = document.querySelector('[data-ui="variant-select"]');
   var variantHint = document.querySelector('[data-ui="variant-hint"]');
+  var targetProfileField = document.querySelector('[data-ui="target-profile-field"]');
+  var targetProfileSelect = document.querySelector('[data-ui="target-profile-select"]');
+  var targetProfileHint = document.querySelector('[data-ui="target-profile-hint"]');
   var versionLabel = document.querySelector('[data-ui="version-label"]');
   var filename = document.querySelector('[data-ui="filename"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
@@ -360,12 +379,70 @@
     variantHint.textContent = 'Este caso no se resuelve automáticamente. Selecciona una variante válida para generar salida.';
   }
 
-  function getTargetTemplate(target) {
+  function supportsTargetProfiles(target) {
+    return !!targetProfileTemplates[target];
+  }
+
+  function getSupportedTargetProfiles(target) {
+    if (!supportsTargetProfiles(target)) {
+      return [];
+    }
+
+    return Object.keys(targetProfileTemplates[target]).sort();
+  }
+
+  function resolveTargetProfile(target, requestedProfile) {
+    var requested = typeof requestedProfile === 'string' ? requestedProfile.trim() : '';
+
+    if (!supportsTargetProfiles(target)) {
+      return {
+        targetProfileUsed: null,
+        error: requested ? 'El target "' + target + '" no soporta perfiles de target.' : null
+      };
+    }
+
+    if (!requested) {
+      return {
+        targetProfileUsed: 'default',
+        error: null
+      };
+    }
+
+    if (Object.prototype.hasOwnProperty.call(targetProfileTemplates[target], requested)) {
+      return {
+        targetProfileUsed: requested,
+        error: null
+      };
+    }
+
+    return {
+      targetProfileUsed: null,
+      error:
+        'El perfil de target "' +
+        requested +
+        '" no existe para "' +
+        target +
+        '". Perfiles disponibles: ' +
+        getSupportedTargetProfiles(target).join(', ') +
+        '.'
+    };
+  }
+
+  function getTargetTemplate(target, targetProfile) {
+    var resolved;
+
+    if (supportsTargetProfiles(target)) {
+      resolved = resolveTargetProfile(target, targetProfile);
+      if (resolved.targetProfileUsed) {
+        return targetProfileTemplates[target][resolved.targetProfileUsed];
+      }
+    }
+
     return targetMappingTemplates[target] || targetMappingTemplates.css;
   }
 
-  function getNativeMapping(target, tokenPath) {
-    var template = getTargetTemplate(target);
+  function getNativeMapping(target, tokenPath, targetProfile) {
+    var template = getTargetTemplate(target, targetProfile);
     var nativeMappings = template && template.nativeMappings ? template.nativeMappings : {};
 
     if (Object.prototype.hasOwnProperty.call(nativeMappings, tokenPath)) {
@@ -373,6 +450,50 @@
     }
 
     return null;
+  }
+
+  function getSelectedTargetProfile() {
+    var target = targetSelect && targetSelect.value ? targetSelect.value : 'css';
+
+    if (!supportsTargetProfiles(target)) {
+      return null;
+    }
+
+    return targetProfileSelect && targetProfileSelect.value ? targetProfileSelect.value : 'default';
+  }
+
+  function updateTargetProfileField() {
+    var target = targetSelect && targetSelect.value ? targetSelect.value : 'css';
+    var profiles = getSupportedTargetProfiles(target);
+    var selectedValue = targetProfileSelect && targetProfileSelect.value ? targetProfileSelect.value : '';
+    var option;
+    var i;
+
+    if (!targetProfileField || !targetProfileSelect) {
+      return;
+    }
+
+    if (profiles.length === 0) {
+      targetProfileField.hidden = true;
+      targetProfileSelect.textContent = '';
+      return;
+    }
+
+    targetProfileSelect.textContent = '';
+    for (i = 0; i < profiles.length; i += 1) {
+      option = document.createElement('option');
+      option.value = profiles[i];
+      option.textContent = profiles[i];
+      targetProfileSelect.appendChild(option);
+    }
+
+    targetProfileField.hidden = false;
+    targetProfileSelect.value = profiles.indexOf(selectedValue) !== -1 ? selectedValue : profiles[0];
+
+    if (targetProfileHint) {
+      targetProfileHint.textContent =
+        'Disponible por ahora solo para bootstrap. default mantiene la salida actual; v4 degrada radius.lg a fallback explícito.';
+    }
   }
 
   function normalizeTokenName(value) {
@@ -2500,6 +2621,7 @@
   function generateBootstrap(tokens, options) {
     var groups = getTokenGroups(tokens);
     var fallbackPrefix = normalizeSassPrefix(options && options.prefix);
+    var targetProfile = options && options.targetProfile;
     var lines = [];
     var spacingKeys = getSortedKeys(groups.spacing);
     var radiusEntries = flattenTokenEntries(groups.radius);
@@ -2628,7 +2750,7 @@
       }
 
       if (bootstrapColorNames[roleName]) {
-        var colorVariable = getNativeMapping('bootstrap', 'colors.' + roleName) || ('$' + roleName);
+        var colorVariable = getNativeMapping('bootstrap', 'colors.' + roleName, targetProfile) || ('$' + roleName);
         colorEntries.push(colorVariable + ': ' + assignment.value + ';');
         consumedColorKeys[assignment.key] = true;
       }
@@ -2689,25 +2811,25 @@
 
     if (fontFamilyBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.fontFamily.base') || '$font-family-base') + ': ' + fontFamilyBase.value + ';'
+        (getNativeMapping('bootstrap', 'typography.fontFamily.base', targetProfile) || '$font-family-base') + ': ' + fontFamilyBase.value + ';'
       );
       consumedTypography.fontFamily[fontFamilyBase.name] = true;
     }
     if (fontSizeBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.fontSize.body') || '$font-size-base') + ': ' + fontSizeBase.value + ';'
+        (getNativeMapping('bootstrap', 'typography.fontSize.body', targetProfile) || '$font-size-base') + ': ' + fontSizeBase.value + ';'
       );
       consumedTypography.fontSize[fontSizeBase.name] = true;
     }
     if (fontWeightBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.fontWeight.regular') || '$font-weight-base') + ': ' + fontWeightBase.value + ';'
+        (getNativeMapping('bootstrap', 'typography.fontWeight.regular', targetProfile) || '$font-weight-base') + ': ' + fontWeightBase.value + ';'
       );
       consumedTypography.fontWeight[fontWeightBase.name] = true;
     }
     if (lineHeightBase) {
       typographyBaseLines.push(
-        (getNativeMapping('bootstrap', 'typography.lineHeight.body') || '$line-height-base') + ': ' + lineHeightBase.value + ';'
+        (getNativeMapping('bootstrap', 'typography.lineHeight.body', targetProfile) || '$line-height-base') + ': ' + lineHeightBase.value + ';'
       );
       consumedTypography.lineHeight[lineHeightBase.name] = true;
     }
@@ -2819,20 +2941,26 @@
         radiusMap[radiusEntries[i].name] = radiusEntries[i].value;
       }
 
-      if (radiusMap.sm) {
-        radiusLines.push((getNativeMapping('bootstrap', 'radius.sm') || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
+    if (radiusMap.sm) {
+      var nativeRadiusSm = getNativeMapping('bootstrap', 'radius.sm', targetProfile);
+      if (nativeRadiusSm) {
+        radiusLines.push(nativeRadiusSm + ': ' + radiusMap.sm + ';');
         consumedRadiusKeys.sm = true;
       }
+    }
 
-      if (radiusMap.lg) {
-        radiusLines.push((getNativeMapping('bootstrap', 'radius.lg') || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
+    if (radiusMap.lg) {
+      var nativeRadiusLg = getNativeMapping('bootstrap', 'radius.lg', targetProfile);
+      if (nativeRadiusLg) {
+        radiusLines.push(nativeRadiusLg + ': ' + radiusMap.lg + ';');
         consumedRadiusKeys.lg = true;
       }
+    }
 
       if (radiusMap.base || radiusMap.default || radiusMap.md) {
         var nativeRadius =
-          getNativeMapping('bootstrap', 'radius.md') ||
-          getNativeMapping('bootstrap', 'radius.default') ||
+          getNativeMapping('bootstrap', 'radius.md', targetProfile) ||
+          getNativeMapping('bootstrap', 'radius.default', targetProfile) ||
           resolveBootstrapRadiusVariable('md') ||
           '$border-radius';
         radiusLines.push(nativeRadius + ': ' + (radiusMap.md || radiusMap.default || radiusMap.base) + ';');
@@ -3234,9 +3362,10 @@
     var normalizationNotes = details && details.normalizationNotes ? details.normalizationNotes : [];
     var importNotes = details && details.importNotes ? details.importNotes : [];
     var selectedVariant = details && details.selectedVariant ? details.selectedVariant : '';
+    var targetProfileUsed = details && details.targetProfileUsed ? details.targetProfileUsed : '';
     var omissionCount = details && details.omissions ? details.omissions.length : 0;
     var warningCount = details && details.warningCount ? details.warningCount : 0;
-    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || omissionCount > 0 || normalizationNotes.length > 0 || importNotes.length > 0 || !!selectedVariant;
+    var hasMeaningfulDetails = warningCount > 0 || ignored.length > 0 || omissionCount > 0 || normalizationNotes.length > 0 || importNotes.length > 0 || !!selectedVariant || !!targetProfileUsed;
     var importSummary = importNotes.slice();
     var status = 'Sin advertencias';
 
@@ -3248,6 +3377,9 @@
 
     if (selectedVariant) {
       importSummary.push('Variante activa: "' + selectedVariant + '".');
+    }
+    if (targetProfileUsed) {
+      importSummary.push('Target profile used: ' + targetProfileUsed + '.');
     }
 
     inspector.hidden = false;
@@ -3404,11 +3536,19 @@
     var currentVariantSelection;
     var discoverySummary;
     var explicitVariant;
+    var targetProfile;
+    var targetProfileResolution;
 
     updateMultiExportVisibility();
     updatePrefixVisibility();
+    updateTargetProfileField();
     ensureAtLeastOneTarget();
     targets = getSelectedTargets();
+    targetProfile = getSelectedTargetProfile();
+    targetProfileResolution =
+      supportsTargetProfiles(targetSelect && targetSelect.value ? targetSelect.value : 'css')
+        ? resolveTargetProfile(targetSelect && targetSelect.value ? targetSelect.value : 'css', targetProfile)
+        : { targetProfileUsed: null, error: null };
 
     if (!tokensInput.value.trim()) {
       hideInspector();
@@ -3432,6 +3572,7 @@
           normalizationNotes: [],
           omissions: [],
           selectedVariant: '',
+          targetProfileUsed: targetProfileResolution.targetProfileUsed,
           warningCount: 0
         });
       }
@@ -3470,6 +3611,28 @@
         omissions: [],
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        warningCount: 0
+      });
+      return;
+    }
+
+    if (targetProfileResolution.error) {
+      setError(targetProfileResolution.error);
+      setWarning('');
+      setOmission('');
+      generatedOutputs = {};
+      updatePreviewSelector();
+      renderActivePreview();
+      updateInspector({
+        rootUsed: normalization.summary && normalization.summary.rootUsed,
+        supportedGroups: normalization.summary && normalization.summary.detectedGroups,
+        ignoredGroups: [],
+        normalizationNotes: normalization.summary && normalization.summary.normalizationNotes,
+        omissions: [],
+        importNotes: normalization.summary && normalization.summary.importNotes,
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
         warningCount: 0
       });
       return;
@@ -3566,6 +3729,7 @@
         omissions: omissions,
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
         warningCount: warningCount
       });
       return;
@@ -3576,7 +3740,8 @@
         target = targets[i];
         generator = getGenerator(target);
         output = generator(parsedTokens, {
-          prefix: prefixInput.value
+          prefix: prefixInput.value,
+          targetProfile: target === 'bootstrap' ? targetProfileResolution.targetProfileUsed : null
         });
         newOutputs[target] = output;
       }
@@ -3598,6 +3763,7 @@
         omissions: omissions,
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
         warningCount: warningCount
       });
       return;
@@ -3615,6 +3781,7 @@
         omissions: omissions,
         importNotes: normalization.summary && normalization.summary.importNotes,
         selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
         warningCount: warningCount
       });
     }
@@ -3702,6 +3869,7 @@
     multiExportToggle.checked = false;
   }
   updateMultiExportVisibility();
+  updateTargetProfileField();
   updateActionState('', targetSelect && targetSelect.value ? targetSelect.value : 'css');
 
   tokensInput.addEventListener('input', renderOutput);
@@ -3711,6 +3879,7 @@
       if (!multiExportToggle || !multiExportToggle.checked) {
         syncSelectedTargetsWithPrimaryTarget();
       }
+      updateTargetProfileField();
       renderOutput();
     });
   }
@@ -3752,6 +3921,9 @@
   });
   prefixInput.addEventListener('input', renderOutput);
   variantSelect.addEventListener('change', renderOutput);
+  if (targetProfileSelect) {
+    targetProfileSelect.addEventListener('change', renderOutput);
+  }
   fileInput.addEventListener('change', handleFileUpload);
   copyButton.addEventListener('click', copyOutput);
   downloadButton.addEventListener('click', downloadOutput);

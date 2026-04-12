@@ -1,0 +1,13 @@
+{
+  "description": "Bootstrap default mantiene la salida actual ante el nuevo perfil v4.",
+  "covers": [
+    "bootstrap-target-profile-default-regression",
+    "target-profile",
+    "bootstrap-default-regression"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "default"
+  }
+}

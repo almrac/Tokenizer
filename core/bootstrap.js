@@ -374,13 +374,19 @@ function generateBootstrap(tokens, options) {
     }
 
     if (radiusMap.sm) {
-      radiusLines.push((getNativeMapping('bootstrap', 'radius.sm', targetProfile) || '$border-radius-sm') + ': ' + radiusMap.sm + ';');
-      consumedRadiusKeys.sm = true;
+      const nativeRadiusSm = getNativeMapping('bootstrap', 'radius.sm', targetProfile);
+      if (nativeRadiusSm) {
+        radiusLines.push(nativeRadiusSm + ': ' + radiusMap.sm + ';');
+        consumedRadiusKeys.sm = true;
+      }
     }
 
     if (radiusMap.lg) {
-      radiusLines.push((getNativeMapping('bootstrap', 'radius.lg', targetProfile) || '$border-radius-lg') + ': ' + radiusMap.lg + ';');
-      consumedRadiusKeys.lg = true;
+      const nativeRadiusLg = getNativeMapping('bootstrap', 'radius.lg', targetProfile);
+      if (nativeRadiusLg) {
+        radiusLines.push(nativeRadiusLg + ': ' + radiusMap.lg + ';');
+        consumedRadiusKeys.lg = true;
+      }
     }
 
     if (radiusMap.base || radiusMap.default || radiusMap.md) {
