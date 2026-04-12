@@ -19,6 +19,7 @@ Entradas compatibles hoy:
 - aliases top-level como `color`, `space`, `borderRadius`, `boxShadow`, `type`
 - roots heterogéneos conocidos cuando existe una rama dominante clara o una agregación segura bajo wrapper conocido
 - hojas envueltas estilo Figma con `value/type` o `$value/$type`, incluida typography compatible y metadatos laterales permitidos
+- dumps heterogéneos de Figma cuando existe una única ruta segura al valor (`value`, `$value` o `resolvedValue`), metadata lateral claramente ignorable y, si aplica, un único modo efectivo
 - `typography.<style> = { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing }`
 - la misma estructura de `typography` envuelta en `value/type` o `$value/$type`
 - text styles compuestos con `paragraphSpacing`, `paragraphIndent`, `textCase` o `textDecoration` como extras ignorados, sin reinterpretarlos
@@ -88,8 +89,9 @@ Parámetros principales de CLI:
 
 ## Límites actuales
 
-- soporta un subconjunto seguro de hojas envueltas estilo Figma, pero no todos los dumps crudos o heterogéneos
+- soporta un subconjunto seguro de hojas envueltas y un subconjunto conservador adicional de dumps heterogéneos de Figma
 - soporta un subconjunto conocido de roots heterogéneos, pero no casos profundos o generales
+- bloquea explícitamente casos con múltiples modos efectivos o múltiples rutas plausibles al valor dentro de dumps estilo Figma
 - no resuelve automáticamente modos o variantes complejas dentro de dumps estilo Figma
 - en text styles compuestos no resuelve modos o variantes internas
 - en text styles compuestos no soporta objetos anidados complejos ni typography arbitraria más amplia
@@ -99,6 +101,7 @@ Parámetros principales de CLI:
 - no existen todavía perfiles adicionales de `bootstrap` más allá de `default` y `v4`
 - no existe soporte de perfil en otros targets
 - la divergencia funcional actual por perfil en `bootstrap` está limitada a un subconjunto pequeño y verificable, no a una matriz amplia de compatibilidad
+- siguen fuera de soporte los dumps arbitrarios de Figma, el multi-modo real y las referencias cruzadas o aliases amplios
 
 ## Versionado
 

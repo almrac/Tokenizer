@@ -13,6 +13,7 @@
 - Contrato mínimo de `targetProfile` en CLI y UI web, limitado inicialmente a `bootstrap`
 - Normalización de aliases top-level y typography
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
+- Adaptador temprano y conservador para dumps heterogéneos de Figma
 - Soporte verificable para text styles compuestos en `typography` dentro de un subconjunto seguro
 - Soporte parcial para flat collections con variantes
 - Política de exportación:
@@ -36,6 +37,7 @@
 - Wrappers comunes: estables
 - Roots heterogéneos con rama dominante o agregación segura bajo wrapper conocido: funcional
 - Hojas envueltas `value/$value` con metadata permitida: funcional
+- Dumps Figma heterogéneos con pruning conservador de metadata, extracción segura de valor y modo único efectivo: funcional en el subconjunto soportado
 - Text styles compuestos directos o envueltos bajo `typography`: funcional en el subconjunto soportado
 - `bootstrap.default` como perfil de target baseline: funcional y equivalente al comportamiento existente
 - `bootstrap.v4` como primer perfil funcional real: verificado con divergencia acotada en `radius.lg`
@@ -53,6 +55,7 @@
 - Bootstrap usa estrategia Sass-first
 - Prefijo configurable aplica a css y fallbacks de ionic/bootstrap
 - No ampliar `targetProfile` por simetría o anticipación; un perfil nuevo solo se abre si cambia de forma clara mappings, compatibilidad o salida generada y ese cambio se puede verificar con fixtures
+- Bootstrap es el único target con perfiles activos por ahora; Tailwind e Ionic no se abren mientras no exista una divergencia pequeña, útil y verificable comparable a `bootstrap.v4`
 
 ## Problemas abiertos
 - Compatibilidad más profunda con dumps complejos y heterogéneos de Figma
@@ -69,7 +72,12 @@
 
 ## Límites actuales
 - Soporta un subconjunto seguro de hojas envueltas con `value/$value`, pero no todos los exports crudos de Figma
+- Soporta además un subconjunto conservador de dumps heterogéneos de Figma con:
+  pruning cerrado de metadata,
+  extracción segura desde `value`, `$value` o `resolvedValue`,
+  y unwrap de modo único efectivo en contenedores explícitos
 - Soporta un subconjunto conocido de roots heterogéneos, pero no casos profundos o generales
+- Bloquea explícitamente dumps Figma con múltiples modos efectivos o múltiples rutas plausibles al valor
 - No resuelve automáticamente modos o variantes complejas en dumps estilo Figma
 - No resuelve automáticamente variantes arbitrarias (`projectA/projectB/...`)
 - Soporta `typography.<style> = { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing }` y la misma estructura envuelta en `value/$value`
@@ -82,6 +90,9 @@
 - Las combinaciones inválidas de target/perfil devuelven error claro y el summary o inspector expone `targetProfileUsed` cuando aplica
 - No existen perfiles funcionales adicionales fuera de `bootstrap.default` y `bootstrap.v4`, ni soporte para otros targets
 - No está previsto abrir perfiles nuevos mientras no aparezca una divergencia real, útil y verificable del mismo nivel que `bootstrap.v4`
+- Tailwind no se abre por ahora porque su primer caso real implicaría un cambio de shape o artefacto demasiado grande para este bloque
+- Ionic no se abre por ahora porque no existe todavía una divergencia pequeña y útil claramente identificada
+- Siguen fuera de soporte los dumps arbitrarios de Figma, el multi-modo real, las múltiples rutas plausibles al valor, las referencias cruzadas amplias y las heurísticas más profundas de root
 
 ## Último estado conocido
 - Hardening reciente completado

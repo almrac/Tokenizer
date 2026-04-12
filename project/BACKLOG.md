@@ -6,6 +6,7 @@
 - Soporte verificable para roots heterogéneos conocidos con rama dominante o agregación segura
 - Mejora de mensajes de ambigüedad en selección de root e importación
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
+- Adaptador temprano y conservador para dumps heterogéneos de Figma en el subconjunto seguro
 - Soporte verificable para text styles compuestos directos y envueltos bajo `typography` en el subconjunto seguro
 - Contrato mínimo de `targetProfile` en CLI y UI web para `bootstrap`
 - Primer perfil funcional real `bootstrap.v4` con divergencia acotada y verificable
@@ -38,6 +39,10 @@
 
 Nota de criterio para `targetProfile`:
 - No abrir perfiles nuevos por simetría; solo avanzar si aparece una diferencia clara de mappings, compatibilidad o salida generada con valor real y cobertura verificable
+- Mantener `bootstrap` como único target con perfiles activos hasta que Tailwind o Ionic presenten un caso pequeño, útil y verificable comparable a `bootstrap.v4`
+
+Nota de criterio para Figma heterogéneo:
+- El subconjunto actual ya soporta pruning cerrado de metadata, extracción segura de una única ruta de valor y unwrap de modo único; siguen abiertos solo los casos que exigen inferencia adicional o estructuras arbitrarias
 
 ## Más adelante
 - Fixtures de test reales más amplios
