@@ -40,6 +40,7 @@
 Nota de criterio para `targetProfile`:
 - No abrir perfiles nuevos por simetría; solo avanzar si aparece una diferencia clara de mappings, compatibilidad o salida generada con valor real y cobertura verificable
 - Mantener `bootstrap` como único target con perfiles activos hasta que Tailwind o Ionic presenten un caso pequeño, útil y verificable comparable a `bootstrap.v4`
+- Mantener `bootstrap.v5.3` como baseline visible y `default` solo como alias técnico interno y retrocompatible
 
 Nota de criterio para Figma heterogéneo:
 - El subconjunto actual ya soporta pruning cerrado de metadata, extracción segura de una única ruta de valor y unwrap de modo único; siguen abiertos solo los casos que exigen inferencia adicional o estructuras arbitrarias

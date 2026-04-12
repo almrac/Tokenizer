@@ -41,9 +41,9 @@ Resumen de salida:
 
 Perfil de target actual:
 
-- CLI: `bootstrap` acepta opcionalmente `--target-profile=default|v4`
-- Web: cuando el target principal es `bootstrap`, la UI muestra `Perfil de target` con `default` y `v4`
-- `default` mantiene la salida baseline actual de `bootstrap`
+- CLI: `bootstrap` acepta opcionalmente `--target-profile=v5.3|v4`; `default` sigue existiendo solo como alias retrocompatible de `v5.3`
+- Web: cuando el target principal es `bootstrap`, la UI muestra `Perfil de target` con `v5.3` y `v4`
+- `v5.3` mantiene la salida baseline actual de `bootstrap`
 - `v4` introduce una diferencia real y acotada: `radius.lg` deja de usar `$border-radius-lg` y se exporta como fallback explícito
 - ejemplo práctico verificado: [project/examples.md](/mnt/proyectos/dev/Tokenizer/project/examples.md)
 
@@ -71,7 +71,7 @@ Parámetros principales de CLI:
 - `--output`: carpeta de salida, por defecto `./dist`
 - `--prefix`: prefijo para variables fallback, por defecto `tk`
 - `--variant=<name>`: fuerza una variante explícita en imports multi-variante compatibles
-- `--target-profile=<name>`: disponible por ahora solo para `bootstrap`; perfiles válidos actuales: `default`, `v4`
+- `--target-profile=<name>`: disponible por ahora solo para `bootstrap`; perfiles visibles actuales: `v5.3`, `v4`; `default` se mantiene como alias retrocompatible
 
 ## Comportamiento actual
 
@@ -86,6 +86,7 @@ Parámetros principales de CLI:
 - La web usa la misma lógica de importación y generación para previsualización.
 - Ambas soportan selección explícita de variante en los casos compatibles actuales.
 - `targetProfile` existe por ahora solo para `bootstrap`: en CLI vía `--target-profile` y en web mediante el selector `Perfil de target`.
+- La presentación visible resuelve siempre el perfil real de exportación: `v5.3` o `v4`; `default` no aparece como opción de usuario.
 
 ## Límites actuales
 
@@ -98,7 +99,7 @@ Parámetros principales de CLI:
 - los extras ignorados de text style no se reinterpretan ni se exportan
 - no resuelve automáticamente variantes arbitrarias cuando no hay una selección segura
 - en roots muy heterogéneos sigue priorizando bloqueo seguro antes que inferencia agresiva
-- no existen todavía perfiles adicionales de `bootstrap` más allá de `default` y `v4`
+- no existen todavía perfiles adicionales de `bootstrap` más allá de `v5.3` y `v4`
 - no existe soporte de perfil en otros targets
 - la divergencia funcional actual por perfil en `bootstrap` está limitada a un subconjunto pequeño y verificable, no a una matriz amplia de compatibilidad
 - siguen fuera de soporte los dumps arbitrarios de Figma, el multi-modo real y las referencias cruzadas o aliases amplios

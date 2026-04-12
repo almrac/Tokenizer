@@ -39,7 +39,7 @@
 - Hojas envueltas `value/$value` con metadata permitida: funcional
 - Dumps Figma heterogéneos con pruning conservador de metadata, extracción segura de valor y modo único efectivo: funcional en el subconjunto soportado
 - Text styles compuestos directos o envueltos bajo `typography`: funcional en el subconjunto soportado
-- `bootstrap.default` como perfil de target baseline: funcional y equivalente al comportamiento existente
+- `bootstrap.v5.3` como perfil de target baseline visible: funcional y equivalente al comportamiento existente
 - `bootstrap.v4` como primer perfil funcional real: verificado con divergencia acotada en `radius.lg`
 - Conflicto top-level vs root anidado: resuelto
 - Flat collection multi-variante no trivial: bloquea correctamente
@@ -85,10 +85,12 @@
 - No soporta todavía modos internos, objetos anidados complejos ni typography arbitraria más amplia
 - La CLI acepta `--target-profile=<name>` solo para `bootstrap`
 - La UI web expone `Perfil de target` cuando el target principal es `bootstrap`
-- `bootstrap.default` mantiene la salida baseline actual
+- `bootstrap.v5.3` mantiene la salida baseline actual
 - `bootstrap.v4` introduce una divergencia real y acotada: `radius.lg` deja de mapearse a `$border-radius-lg` y cae a fallback explícito
-- Las combinaciones inválidas de target/perfil devuelven error claro y el summary o inspector expone `targetProfileUsed` cuando aplica
-- No existen perfiles funcionales adicionales fuera de `bootstrap.default` y `bootstrap.v4`, ni soporte para otros targets
+- `default` queda solo como alias interno y retrocompatible de `bootstrap.v5.3`
+- La UI muestra `v5.3` y `v4`, y la CLI puede aceptar `default` pero resuelve el summary a `v5.3`
+- Las combinaciones inválidas de target/perfil devuelven error claro y el summary o inspector expone `targetProfileUsed` con el perfil real resuelto
+- No existen perfiles funcionales adicionales fuera de `bootstrap.v5.3` y `bootstrap.v4`, ni soporte para otros targets
 - No está previsto abrir perfiles nuevos mientras no aparezca una divergencia real, útil y verificable del mismo nivel que `bootstrap.v4`
 - Tailwind no se abre por ahora porque su primer caso real implicaría un cambio de shape o artefacto demasiado grande para este bloque
 - Ionic no se abre por ahora porque no existe todavía una divergencia pequeña y útil claramente identificada

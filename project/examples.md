@@ -276,7 +276,7 @@ Feedback esperado:
 Nota:
 - el fixture `figma-typography-compound-with-ignored-extras` verifica además que `paragraphSpacing`, `paragraphIndent`, `textCase` y `textDecoration` no bloquean el import, pero tampoco se exportan.
 
-## 8. Bootstrap `default` vs `v4`
+## 8. Bootstrap `v5.3` vs `v4`
 
 Fixtures:
 - [bootstrap-target-profile-default-regression](../fixtures/cases/bootstrap-target-profile-default-regression/fixture.json)
@@ -294,15 +294,16 @@ Entrada representativa:
 ```
 
 Cómo se selecciona:
-- CLI: `node index.js --target bootstrap --target-profile=default`
+- CLI: `node index.js --target bootstrap --target-profile=v5.3`
+- CLI: `node index.js --target bootstrap --target-profile=default` (`default` se mantiene solo como alias retrocompatible)
 - CLI: `node index.js --target bootstrap --target-profile=v4`
-- Web: con target principal `bootstrap`, el selector `Perfil de target` permite elegir `default` o `v4`
+- Web: con target principal `bootstrap`, el selector `Perfil de target` permite elegir `v5.3` o `v4`
 
 Qué significa cada perfil hoy:
-- `bootstrap.default`: mantiene el comportamiento baseline actual
+- `bootstrap.v5.3`: mantiene el comportamiento baseline actual
 - `bootstrap.v4`: cambia solo un punto verificable; `radius.lg` deja de mapearse a `$border-radius-lg` y cae a fallback explícito
 
-Salida esperada con `default`:
+Salida esperada con `v5.3`:
 
 ```scss
 /* Radius */
