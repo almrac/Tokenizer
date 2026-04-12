@@ -285,6 +285,7 @@
   var targetProfileHint = document.querySelector('[data-ui="target-profile-hint"]');
   var versionLabel = document.querySelector('[data-ui="version-label"]');
   var filename = document.querySelector('[data-ui="filename"]');
+  var resultContext = document.querySelector('[data-ui="result-context"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
   var warningMessage = document.querySelector('[data-ui="warning-message"]');
@@ -312,6 +313,13 @@
   var generatedOutputs = {};
   var activePreviewTarget = 'css';
   var preferredPreviewTarget = '';
+  var currentResultState = {
+    status: 'Sin advertencias',
+    stateKey: 'ok',
+    selectedVariant: '',
+    targetProfileUsed: null,
+    hasError: false
+  };
 
   function loadVisibleVersion() {
     if (!versionLabel || typeof fetch !== 'function') {
@@ -3521,6 +3529,41 @@
     updateActionState(output, activePreviewTarget);
   }
 
+  function getResultStateKey(status, hasError) {
+    if (hasError) {
+      return 'error';
+    }
+
+    if (status === 'Con omisiones') {
+      return 'omission';
+    }
+
+    if (status === 'Con advertencias') {
+      return 'warning';
+    }
+
+    return 'ok';
+  }
+
+  function buildResultContext(target) {
+    var parts = [];
+    var activeTarget = target || activePreviewTarget;
+
+    if (activeTarget) {
+      parts.push('Target activo: ' + activeTarget);
+    }
+
+    if (activeTarget === 'bootstrap' && currentResultState.targetProfileUsed) {
+      parts.push('Perfil: ' + currentResultState.targetProfileUsed);
+    }
+
+    if (currentResultState.selectedVariant) {
+      parts.push('Variante: ' + currentResultState.selectedVariant);
+    }
+
+    return parts.join(' · ');
+  }
+
   function setCopyButtonLabel(label) {
     if (copyResetTimer) {
       window.clearTimeout(copyResetTimer);
@@ -3539,15 +3582,24 @@
 
   function updateActionState(output, target) {
     var hasOutput = !!output;
+    var showHeaderState = hasOutput || currentResultState.hasError;
+    var contextText = buildResultContext(target);
 
     copyButton.disabled = !hasOutput;
     downloadButton.disabled = !hasOutput;
     updateEmptyState(output);
-    statusBadge.hidden = !hasOutput;
-    filename.textContent = hasOutput ? getCurrentFileName(target || activePreviewTarget) : '';
+    statusBadge.hidden = !showHeaderState;
+    statusBadge.textContent = currentResultState.status;
+    statusBadge.setAttribute('data-state', currentResultState.stateKey);
+    resultContext.hidden = !showHeaderState || !contextText;
+    resultContext.textContent = showHeaderState ? contextText : '';
+    filename.textContent = showHeaderState ? getCurrentFileName(target || activePreviewTarget) : '';
 
     if (!hasOutput) {
       setCopyButtonLabel(defaultCopyLabel);
+      if (!currentResultState.hasError) {
+        statusBadge.removeAttribute('data-state');
+      }
     }
   }
 
@@ -3578,6 +3630,7 @@
     var explicitVariant;
     var targetProfile;
     var targetProfileResolution;
+    var statusLabel = 'Sin advertencias';
 
     updateMultiExportVisibility();
     ensureAtLeastOneTarget();
@@ -3603,6 +3656,13 @@
       setWarning('');
       setOmission('');
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: '',
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       if (tokensInput.value.trim()) {
@@ -3642,6 +3702,13 @@
       setWarning('');
       setOmission('');
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3663,6 +3730,13 @@
       setWarning('');
       setOmission('');
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3750,6 +3824,13 @@
       setWarning(warnings.join('\n'));
       setOmission(omissions.join('\n'));
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3764,6 +3845,12 @@
         warningCount: warningCount
       });
       return;
+    }
+
+    if (omissions.length > 0) {
+      statusLabel = 'Con omisiones';
+    } else if (warningCount > 0) {
+      statusLabel = 'Con advertencias';
     }
 
     try {
@@ -3784,6 +3871,13 @@
       setWarning(warnings.join('\n'));
       setOmission(omissions.join('\n'));
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3801,6 +3895,13 @@
     }
 
     generatedOutputs = newOutputs;
+    currentResultState = {
+      status: statusLabel,
+      stateKey: getResultStateKey(statusLabel, false),
+      selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+      targetProfileUsed: targetProfileResolution.targetProfileUsed,
+      hasError: false
+    };
     updatePreviewSelector();
     renderActivePreview();
     if (tokensInput.value.trim()) {
