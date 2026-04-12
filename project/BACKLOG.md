@@ -10,6 +10,8 @@
 - Soporte verificable para text styles compuestos directos y envueltos bajo `typography` en el subconjunto seguro
 - Contrato mínimo de `targetProfile` en CLI y UI web para `bootstrap`
 - Primer perfil funcional real `bootstrap.v4` con divergencia acotada y verificable
+- La web mantiene `importNotes` separadas de las advertencias reales
+- La web resuelve el perfil de Bootstrap sobre los targets activos reales en multi-export
 - Flat variant collection (base)
 - Selección explícita de variante en CLI
 - Selección explícita de variante en UI

@@ -41,6 +41,8 @@
 - Text styles compuestos directos o envueltos bajo `typography`: funcional en el subconjunto soportado
 - `bootstrap.v5.3` como perfil de target baseline visible: funcional y equivalente al comportamiento existente
 - `bootstrap.v4` como primer perfil funcional real: verificado con divergencia acotada en `radius.lg`
+- La web mantiene `importNotes` como información de importación y no las eleva a advertencias reales
+- La web resuelve el perfil de Bootstrap sobre los targets activos reales, también en multi-export
 - Conflicto top-level vs root anidado: resuelto
 - Flat collection multi-variante no trivial: bloquea correctamente
 - Root mixto con aliases y variantes: funcional
@@ -90,6 +92,8 @@
 - `default` queda solo como alias interno y retrocompatible de `bootstrap.v5.3`
 - La UI muestra `v5.3` y `v4`, y la CLI puede aceptar `default` pero resuelve el summary a `v5.3`
 - Las combinaciones inválidas de target/perfil devuelven error claro y el summary o inspector expone `targetProfileUsed` con el perfil real resuelto
+- En web, `importNotes` siguen visibles en `Importación`, pero no cuentan como warnings reales ni activan el estado `Con advertencias`
+- En multi-export, si `bootstrap` participa, el perfil aplicado ya no depende solo del target principal visible
 - No existen perfiles funcionales adicionales fuera de `bootstrap.v5.3` y `bootstrap.v4`, ni soporte para otros targets
 - No está previsto abrir perfiles nuevos mientras no aparezca una divergencia real, útil y verificable del mismo nivel que `bootstrap.v4`
 - Tailwind no se abre por ahora porque su primer caso real implicaría un cambio de shape o artefacto demasiado grande para este bloque

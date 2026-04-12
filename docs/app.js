@@ -471,20 +471,39 @@
   }
 
   function getSelectedTargetProfile() {
-    var target = targetSelect && targetSelect.value ? targetSelect.value : 'css';
+    var target = getActiveTargetProfileTarget();
     var profiles = getSupportedTargetProfiles(target);
 
-    if (!supportsTargetProfiles(target)) {
+    if (!target || !supportsTargetProfiles(target)) {
       return null;
     }
 
     return targetProfileSelect && targetProfileSelect.value ? targetProfileSelect.value : profiles[0];
   }
 
+  function getActiveTargetProfileTarget() {
+    var selectedTargets = getSelectedTargets();
+    var i;
+
+    for (i = 0; i < selectedTargets.length; i += 1) {
+      if (supportsTargetProfiles(selectedTargets[i])) {
+        return selectedTargets[i];
+      }
+    }
+
+    return null;
+  }
+
   function updateTargetProfileField() {
-    var target = targetSelect && targetSelect.value ? targetSelect.value : 'css';
+    var target = getActiveTargetProfileTarget();
+    var selectedTargets = getSelectedTargets();
     var profiles = getSupportedTargetProfiles(target);
     var selectedValue = targetProfileSelect && targetProfileSelect.value ? targetProfileSelect.value : '';
+    var isBootstrapInMultiExport =
+      !!multiExportToggle &&
+      !!multiExportToggle.checked &&
+      selectedTargets.length > 1 &&
+      selectedTargets.indexOf('bootstrap') !== -1;
     var option;
     var i;
 
@@ -511,7 +530,9 @@
 
     if (targetProfileHint) {
       targetProfileHint.textContent =
-        'Disponible por ahora solo para bootstrap. v5.3 es el baseline actual; v4 degrada radius.lg a fallback explícito.';
+        isBootstrapInMultiExport
+          ? 'Se aplicará a bootstrap dentro del multi-export. v5.3 es el baseline actual; v4 degrada radius.lg a fallback explícito.'
+          : 'Disponible por ahora solo para bootstrap. v5.3 es el baseline actual; v4 degrada radius.lg a fallback explícito.';
     }
   }
 
@@ -3559,14 +3580,15 @@
     var targetProfileResolution;
 
     updateMultiExportVisibility();
+    ensureAtLeastOneTarget();
     updatePrefixVisibility();
     updateTargetProfileField();
-    ensureAtLeastOneTarget();
     targets = getSelectedTargets();
     targetProfile = getSelectedTargetProfile();
+    var targetProfileTarget = getActiveTargetProfileTarget();
     targetProfileResolution =
-      supportsTargetProfiles(targetSelect && targetSelect.value ? targetSelect.value : 'css')
-        ? resolveTargetProfile(targetSelect && targetSelect.value ? targetSelect.value : 'css', targetProfile)
+      targetProfileTarget
+        ? resolveTargetProfile(targetProfileTarget, targetProfile)
         : { targetProfileUsed: null, error: null };
 
     if (!tokensInput.value.trim()) {
@@ -3661,16 +3683,6 @@
       for (i = 0; i < normalization.summary.omissions.length; i += 1) {
         var normOmission = normalization.summary.omissions[i];
         omissionsMap['Se omitió ' + normOmission.path + ' por ' + normOmission.reason + '.'] = true;
-      }
-    }
-
-    if (normalization.summary && normalization.summary.importNotes) {
-      for (i = 0; i < normalization.summary.importNotes.length; i += 1) {
-        var importNote = normalization.summary.importNotes[i];
-        if (importNote.indexOf('Import summary:') === 0) {
-          continue;
-        }
-        warningsMap[importNote] = true;
       }
     }
 
