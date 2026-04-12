@@ -8,6 +8,7 @@ Usage examples:
   node index.js --target css,tailwind --output ./dist
   node index.js --target css --variant=dark
   node index.js --target bootstrap --target-profile=default
+  node index.js --target bootstrap --target-profile=v5.3
 */
 
 const fs = require('fs');

@@ -1,0 +1,13 @@
+{
+  "description": "Bootstrap v5.3 es alias explícito del baseline actual y equivale a default.",
+  "covers": [
+    "bootstrap-target-profile-v53-alias",
+    "target-profile",
+    "bootstrap-v53-alias"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "v5.3"
+  }
+}

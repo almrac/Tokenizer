@@ -253,6 +253,7 @@ delete BOOTSTRAP_V4_TEMPLATE.nativeMappings['radius.lg'];
 const TARGET_PROFILE_TEMPLATES = {
   bootstrap: {
     default: TARGET_MAPPING_TEMPLATES.bootstrap,
+    'v5.3': TARGET_MAPPING_TEMPLATES.bootstrap,
     v4: BOOTSTRAP_V4_TEMPLATE,
   },
 };
@@ -266,7 +267,7 @@ function getSupportedTargetProfiles(target) {
     return [];
   }
 
-  return Object.keys(TARGET_PROFILE_TEMPLATES[target]).sort();
+  return Object.keys(TARGET_PROFILE_TEMPLATES[target]);
 }
 
 function resolveTargetProfile(target, requestedProfile) {

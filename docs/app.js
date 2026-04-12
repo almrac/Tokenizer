@@ -258,6 +258,7 @@
   var targetProfileTemplates = {
     bootstrap: {
       default: targetMappingTemplates.bootstrap,
+      'v5.3': targetMappingTemplates.bootstrap,
       v4: bootstrapV4Template
     }
   };
@@ -388,7 +389,7 @@
       return [];
     }
 
-    return Object.keys(targetProfileTemplates[target]).sort();
+    return Object.keys(targetProfileTemplates[target]);
   }
 
   function resolveTargetProfile(target, requestedProfile) {
@@ -492,7 +493,7 @@
 
     if (targetProfileHint) {
       targetProfileHint.textContent =
-        'Disponible por ahora solo para bootstrap. default mantiene la salida actual; v4 degrada radius.lg a fallback explícito.';
+        'Disponible por ahora solo para bootstrap. default equivale a v5.3; v4 degrada radius.lg a fallback explícito.';
     }
   }
 

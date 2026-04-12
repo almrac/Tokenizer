@@ -57,6 +57,14 @@
             <small class="hint">Flujo principal: selecciona un target y previsualiza ese archivo al instante.</small>
           </label>
 
+          <label class="field target-profile-field" data-ui="target-profile-field" hidden>
+            <span>Versión o perfil de target</span>
+            <select class="target-profile-select" data-ui="target-profile-select" aria-label="Seleccionar versión o perfil de target">
+              <option value="default">default</option>
+            </select>
+            <small class="hint" data-ui="target-profile-hint">Disponible por ahora solo para <code>bootstrap</code>. <code>default</code> equivale a <code>v5.3</code>; <code>v4</code> mantiene la divergencia actual en <code>radius.lg</code>.</small>
+          </label>
+
           <div class="field multi-export-field">
             <label class="multi-export-toggle">
               <input type="checkbox" data-ui="multi-export-toggle">
@@ -81,14 +89,6 @@
             <span>Variante</span>
             <select class="variant-select" data-ui="variant-select" aria-label="Seleccionar variante de importación"></select>
             <small class="hint" data-ui="variant-hint">Selecciona una variante explícita cuando la importación detecte varias opciones compatibles.</small>
-          </label>
-
-          <label class="field target-profile-field" data-ui="target-profile-field" hidden>
-            <span>Perfil de target</span>
-            <select class="target-profile-select" data-ui="target-profile-select" aria-label="Seleccionar perfil de target">
-              <option value="default">default</option>
-            </select>
-            <small class="hint" data-ui="target-profile-hint">Disponible por ahora solo para <code>bootstrap</code>. El perfil <code>default</code> mantiene la misma salida actual.</small>
           </label>
         </section>
 
