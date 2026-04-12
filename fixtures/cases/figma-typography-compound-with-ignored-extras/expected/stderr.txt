@@ -1,5 +1,5 @@
-Info: Typography compound envelopes normalizados: 1 estilo(s) convertidos a objeto plano.
+Info: Figma heterogeneous adapter aplicado: 0 metadata ignorada(s), 1 ruta(s) de valor extraída(s), 0 modo(s) único(s) desplegado(s).
 Info: Import summary: root "top-level", grupos detectados: typography.
 Info: Root used: top-level
-Info: Source pattern: typographyCompoundEnvelope
+Info: Source pattern: figmaHeterogeneous
 Info: Supported groups detected: typography

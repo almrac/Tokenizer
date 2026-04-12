@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con metadata lateral abundante y grupos claros en top-level recuperables de forma segura.",
+  "covers": [
+    "figma-heterogeneous-metadata-dominant-root",
+    "figma-heterogeneous"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

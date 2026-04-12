@@ -1,4 +1,4 @@
-Info: Figma heterogeneous adapter aplicado: 0 metadata ignorada(s), 2 ruta(s) de valor extraída(s), 0 modo(s) único(s) desplegado(s).
+Info: Figma heterogeneous adapter aplicado: 2 metadata ignorada(s), 0 ruta(s) de valor extraída(s), 0 modo(s) único(s) desplegado(s).
 Info: Using token root from "tokens.global" (2 grupos canónicos, 0 aliases).
 Info: Import summary: root "tokens.global", grupos detectados: colors, spacing.
 Info: Root used: tokens.global

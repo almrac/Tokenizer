@@ -62,6 +62,26 @@ const TYPOGRAPHY_IGNORED_EXTRA_KEYS = {
   textCase: true,
   textDecoration: true,
 };
+const FIGMA_METADATA_BRANCH_KEYS = {
+  collectionId: true,
+  variableCollectionId: true,
+  variableCollection: true,
+  defaultModeId: true,
+  modeId: true,
+  key: true,
+  remote: true,
+  hiddenFromPublishing: true,
+  scopes: true,
+  codeSyntax: true,
+  resolvedType: true,
+  createdAt: true,
+  updatedAt: true,
+};
+const FIGMA_SAFE_VALUE_PATH_KEYS = ['value', '$value', 'resolvedValue'];
+const FIGMA_SINGLE_MODE_CONTAINER_KEYS = {
+  valuesByMode: true,
+  modes: true,
+};
 
 function isColorLike(value) {
   const text = String(value || '').trim();
@@ -298,6 +318,307 @@ function isScalarValue(value) {
     typeof value === 'number' ||
     typeof value === 'boolean'
   );
+}
+
+function isCompatibleFigmaExtractedValue(value, depth) {
+  const currentDepth = typeof depth === 'number' ? depth : 0;
+
+  if (isScalarValue(value)) {
+    return true;
+  }
+
+  if (!isObjectRecord(value) || currentDepth > 4) {
+    return false;
+  }
+
+  const keys = Object.keys(value);
+  if (keys.length === 0) {
+    return false;
+  }
+
+  for (let i = 0; i < keys.length; i += 1) {
+    if (!isCompatibleFigmaExtractedValue(value[keys[i]], currentDepth + 1)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isAllowedFigmaWrapperMetadataKey(key) {
+  return !!TOKEN_METADATA_KEYS[key] || !!FIGMA_METADATA_BRANCH_KEYS[key];
+}
+
+function getNodePath(path, key) {
+  return path ? path + '.' + key : key;
+}
+
+function unwrapFigmaSingleMode(value, path, metadata) {
+  if (!isObjectRecord(value)) {
+    return {
+      value: value,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  const keys = Object.keys(value);
+  const modeContainerKeys = keys.filter(function (key) {
+    return !!FIGMA_SINGLE_MODE_CONTAINER_KEYS[key];
+  });
+
+  if (modeContainerKeys.length === 0) {
+    return {
+      value: value,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  if (modeContainerKeys.length > 1) {
+    metadata.errors.push(
+      'Se detectaron múltiples contenedores de modo en "' +
+        (path || 'top-level') +
+        '" (' +
+        modeContainerKeys.join(', ') +
+        '). No hay un único modo seguro para extraer.'
+    );
+    return {
+      value: value,
+      handled: true,
+      blocked: true,
+    };
+  }
+
+  const modeContainerKey = modeContainerKeys[0];
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+
+    if (key === modeContainerKey) {
+      continue;
+    }
+
+    if (!isAllowedFigmaWrapperMetadataKey(key)) {
+      return {
+        value: value,
+        handled: false,
+        blocked: false,
+      };
+    }
+  }
+
+  const modeContainer = value[modeContainerKey];
+  if (!isObjectRecord(modeContainer)) {
+    return {
+      value: value,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  const modeNames = Object.keys(modeContainer).filter(function (modeName) {
+    return isCompatibleFigmaExtractedValue(modeContainer[modeName]);
+  });
+
+  if (modeNames.length === 0) {
+    return {
+      value: value,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  if (modeNames.length > 1) {
+    metadata.errors.push(
+      'Se detectaron múltiples modos efectivos en "' +
+        getNodePath(path || 'top-level', modeContainerKey) +
+        '" (' +
+        modeNames.join(', ') +
+        '). No hay un único modo seguro para extraer.'
+    );
+    return {
+      value: value,
+      handled: true,
+      blocked: true,
+    };
+  }
+
+  metadata.applied = true;
+  metadata.singleModeUnwrappedCount += 1;
+  return {
+    value: modeContainer[modeNames[0]],
+    handled: true,
+    blocked: false,
+  };
+}
+
+function extractFigmaSafeValuePath(value, path, metadata) {
+  if (!isObjectRecord(value)) {
+    return {
+      value: value,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  const keys = Object.keys(value);
+  const candidateKeys = keys.filter(function (key) {
+    return FIGMA_SAFE_VALUE_PATH_KEYS.indexOf(key) !== -1 && isCompatibleFigmaExtractedValue(value[key]);
+  });
+
+  if (candidateKeys.length === 0) {
+    return {
+      value: value,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+
+    if (candidateKeys.indexOf(key) !== -1) {
+      continue;
+    }
+
+    if (!isAllowedFigmaWrapperMetadataKey(key)) {
+      return {
+        value: value,
+        handled: false,
+        blocked: false,
+      };
+    }
+  }
+
+  if (candidateKeys.length > 1) {
+    metadata.errors.push(
+      'Se detectaron múltiples rutas de valor candidatas en "' +
+        (path || 'top-level') +
+        '" (' +
+        candidateKeys.join(', ') +
+        '). No hay una extracción segura única.'
+    );
+    return {
+      value: value,
+      handled: true,
+      blocked: true,
+    };
+  }
+
+  metadata.applied = true;
+  metadata.safeValuePathCount += 1;
+  return {
+    value: value[candidateKeys[0]],
+    handled: true,
+    blocked: false,
+  };
+}
+
+function pruneFigmaMetadataBranches(value, metadata) {
+  if (!isObjectRecord(value)) {
+    return value;
+  }
+
+  const keys = Object.keys(value);
+  const prunableKeys = keys.filter(function (key) {
+    return !!FIGMA_METADATA_BRANCH_KEYS[key];
+  });
+  const nonMetadataKeys = keys.filter(function (key) {
+    return !FIGMA_METADATA_BRANCH_KEYS[key];
+  });
+
+  if (prunableKeys.length === 0 || nonMetadataKeys.length === 0) {
+    return value;
+  }
+
+  const clone = {};
+  for (let i = 0; i < nonMetadataKeys.length; i += 1) {
+    clone[nonMetadataKeys[i]] = value[nonMetadataKeys[i]];
+  }
+
+  metadata.applied = true;
+  metadata.prunedMetadataCount += prunableKeys.length;
+  return clone;
+}
+
+function adaptFigmaHeterogeneousNode(value, path, metadata) {
+  if (!isObjectRecord(value)) {
+    return value;
+  }
+
+  const singleModeResult = unwrapFigmaSingleMode(value, path, metadata);
+  if (singleModeResult.blocked) {
+    return value;
+  }
+  if (singleModeResult.handled) {
+    return adaptFigmaHeterogeneousNode(singleModeResult.value, path, metadata);
+  }
+
+  const safeValueResult = extractFigmaSafeValuePath(value, path, metadata);
+  if (safeValueResult.blocked) {
+    return value;
+  }
+  if (safeValueResult.handled) {
+    return adaptFigmaHeterogeneousNode(safeValueResult.value, path, metadata);
+  }
+
+  const pruned = pruneFigmaMetadataBranches(value, metadata);
+  if (!isObjectRecord(pruned)) {
+    return pruned;
+  }
+
+  const clone = {};
+  const keys = Object.keys(pruned);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    clone[key] = adaptFigmaHeterogeneousNode(pruned[key], getNodePath(path, key), metadata);
+  }
+
+  return clone;
+}
+
+function applyFigmaHeterogeneousAdapter(rawTokens) {
+  const metadata = {
+    sourcePattern: null,
+    rootUsed: null,
+    selectedVariant: null,
+    variantSelectionMode: null,
+    warnings: [],
+    errors: [],
+    applied: false,
+    prunedMetadataCount: 0,
+    safeValuePathCount: 0,
+    singleModeUnwrappedCount: 0,
+  };
+
+  if (!isObjectRecord(rawTokens)) {
+    return {
+      adapted: rawTokens,
+      metadata: metadata,
+    };
+  }
+
+  const adapted = adaptFigmaHeterogeneousNode(rawTokens, '', metadata);
+
+  if (metadata.applied) {
+    metadata.sourcePattern = 'figmaHeterogeneous';
+    metadata.warnings.push(
+      'Figma heterogeneous adapter aplicado: ' +
+        metadata.prunedMetadataCount +
+        ' metadata ignorada(s), ' +
+        metadata.safeValuePathCount +
+        ' ruta(s) de valor extraída(s), ' +
+        metadata.singleModeUnwrappedCount +
+        ' modo(s) único(s) desplegado(s).'
+    );
+  }
+
+  return {
+    adapted: adapted,
+    metadata: metadata,
+  };
 }
 
 function unwrapLeafTokenEnvelope(value, metadata) {
@@ -673,6 +994,7 @@ function applyFlatVariantCollectionAdapter(rawTokens, options) {
 }
 
 module.exports = {
+  applyFigmaHeterogeneousAdapter: applyFigmaHeterogeneousAdapter,
   applyLeafTokenEnvelopeAdapter: applyLeafTokenEnvelopeAdapter,
   applyTypographyCompoundAdapter: applyTypographyCompoundAdapter,
   applyFlatVariantCollectionAdapter: applyFlatVariantCollectionAdapter,

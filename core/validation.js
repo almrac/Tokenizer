@@ -1,6 +1,7 @@
 const SUPPORTED_GROUPS = ['colors', 'spacing', 'typography', 'radius', 'shadows'];
 const { getTypographyBuckets } = require('./naming');
 const {
+  applyFigmaHeterogeneousAdapter,
   applyLeafTokenEnvelopeAdapter,
   applyTypographyCompoundAdapter,
   applyFlatVariantCollectionAdapter,
@@ -644,7 +645,8 @@ function normalizeTokenInput(rawTokens, options) {
   let normalized = rawTokens;
   let extractedRoot = rawTokens;
   let detectedGroups = [];
-  const leafAdapterResult = applyLeafTokenEnvelopeAdapter(rawTokens, options);
+  const figmaHeterogeneousAdapterResult = applyFigmaHeterogeneousAdapter(rawTokens, options);
+  const leafAdapterResult = applyLeafTokenEnvelopeAdapter(figmaHeterogeneousAdapterResult.adapted, options);
   const typographyCompoundAdapterResult = applyTypographyCompoundAdapter(leafAdapterResult.adapted, options);
   const flatVariantAdapterResult = applyFlatVariantCollectionAdapter(typographyCompoundAdapterResult.adapted, options);
   const adaptedInput = flatVariantAdapterResult.adapted;
@@ -652,26 +654,33 @@ function normalizeTokenInput(rawTokens, options) {
     sourcePattern:
       flatVariantAdapterResult.metadata.sourcePattern ||
       typographyCompoundAdapterResult.metadata.sourcePattern ||
+      figmaHeterogeneousAdapterResult.metadata.sourcePattern ||
       leafAdapterResult.metadata.sourcePattern,
     rootUsed:
       flatVariantAdapterResult.metadata.rootUsed ||
       typographyCompoundAdapterResult.metadata.rootUsed ||
+      figmaHeterogeneousAdapterResult.metadata.rootUsed ||
       leafAdapterResult.metadata.rootUsed,
     selectedVariant:
       flatVariantAdapterResult.metadata.selectedVariant ||
       typographyCompoundAdapterResult.metadata.selectedVariant ||
+      figmaHeterogeneousAdapterResult.metadata.selectedVariant ||
       leafAdapterResult.metadata.selectedVariant,
     variantSelectionMode:
       flatVariantAdapterResult.metadata.variantSelectionMode ||
       typographyCompoundAdapterResult.metadata.variantSelectionMode ||
+      figmaHeterogeneousAdapterResult.metadata.variantSelectionMode ||
       leafAdapterResult.metadata.variantSelectionMode,
-    warnings: leafAdapterResult.metadata.warnings
+    warnings: figmaHeterogeneousAdapterResult.metadata.warnings
+      .concat(leafAdapterResult.metadata.warnings)
       .concat(typographyCompoundAdapterResult.metadata.warnings)
       .concat(flatVariantAdapterResult.metadata.warnings),
-    errors: leafAdapterResult.metadata.errors
+    errors: figmaHeterogeneousAdapterResult.metadata.errors
+      .concat(leafAdapterResult.metadata.errors)
       .concat(typographyCompoundAdapterResult.metadata.errors)
       .concat(flatVariantAdapterResult.metadata.errors),
     applied:
+      figmaHeterogeneousAdapterResult.metadata.applied ||
       leafAdapterResult.metadata.applied ||
       typographyCompoundAdapterResult.metadata.applied ||
       flatVariantAdapterResult.metadata.applied,

@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con hojas recuperables mediante resolvedValue.",
+  "covers": [
+    "figma-resolved-value-safe",
+    "figma-heterogeneous"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

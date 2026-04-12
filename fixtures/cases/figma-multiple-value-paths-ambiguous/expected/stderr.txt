@@ -1,0 +1,1 @@
+Error: Se detectaron múltiples rutas de valor candidatas en "colors.primary" (value, resolvedValue). No hay una extracción segura única.

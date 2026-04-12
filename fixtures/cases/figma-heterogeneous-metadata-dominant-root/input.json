@@ -1,0 +1,12 @@
+{
+  "variableCollectionId": "collection-1",
+  "defaultModeId": "mode-1",
+  "scopes": ["ALL_SCOPES"],
+  "resolvedType": "mixed",
+  "colors": {
+    "primary": "#0d6efd"
+  },
+  "spacing": {
+    "sm": 8
+  }
+}

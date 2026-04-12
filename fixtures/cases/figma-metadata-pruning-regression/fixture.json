@@ -1,0 +1,9 @@
+{
+  "description": "Pruning de metadata Figma no rompe un wrapper ya soportado con grupos útiles.",
+  "covers": [
+    "figma-metadata-pruning-regression",
+    "figma-heterogeneous"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

@@ -1,9 +1,5 @@
-Info: Using top-level token groups; wrapped candidates were ignored.
+Info: Figma heterogeneous adapter aplicado: 0 metadata ignorada(s), 1 ruta(s) de valor extraída(s), 0 modo(s) único(s) desplegado(s).
 Info: Import summary: root "top-level", grupos detectados: typography.
 Info: Root used: top-level
+Info: Source pattern: figmaHeterogeneous
 Info: Supported groups detected: typography
-Warning [css]: El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.
-Warning [ionic]: El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.
-Warning [bootstrap]: El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.
-Warning [tailwind]: El grupo "typography" no contiene claves mapeables (fontFamily, fontSize, fontWeight, lineHeight, letterSpacing) y se ignorará.
-Info: Warnings emitted: 4
