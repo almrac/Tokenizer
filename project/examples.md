@@ -276,7 +276,58 @@ Feedback esperado:
 Nota:
 - el fixture `figma-typography-compound-with-ignored-extras` verifica además que `paragraphSpacing`, `paragraphIndent`, `textCase` y `textDecoration` no bloquean el import, pero tampoco se exportan.
 
-## 8. Root heterogéneo conocido soportado
+## 8. Bootstrap `default` vs `v4`
+
+Fixtures:
+- [bootstrap-target-profile-default-regression](../fixtures/cases/bootstrap-target-profile-default-regression/fixture.json)
+- [bootstrap-target-profile-v4-basic](../fixtures/cases/bootstrap-target-profile-v4-basic/fixture.json)
+- [bootstrap-target-profile-v4-vs-default](../fixtures/cases/bootstrap-target-profile-v4-vs-default/fixture.json)
+- [bootstrap-target-profile-v4-summary](../fixtures/cases/bootstrap-target-profile-v4-summary/fixture.json)
+
+Entrada representativa:
+
+```json
+{
+  "colors": { "primary": "#0d6efd" },
+  "radius": { "sm": "0.125rem", "md": "0.25rem", "lg": "0.5rem" }
+}
+```
+
+Cómo se selecciona:
+- CLI: `node index.js --target bootstrap --target-profile=default`
+- CLI: `node index.js --target bootstrap --target-profile=v4`
+- Web: con target principal `bootstrap`, el selector `Perfil de target` permite elegir `default` o `v4`
+
+Qué significa cada perfil hoy:
+- `bootstrap.default`: mantiene el comportamiento baseline actual
+- `bootstrap.v4`: cambia solo un punto verificable; `radius.lg` deja de mapearse a `$border-radius-lg` y cae a fallback explícito
+
+Salida esperada con `default`:
+
+```scss
+/* Radius */
+$border-radius-sm: 0.125rem;
+$border-radius-lg: 0.5rem;
+$border-radius: 0.25rem;
+```
+
+Salida esperada con `v4`:
+
+```scss
+/* Radius */
+$border-radius-sm: 0.125rem;
+$border-radius: 0.25rem;
+$tk-radius-lg: 0.5rem;
+```
+
+Feedback esperado:
+- `Info: Target profile used: v4`
+
+Resultado operativo:
+- `Genera`
+- la divergencia actual entre perfiles está limitada a `radius.lg`; no hay más diferencias funcionales documentadas por ahora
+
+## 9. Root heterogéneo conocido soportado
 
 Fixture: [heterogeneous-parent-aggregate-safe](../fixtures/cases/heterogeneous-parent-aggregate-safe/fixture.json)
 
@@ -317,7 +368,7 @@ Salida esperada:
 Feedback esperado:
 - `Info: Detected multiple candidates; selected "theme.global" because it has stronger token-group signals ...`
 
-## 9. Valores inválidos que se omiten sin bloquear
+## 10. Valores inválidos que se omiten sin bloquear
 
 Fixture: [invalid-values](../fixtures/cases/invalid-values/fixture.json)
 

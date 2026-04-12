@@ -10,6 +10,7 @@
 - Importación con detección de roots y wrappers comunes
 - Soporte verificable para roots heterogéneos conocidos con reglas conservadoras
 - Mensajes de ambigüedad e importación más claros y accionables
+- Contrato mínimo de `targetProfile` en CLI y UI web, limitado inicialmente a `bootstrap`
 - Normalización de aliases top-level y typography
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Soporte verificable para text styles compuestos en `typography` dentro de un subconjunto seguro
@@ -36,6 +37,8 @@
 - Roots heterogéneos con rama dominante o agregación segura bajo wrapper conocido: funcional
 - Hojas envueltas `value/$value` con metadata permitida: funcional
 - Text styles compuestos directos o envueltos bajo `typography`: funcional en el subconjunto soportado
+- `bootstrap.default` como perfil de target baseline: funcional y equivalente al comportamiento existente
+- `bootstrap.v4` como primer perfil funcional real: verificado con divergencia acotada en `radius.lg`
 - Conflicto top-level vs root anidado: resuelto
 - Flat collection multi-variante no trivial: bloquea correctamente
 - Root mixto con aliases y variantes: funcional
@@ -49,10 +52,15 @@
 - Mantener política formal de exportación común
 - Bootstrap usa estrategia Sass-first
 - Prefijo configurable aplica a css y fallbacks de ionic/bootstrap
+- No ampliar `targetProfile` por simetría o anticipación; un perfil nuevo solo se abre si cambia de forma clara mappings, compatibilidad o salida generada y ese cambio se puede verificar con fixtures
 
 ## Problemas abiertos
 - Compatibilidad más profunda con dumps complejos y heterogéneos de Figma
 - Heurísticas más finas para roots heterogéneos profundos o generales
+- Perfiles adicionales de `bootstrap` más allá de `v4`
+- Extensión de `targetProfile` a otros targets
+- Cambios funcionales más amplios de mappings o compatibilidad por perfil
+- Warnings específicos por degradación de compatibilidad según perfil
 - Soporte de modos o variantes internas dentro de text styles compuestos
 - Soporte para objetos anidados complejos dentro de text styles compuestos
 - Cobertura más amplia para typography arbitraria o DTCG
@@ -67,7 +75,13 @@
 - Soporta `typography.<style> = { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing }` y la misma estructura envuelta en `value/$value`
 - Permite `paragraphSpacing`, `paragraphIndent`, `textCase` y `textDecoration` como extras ignorados, sin reinterpretarlos ni exportarlos
 - No soporta todavía modos internos, objetos anidados complejos ni typography arbitraria más amplia
-- No existe todavía selección de versión o perfil del target; hoy la exportación usa un único comportamiento por target
+- La CLI acepta `--target-profile=<name>` solo para `bootstrap`
+- La UI web expone `Perfil de target` cuando el target principal es `bootstrap`
+- `bootstrap.default` mantiene la salida baseline actual
+- `bootstrap.v4` introduce una divergencia real y acotada: `radius.lg` deja de mapearse a `$border-radius-lg` y cae a fallback explícito
+- Las combinaciones inválidas de target/perfil devuelven error claro y el summary o inspector expone `targetProfileUsed` cuando aplica
+- No existen perfiles funcionales adicionales fuera de `bootstrap.default` y `bootstrap.v4`, ni soporte para otros targets
+- No está previsto abrir perfiles nuevos mientras no aparezca una divergencia real, útil y verificable del mismo nivel que `bootstrap.v4`
 
 ## Último estado conocido
 - Hardening reciente completado

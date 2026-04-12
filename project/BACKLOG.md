@@ -7,6 +7,8 @@
 - Mejora de mensajes de ambigüedad en selección de root e importación
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Soporte verificable para text styles compuestos directos y envueltos bajo `typography` en el subconjunto seguro
+- Contrato mínimo de `targetProfile` en CLI y UI web para `bootstrap`
+- Primer perfil funcional real `bootstrap.v4` con divergencia acotada y verificable
 - Flat variant collection (base)
 - Selección explícita de variante en CLI
 - Selección explícita de variante en UI
@@ -25,14 +27,20 @@
 ## Abierto
 - Compatibilidad ampliada con dumps complejos y heterogéneos de Figma
 - Mejora de heurísticas para roots heterogéneos profundos o generales
+- Perfiles adicionales de `bootstrap` más allá de `v4`
+- Extensión de `targetProfile` a otros targets
+- Cambios funcionales más amplios de mappings o compatibilidad por perfil
+- Warnings específicos por degradación de compatibilidad según perfil
 - Modos o variantes internas dentro de text styles compuestos
 - Objetos anidados complejos en text styles compuestos
 - Cobertura general de typography arbitraria o DTCG más amplia
 - Exportación de extras ignorados en text styles compuestos
 
+Nota de criterio para `targetProfile`:
+- No abrir perfiles nuevos por simetría; solo avanzar si aparece una diferencia clara de mappings, compatibilidad o salida generada con valor real y cobertura verificable
+
 ## Más adelante
 - Fixtures de test reales más amplios
 - Suite de verificación semiautomática por target
-- Selección opcional de versión o perfil del target cuando la versión cambie mappings, compatibilidad o salida generada
 - Documentación avanzada con casos reales de entrada/salida
 - Supervisor operativo integrado en flujo del proyecto

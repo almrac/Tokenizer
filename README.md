@@ -38,6 +38,14 @@ Resumen de salida:
 - `bootstrap`: estrategia Sass-first con fallback explícito para tokens útiles fuera de slots nativos
 - `tailwind`: mapeo a `theme.extend.*`
 
+Perfil de target actual:
+
+- CLI: `bootstrap` acepta opcionalmente `--target-profile=default|v4`
+- Web: cuando el target principal es `bootstrap`, la UI muestra `Perfil de target` con `default` y `v4`
+- `default` mantiene la salida baseline actual de `bootstrap`
+- `v4` introduce una diferencia real y acotada: `radius.lg` deja de usar `$border-radius-lg` y se exporta como fallback explícito
+- ejemplo práctico verificado: [project/examples.md](/mnt/proyectos/dev/Tokenizer/project/examples.md)
+
 ## Uso rápido
 
 CLI:
@@ -62,6 +70,7 @@ Parámetros principales de CLI:
 - `--output`: carpeta de salida, por defecto `./dist`
 - `--prefix`: prefijo para variables fallback, por defecto `tk`
 - `--variant=<name>`: fuerza una variante explícita en imports multi-variante compatibles
+- `--target-profile=<name>`: disponible por ahora solo para `bootstrap`; perfiles válidos actuales: `default`, `v4`
 
 ## Comportamiento actual
 
@@ -75,6 +84,7 @@ Parámetros principales de CLI:
 - La CLI genera archivos en `dist/`.
 - La web usa la misma lógica de importación y generación para previsualización.
 - Ambas soportan selección explícita de variante en los casos compatibles actuales.
+- `targetProfile` existe por ahora solo para `bootstrap`: en CLI vía `--target-profile` y en web mediante el selector `Perfil de target`.
 
 ## Límites actuales
 
@@ -86,6 +96,9 @@ Parámetros principales de CLI:
 - los extras ignorados de text style no se reinterpretan ni se exportan
 - no resuelve automáticamente variantes arbitrarias cuando no hay una selección segura
 - en roots muy heterogéneos sigue priorizando bloqueo seguro antes que inferencia agresiva
+- no existen todavía perfiles adicionales de `bootstrap` más allá de `default` y `v4`
+- no existe soporte de perfil en otros targets
+- la divergencia funcional actual por perfil en `bootstrap` está limitada a un subconjunto pequeño y verificable, no a una matriz amplia de compatibilidad
 
 ## Versionado
 
