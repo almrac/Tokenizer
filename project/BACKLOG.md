@@ -7,6 +7,7 @@
 - Mejora de mensajes de ambigüedad en selección de root e importación
 - Soporte seguro para hojas envueltas estilo Figma con `value/$value`
 - Adaptador temprano y conservador para dumps heterogéneos de Figma en el subconjunto seguro
+- Soporte verificable para `valuesByMode` con selector local explícito `defaultModeId` o `modeId`
 - Soporte verificable para text styles compuestos directos y envueltos bajo `typography` en el subconjunto seguro
 - Contrato mínimo de `targetProfile` en CLI y UI web para `bootstrap`
 - Primer perfil funcional real `bootstrap.v4` con divergencia acotada y verificable
@@ -46,6 +47,7 @@ Nota de criterio para `targetProfile`:
 
 Nota de criterio para Figma heterogéneo:
 - El subconjunto actual ya soporta pruning cerrado de metadata, extracción segura de una única ruta de valor y unwrap de modo único; siguen abiertos solo los casos que exigen inferencia adicional o estructuras arbitrarias
+- En `valuesByMode`, solo se soporta selector local explícito con coincidencia exacta; siguen abiertos el multi-modo real, la metadata externa de colección y la resolución por nombre arbitrario
 
 ## Más adelante
 - Fixtures de test reales más amplios
