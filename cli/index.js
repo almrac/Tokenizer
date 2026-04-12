@@ -159,8 +159,12 @@ function resolveRequestedTargetProfile(targetList, requestedProfile) {
   const target = targetList.length === 1 ? targetList[0] : null;
 
   if (!requested) {
+    if (target && supportsTargetProfiles(target)) {
+      return resolveTargetProfile(target, '');
+    }
+
     return {
-      targetProfileUsed: target && supportsTargetProfiles(target) ? 'default' : null,
+      targetProfileUsed: null,
     };
   }
 

@@ -252,9 +252,14 @@ delete BOOTSTRAP_V4_TEMPLATE.nativeMappings['radius.lg'];
 
 const TARGET_PROFILE_TEMPLATES = {
   bootstrap: {
-    default: TARGET_MAPPING_TEMPLATES.bootstrap,
     'v5.3': TARGET_MAPPING_TEMPLATES.bootstrap,
     v4: BOOTSTRAP_V4_TEMPLATE,
+  },
+};
+
+const TARGET_PROFILE_ALIASES = {
+  bootstrap: {
+    default: 'v5.3',
   },
 };
 
@@ -270,8 +275,19 @@ function getSupportedTargetProfiles(target) {
   return Object.keys(TARGET_PROFILE_TEMPLATES[target]);
 }
 
+function resolveTargetProfileAlias(target, requestedProfile) {
+  const aliases = TARGET_PROFILE_ALIASES[target] || {};
+
+  if (Object.prototype.hasOwnProperty.call(aliases, requestedProfile)) {
+    return aliases[requestedProfile];
+  }
+
+  return requestedProfile;
+}
+
 function resolveTargetProfile(target, requestedProfile) {
   const requested = typeof requestedProfile === 'string' ? requestedProfile.trim() : '';
+  const defaultProfile = getSupportedTargetProfiles(target)[0] || null;
 
   if (!supportsTargetProfiles(target)) {
     return {
@@ -282,14 +298,16 @@ function resolveTargetProfile(target, requestedProfile) {
 
   if (!requested) {
     return {
-      targetProfileUsed: 'default',
+      targetProfileUsed: defaultProfile,
       error: null,
     };
   }
 
-  if (Object.prototype.hasOwnProperty.call(TARGET_PROFILE_TEMPLATES[target], requested)) {
+  const resolvedProfile = resolveTargetProfileAlias(target, requested);
+
+  if (Object.prototype.hasOwnProperty.call(TARGET_PROFILE_TEMPLATES[target], resolvedProfile)) {
     return {
-      targetProfileUsed: requested,
+      targetProfileUsed: resolvedProfile,
       error: null,
     };
   }

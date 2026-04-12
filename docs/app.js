@@ -257,9 +257,13 @@
   delete bootstrapV4Template.nativeMappings['radius.lg'];
   var targetProfileTemplates = {
     bootstrap: {
-      default: targetMappingTemplates.bootstrap,
       'v5.3': targetMappingTemplates.bootstrap,
       v4: bootstrapV4Template
+    }
+  };
+  var targetProfileAliases = {
+    bootstrap: {
+      default: 'v5.3'
     }
   };
 
@@ -392,8 +396,19 @@
     return Object.keys(targetProfileTemplates[target]);
   }
 
+  function resolveTargetProfileAlias(target, requestedProfile) {
+    var aliases = targetProfileAliases[target] || {};
+
+    if (Object.prototype.hasOwnProperty.call(aliases, requestedProfile)) {
+      return aliases[requestedProfile];
+    }
+
+    return requestedProfile;
+  }
+
   function resolveTargetProfile(target, requestedProfile) {
     var requested = typeof requestedProfile === 'string' ? requestedProfile.trim() : '';
+    var defaultProfile = getSupportedTargetProfiles(target)[0] || null;
 
     if (!supportsTargetProfiles(target)) {
       return {
@@ -404,14 +419,16 @@
 
     if (!requested) {
       return {
-        targetProfileUsed: 'default',
+        targetProfileUsed: defaultProfile,
         error: null
       };
     }
 
-    if (Object.prototype.hasOwnProperty.call(targetProfileTemplates[target], requested)) {
+    var resolvedProfile = resolveTargetProfileAlias(target, requested);
+
+    if (Object.prototype.hasOwnProperty.call(targetProfileTemplates[target], resolvedProfile)) {
       return {
-        targetProfileUsed: requested,
+        targetProfileUsed: resolvedProfile,
         error: null
       };
     }
@@ -455,12 +472,13 @@
 
   function getSelectedTargetProfile() {
     var target = targetSelect && targetSelect.value ? targetSelect.value : 'css';
+    var profiles = getSupportedTargetProfiles(target);
 
     if (!supportsTargetProfiles(target)) {
       return null;
     }
 
-    return targetProfileSelect && targetProfileSelect.value ? targetProfileSelect.value : 'default';
+    return targetProfileSelect && targetProfileSelect.value ? targetProfileSelect.value : profiles[0];
   }
 
   function updateTargetProfileField() {
@@ -493,7 +511,7 @@
 
     if (targetProfileHint) {
       targetProfileHint.textContent =
-        'Disponible por ahora solo para bootstrap. default equivale a v5.3; v4 degrada radius.lg a fallback explícito.';
+        'Disponible por ahora solo para bootstrap. v5.3 es el baseline actual; v4 degrada radius.lg a fallback explícito.';
     }
   }
 
