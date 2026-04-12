@@ -353,6 +353,99 @@ function getNodePath(path, key) {
   return path ? path + '.' + key : key;
 }
 
+function getLocalFigmaModeSelectorValue(value, key) {
+  if (!isObjectRecord(value) || typeof value[key] !== 'string') {
+    return '';
+  }
+
+  return value[key].trim();
+}
+
+function resolveExplicitFigmaModeSelection(value, modeContainer, path, modeNames, metadata) {
+  const defaultModeId = getLocalFigmaModeSelectorValue(value, 'defaultModeId');
+  const modeId = getLocalFigmaModeSelectorValue(value, 'modeId');
+  const modeContainerPath = getNodePath(path || 'top-level', 'valuesByMode');
+  const hasDefaultModeId = !!defaultModeId;
+  const hasModeId = !!modeId;
+  const defaultModeUsable = hasDefaultModeId && modeNames.indexOf(defaultModeId) !== -1;
+  const modeIdUsable = hasModeId && modeNames.indexOf(modeId) !== -1;
+
+  if (!hasDefaultModeId && !hasModeId) {
+    return {
+      value: modeContainer,
+      handled: false,
+      blocked: false,
+    };
+  }
+
+  if (defaultModeUsable && modeIdUsable && defaultModeId !== modeId) {
+    metadata.errors.push(
+      'Los selectores locales "defaultModeId" y "modeId" entran en conflicto en "' +
+        (path || 'top-level') +
+        '" (' +
+        defaultModeId +
+        ' vs ' +
+        modeId +
+        '). No hay un modo seguro para extraer.'
+    );
+    return {
+      value: modeContainer,
+      handled: true,
+      blocked: true,
+    };
+  }
+
+  if (defaultModeUsable || modeIdUsable) {
+    const selectorKey = defaultModeUsable ? 'defaultModeId' : 'modeId';
+    const selectedModeId = defaultModeUsable ? defaultModeId : modeId;
+
+    metadata.applied = true;
+    metadata.singleModeUnwrappedCount += 1;
+    metadata.warnings.push(
+      'Modo Figma seleccionado por selector local en "' +
+        modeContainerPath +
+        '" usando ' +
+        selectorKey +
+        '="' +
+        selectedModeId +
+        '".'
+    );
+    return {
+      value: modeContainer[selectedModeId],
+      handled: true,
+      blocked: false,
+    };
+  }
+
+  if (hasDefaultModeId) {
+    metadata.errors.push(
+      'El selector local "defaultModeId" con valor "' +
+        defaultModeId +
+        '" no existe en "' +
+        modeContainerPath +
+        '" o no apunta a un valor compatible. No hay un modo seguro para extraer.'
+    );
+    return {
+      value: modeContainer,
+      handled: true,
+      blocked: true,
+    };
+  }
+
+  metadata.errors.push(
+    'El selector local "modeId" con valor "' +
+      modeId +
+      '" no existe en "' +
+      modeContainerPath +
+      '" o no apunta a un valor compatible. No hay un modo seguro para extraer.'
+  );
+  return {
+    value: modeContainer,
+    handled: true,
+    blocked: true,
+  };
+}
+
 function unwrapFigmaSingleMode(value, path, metadata) {
   if (!isObjectRecord(value)) {
     return {
@@ -427,6 +520,26 @@ function unwrapFigmaSingleMode(value, path, metadata) {
       handled: false,
       blocked: false,
     };
+  }
+
+  if (modeContainerKey === 'valuesByMode' && modeNames.length > 1) {
+    const explicitSelection = resolveExplicitFigmaModeSelection(value, modeContainer, path, modeNames, metadata);
+
+    if (explicitSelection.blocked) {
+      return {
+        value: value,
+        handled: true,
+        blocked: true,
+      };
+    }
+
+    if (explicitSelection.handled) {
+      return {
+        value: explicitSelection.value,
+        handled: true,
+        blocked: false,
+      };
+    }
   }
 
   if (modeNames.length > 1) {

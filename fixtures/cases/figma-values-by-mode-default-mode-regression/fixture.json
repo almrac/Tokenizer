@@ -1,0 +1,9 @@
+{
+  "description": "Regresión de valuesByMode con defaultModeId local y siblings que siguen usando el adaptador heterogéneo.",
+  "covers": [
+    "figma-values-by-mode-default-mode-regression",
+    "figma-heterogeneous"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

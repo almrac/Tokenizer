@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con valuesByMode y múltiples modos efectivos sin selector local seguro.",
+  "covers": [
+    "figma-values-by-mode-without-selector-ambiguous",
+    "figma-heterogeneous-error"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

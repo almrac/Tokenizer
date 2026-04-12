@@ -1,0 +1,1 @@
+Error: Se detectaron múltiples modos efectivos en "colors.primary.valuesByMode" (light, dark). No hay un único modo seguro para extraer.

@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con valuesByMode y conflicto entre defaultModeId y modeId.",
+  "covers": [
+    "figma-values-by-mode-explicit-selector-conflict",
+    "figma-heterogeneous-error"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

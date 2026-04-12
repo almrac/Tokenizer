@@ -1,0 +1,23 @@
+{
+  "colors": {
+    "primary": {
+      "valuesByMode": {
+        "mode-light": {
+          "resolvedValue": "#ffffff"
+        },
+        "mode-brand": {
+          "resolvedValue": "#0d6efd"
+        }
+      },
+      "defaultModeId": "mode-brand",
+      "variableCollectionId": "collection-1",
+      "scopes": ["ALL_SCOPES"]
+    }
+  },
+  "spacing": {
+    "sm": {
+      "resolvedValue": 8,
+      "variableCollectionId": "collection-1"
+    }
+  }
+}

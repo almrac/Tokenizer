@@ -1,5 +1,5 @@
 {
-  "description": "Dump Figma con múltiples modos efectivos sin selección segura.",
+  "description": "Dump Figma con múltiples modos efectivos en contenedor modes sin selección segura.",
   "covers": [
     "figma-multi-mode-ambiguous",
     "figma-heterogeneous-error"

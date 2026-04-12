@@ -1,0 +1,1 @@
+Error: Los selectores locales "defaultModeId" y "modeId" entran en conflicto en "colors.primary" (light vs dark). No hay un modo seguro para extraer.

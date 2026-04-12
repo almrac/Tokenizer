@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "primary": {
+      "valuesByMode": {
+        "mode-muted": {
+          "resolvedValue": "#6c757d"
+        },
+        "mode-brand": {
+          "resolvedValue": "#0d6efd"
+        }
+      },
+      "modeId": "mode-muted",
+      "variableCollectionId": "collection-1"
+    }
+  }
+}

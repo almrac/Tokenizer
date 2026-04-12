@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con valuesByMode y selección segura mediante defaultModeId local.",
+  "covers": [
+    "figma-values-by-mode-default-mode-id-safe",
+    "figma-heterogeneous"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}
