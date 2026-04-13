@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "primary": {
+      "valuesByMode": {
+        "light": {
+          "resolvedValue": "#ffffff"
+        },
+        "dark": {
+          "resolvedValue": "#000000"
+        }
+      },
+      "defaultModeId": "light",
+      "modeId": "dark"
+    }
+  }
+}

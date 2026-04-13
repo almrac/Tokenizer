@@ -1,0 +1,9 @@
+{
+  "description": "Colección plana multi-variante no trivial que debe bloquear si no se selecciona variante.",
+  "covers": [
+    "flat-variant-ambiguous",
+    "blocking-error"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

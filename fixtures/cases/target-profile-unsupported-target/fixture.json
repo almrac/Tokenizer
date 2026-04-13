@@ -1,0 +1,12 @@
+{
+  "description": "Usar target profile con un target que aún no lo soporta devuelve error claro.",
+  "covers": [
+    "target-profile-unsupported-target",
+    "target-profile-error"
+  ],
+  "expect": "error",
+  "targets": ["css"],
+  "args": {
+    "target-profile": "default"
+  }
+}

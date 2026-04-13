@@ -1,0 +1,9 @@
+{
+  "description": "Dos roots fuertes y similares deben seguir bloqueando por ambigüedad.",
+  "covers": [
+    "heterogeneous-dual-strong-roots",
+    "blocking-root-ambiguity"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

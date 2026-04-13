@@ -1,0 +1,9 @@
+{
+  "description": "Caso con root top-level canónica y wrapper anidado simultáneo; debe priorizar top-level.",
+  "covers": [
+    "heterogeneous-roots",
+    "top-level-precedence"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

@@ -1,0 +1,9 @@
+{
+  "description": "Aliases top-level y aliases de typography normalizados antes de generar.",
+  "covers": [
+    "aliases-top-level",
+    "typography-aliases"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

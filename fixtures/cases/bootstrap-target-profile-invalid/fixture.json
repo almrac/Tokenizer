@@ -1,0 +1,12 @@
+{
+  "description": "Bootstrap con target profile no existente devuelve error claro.",
+  "covers": [
+    "bootstrap-target-profile-invalid",
+    "target-profile-error"
+  ],
+  "expect": "error",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "legacy"
+  }
+}

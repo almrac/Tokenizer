@@ -1,0 +1,15 @@
+{
+  "colors": {
+    "primary": {
+      "resolvedValue": "#0d6efd",
+      "resolvedType": "color",
+      "id": "color-primary"
+    }
+  },
+  "spacing": {
+    "sm": {
+      "resolvedValue": 8,
+      "resolvedType": "float"
+    }
+  }
+}

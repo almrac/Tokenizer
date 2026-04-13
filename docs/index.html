@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokenizer | Convierte design tokens a css, ionic, bootstrap y tailwind</title>
+  <meta name="description" content="Herramienta estática para convertir tokens.json en archivos listos para css, ionic, bootstrap y tailwind desde el navegador o la CLI.">
+  <meta name="theme-color" content="#3658df">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script>
+    (function () {
+      var theme = 'dark';
+      try {
+        theme = localStorage.getItem('tokenizer-theme') || 'dark';
+      } catch (error) {}
+      document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+    }());
+  </script>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-brand">
+          <div class="topbar-heading">
+            <h1>Tokenizer</h1>
+            <span class="version-label" data-ui="version-label" aria-label="Versión actual">v...</span>
+          </div>
+          <p>Herramienta de conversión de tokens de diseño para desarrolladores</p>
+        </div>
+
+        <div class="topbar-tools">
+          <button class="theme-toggle" data-ui="theme-toggle" type="button" aria-label="Cambiar a modo claro" title="Cambiar tema">
+            <span class="theme-toggle-icon" data-ui="theme-toggle-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace" id="main-content">
+      <aside class="workspace-sidebar">
+        <section class="config-section source-section">
+          <header class="section-heading">
+            <div class="section-heading-copy">
+              <h2>Archivo de origen</h2>
+              <p>Carga o pega el contenido de tu archivo JSON.</p>
+            </div>
+          </header>
+
+          <div class="section-body source-body">
+            <div class="source-toolbar section-tools">
+              <button class="btn btn-tertiary" data-ui="example-button" type="button">Cargar ejemplo</button>
+              <button class="btn btn-ghost" data-ui="clear-button" type="button">Limpiar</button>
+            </div>
+
+            <label class="upload-card">
+              <span class="upload-card-icon" aria-hidden="true">↑</span>
+              <span class="upload-card-title">Sube tu archivo JSON aquí</span>
+              <span class="upload-card-copy">O haz clic para explorarlo desde tu equipo</span>
+              <input class="file-input" data-ui="file-input" type="file" accept=".json,application/json" aria-label="Seleccionar archivo JSON de tokens">
+            </label>
+
+            <label class="field field-editor">
+              <span>Contenido de <code>tokens.json</code></span>
+              <textarea class="tokens-input" data-ui="tokens-input" spellcheck="false" aria-label="Contenido de tokens JSON" placeholder="{&#10;  &quot;colors&quot;: {&#10;    &quot;primary&quot;: &quot;#0d6efd&quot;&#10;  }&#10;}"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="config-section config-section-primary">
+          <header class="section-heading">
+            <div class="section-heading-copy">
+              <h2 id="main-config-title">Configuración principal</h2>
+              <p>Elige el target y, si aplica, su versión o perfil visible.</p>
+            </div>
+          </header>
+
+          <div class="section-body config-body">
+            <label class="field">
+              <span>Target principal</span>
+              <select class="target-select" data-ui="target-select">
+                <option value="css">css</option>
+                <option value="ionic">ionic</option>
+                <option value="bootstrap">bootstrap</option>
+                <option value="tailwind">tailwind</option>
+              </select>
+              <small class="hint">Selecciona un target y previsualiza ese archivo al instante.</small>
+            </label>
+
+            <label class="field target-profile-field" data-ui="target-profile-field" hidden>
+              <span>Versión o perfil de target</span>
+              <select class="target-profile-select" data-ui="target-profile-select" aria-label="Seleccionar versión o perfil de target">
+                <option value="v5.3">v5.3</option>
+              </select>
+              <small class="hint" data-ui="target-profile-hint">Disponible por ahora solo para <code>bootstrap</code>. <code>v5.3</code> es el baseline actual; <code>v4</code> mantiene la divergencia en <code>radius.lg</code>.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="config-section config-section-secondary">
+          <header class="section-heading">
+            <div class="section-heading-copy">
+              <h2 id="secondary-config-title">Configuración adicional</h2>
+              <p>Ajustes opcionales para exportación, prefijos y variantes detectadas.</p>
+            </div>
+          </header>
+
+          <div class="section-body config-body">
+            <div class="field multi-export-field">
+              <label class="multi-export-toggle">
+                <input type="checkbox" data-ui="multi-export-toggle">
+                Modo multi-export (opcional)
+              </label>
+              <div class="target-grid multi-export-panel" data-ui="target-group" hidden>
+                <label class="target-item"><input type="checkbox" data-ui="target-option" value="css"> css</label>
+                <label class="target-item"><input type="checkbox" data-ui="target-option" value="ionic"> ionic</label>
+                <label class="target-item"><input type="checkbox" data-ui="target-option" value="bootstrap"> bootstrap</label>
+                <label class="target-item"><input type="checkbox" data-ui="target-option" value="tailwind"> tailwind</label>
+              </div>
+              <small class="hint">Cuando está activo, puedes generar y descargar varios targets en una sola acción.</small>
+            </div>
+
+            <label class="field prefix-field" data-ui="prefix-field">
+              <span>Prefijo de variables</span>
+              <input class="prefix-input" data-ui="prefix-input" type="text" placeholder="tk">
+              <small class="hint">Aplica a <code>css</code>, a variables personalizadas en <code>ionic</code> y a fallbacks extendidos en <code>bootstrap</code>. Si escribes <code>tk</code>, se generan variables como <code>--tk-color-primary</code> o <code>$tk-radius-xl</code>.</small>
+            </label>
+
+            <label class="field variant-field" data-ui="variant-field" hidden>
+              <span>Variante</span>
+              <select class="variant-select" data-ui="variant-select" aria-label="Seleccionar variante de importación"></select>
+              <small class="hint" data-ui="variant-hint">Selecciona una variante explícita cuando la importación detecte varias opciones compatibles.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="inspector" data-ui="inspector" hidden aria-labelledby="inspector-title">
+          <h3 id="inspector-title">Diagnóstico</h3>
+          <p><strong>Origen de tokens:</strong> <span data-ui="inspector-root">-</span></p>
+          <p><strong>Grupos detectados:</strong> <span data-ui="inspector-supported">-</span></p>
+          <p data-ui="inspector-ignored-row" hidden><strong>Grupos ignorados:</strong> <span data-ui="inspector-ignored">-</span></p>
+          <p data-ui="inspector-normalization-row" hidden><strong>Normalización:</strong> <span data-ui="inspector-normalization">-</span></p>
+          <p data-ui="inspector-import-row" hidden><strong>Importación:</strong> <span data-ui="inspector-import">-</span></p>
+          <p data-ui="inspector-omission-row" hidden><strong>Omisiones:</strong> <span data-ui="inspector-omission">-</span></p>
+          <p><strong>Estado:</strong> <span data-ui="inspector-warning-state">Sin advertencias</span></p>
+        </section>
+
+        <p class="error" data-ui="error-message" role="alert" aria-live="assertive" hidden></p>
+        <p class="warning" data-ui="warning-message" role="status" aria-live="polite" hidden></p>
+        <p class="omission" data-ui="omission-message" role="status" aria-live="polite" hidden></p>
+      </aside>
+
+      <section class="workspace-result">
+        <header class="result-header">
+          <div class="result-meta">
+            <div class="result-title-row">
+              <span class="result-icon" aria-hidden="true">{ }</span>
+              <h2 class="filename" data-ui="filename"></h2>
+              <span class="status-badge" data-ui="status-badge" hidden>Sin advertencias</span>
+            </div>
+            <p class="result-context" data-ui="result-context" hidden></p>
+            <div class="preview-switch" data-ui="preview-switch" hidden>
+              <span class="preview-switch-label">Vista activa</span>
+              <div class="preview-tabs" data-ui="preview-tabs"></div>
+            </div>
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-secondary" data-ui="copy-button" type="button">Copiar</button>
+            <button class="btn btn-primary" data-ui="download-button" type="button">Descargar</button>
+          </div>
+        </header>
+
+        <section class="editor-shell">
+          <div class="editor-topbar">
+            <span class="editor-dots" aria-hidden="true"></span>
+            <span class="editor-label">Vista previa</span>
+          </div>
+
+          <div class="editor-body">
+            <div class="editor-canvas">
+              <label class="field output-field">
+                <textarea class="output-preview" data-ui="output-preview" readonly spellcheck="false" aria-label="Vista previa del archivo generado"></textarea>
+              </label>
+
+              <div class="empty-state" data-ui="empty-state" hidden>
+                <h3>Sin salida todavía</h3>
+                <p>Escribe o carga un <code>tokens.json</code> válido para ver aquí el archivo generado.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "colors": {
+    "primary": "#0d6efd",
+    "secondary": "#6c757d",
+    "surface": "#ffffff"
+  },
+  "spacing": {
+    "xs": 4,
+    "md": 16
+  },
+  "typography": {
+    "fontFamily": {
+      "base": "Inter, sans-serif"
+    },
+    "fontSize": {
+      "body": 16,
+      "display": 32
+    },
+    "fontWeight": {
+      "regular": 400,
+      "bold": 700
+    },
+    "lineHeight": {
+      "body": 1.5
+    },
+    "letterSpacing": {
+      "wide": "0.04em"
+    }
+  },
+  "radius": {
+    "sm": 4,
+    "default": 8
+  },
+  "shadows": {
+    "sm": "0 1px 2px rgba(0, 0, 0, 0.16)",
+    "default": "0 8px 24px rgba(0, 0, 0, 0.2)"
+  }
+}

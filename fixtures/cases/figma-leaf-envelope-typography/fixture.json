@@ -1,0 +1,10 @@
+{
+  "description": "Typography envuelta con hojas de value/type compatibles con la estructura soportada.",
+  "covers": [
+    "figma-leaf-envelope-typography",
+    "leaf-envelope",
+    "typography"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

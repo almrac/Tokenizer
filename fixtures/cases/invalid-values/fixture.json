@@ -1,0 +1,9 @@
+{
+  "description": "Valores inválidos que deben omitirse sin bloquear la generación.",
+  "covers": [
+    "invalid-values",
+    "omissions"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

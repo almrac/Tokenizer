@@ -1,0 +1,10 @@
+{
+  "description": "Objeto parecido a hoja envuelta pero ambiguo; no debe aplanarse de forma insegura.",
+  "covers": [
+    "figma-leaf-envelope-ambiguous-object",
+    "safe-non-unwrap",
+    "omissions"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

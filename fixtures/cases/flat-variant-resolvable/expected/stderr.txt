@@ -1,0 +1,6 @@
+Info: Se usó la variante explícita "dark" en "collection".
+Info: Import summary: root "collection", grupos detectados: colors.
+Info: Root used: collection
+Info: Source pattern: flatVariantCollection
+Info: explicit variant selected: "dark"
+Info: Supported groups detected: colors

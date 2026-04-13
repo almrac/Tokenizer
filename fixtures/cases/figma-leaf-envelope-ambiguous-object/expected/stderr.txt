@@ -1,0 +1,9 @@
+Info: Figma heterogeneous adapter aplicado: 0 metadata ignorada(s), 2 ruta(s) de valor extraída(s), 0 modo(s) único(s) desplegado(s).
+Info: Using top-level token groups; wrapped candidates were ignored.
+Info: Import summary: root "top-level", grupos detectados: colors, spacing.
+Info: Se omiten tokens inválidos en "colors": "colors.primary.type".
+Omisión: Se omitió colors.primary.type por valor de color inválido.
+Info: Root used: top-level
+Info: Source pattern: figmaHeterogeneous
+Info: Supported groups detected: colors, spacing
+Info: Normalization applied: 1 ajuste(s)

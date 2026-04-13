@@ -1,0 +1,12 @@
+{
+  "description": "Colección plana multi-variante resoluble con selección explícita.",
+  "covers": [
+    "flat-variant-resolvable",
+    "explicit-variant"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"],
+  "args": {
+    "variant": "dark"
+  }
+}

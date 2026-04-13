@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con múltiples rutas plausibles al valor en el mismo nodo.",
+  "covers": [
+    "figma-multiple-value-paths-ambiguous",
+    "figma-heterogeneous-error"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

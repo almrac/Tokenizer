@@ -1,0 +1,9 @@
+{
+  "description": "Top-level canónico debe seguir prevaleciendo frente a wrappers heterogéneos.",
+  "covers": [
+    "heterogeneous-top-level-precedence-regression",
+    "top-level-precedence"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

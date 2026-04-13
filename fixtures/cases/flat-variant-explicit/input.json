@@ -1,0 +1,16 @@
+{
+  "collection": {
+    "primary": {
+      "projectA": "#0ea5e9",
+      "projectB": "#0284c7"
+    },
+    "secondary": {
+      "projectA": "#22c55e",
+      "projectB": "#16a34a"
+    },
+    "surface": {
+      "projectA": "#f8fafc",
+      "projectB": "#0f172a"
+    }
+  }
+}

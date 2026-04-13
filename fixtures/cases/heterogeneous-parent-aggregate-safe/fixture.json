@@ -1,0 +1,9 @@
+{
+  "description": "Wrapper conocido cuyos hijos directos aportan grupos complementarios sin conflicto.",
+  "covers": [
+    "heterogeneous-parent-aggregate-safe",
+    "safe-root-aggregation"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

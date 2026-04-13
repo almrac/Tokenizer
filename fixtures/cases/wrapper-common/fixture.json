@@ -1,0 +1,9 @@
+{
+  "description": "Export JSON envuelto en wrapper común con raíz tokens.global.",
+  "covers": [
+    "wrapper-common",
+    "root-detection"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

@@ -1,0 +1,13 @@
+:root {
+  /* Colors */
+  --color-primary: #0d6efd;
+  --color-secondary: #6c757d;
+
+  /* Spacing */
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+
+  /* Typography */
+  --font-size-body: 16px;
+  --font-weight-regular: 400;
+}

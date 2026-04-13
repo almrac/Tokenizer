@@ -1,0 +1,9 @@
+{
+  "description": "Entre dos candidatas válidas, debe ganar la más coherente frente a una más ruidosa.",
+  "covers": [
+    "heterogeneous-noisy-vs-coherent",
+    "root-coherence"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

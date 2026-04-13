@@ -1,0 +1,9 @@
+{
+  "description": "Hijas competidoras con grupos solapados; no debe agregarse ni adivinarse root.",
+  "covers": [
+    "heterogeneous-sibling-conflict",
+    "blocking-root-ambiguity"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

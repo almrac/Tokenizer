@@ -1,0 +1,5 @@
+Info: Figma heterogeneous adapter aplicado: 4 metadata ignorada(s), 0 ruta(s) de valor extraída(s), 0 modo(s) único(s) desplegado(s).
+Info: Import summary: root "top-level", grupos detectados: colors, spacing.
+Info: Root used: top-level
+Info: Source pattern: figmaHeterogeneous
+Info: Supported groups detected: colors, spacing

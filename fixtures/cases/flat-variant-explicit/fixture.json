@@ -1,0 +1,13 @@
+{
+  "description": "Colección plana multi-variante no trivial resuelta mediante variante explícita soportada.",
+  "covers": [
+    "flat-variant-explicit",
+    "explicit-variant",
+    "blocking-case-with-valid-selection"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"],
+  "args": {
+    "variant": "projectB"
+  }
+}

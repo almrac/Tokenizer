@@ -1,0 +1,34 @@
+{
+  "theme": {
+    "global": {
+      "brand": {
+        "colors": {
+          "primary": "#0d6efd",
+          "secondary": "#6c757d"
+        },
+        "meta": {
+          "scope": "brand"
+        }
+      },
+      "layout": {
+        "spacing": {
+          "sm": 8,
+          "md": 16
+        }
+      },
+      "typeScale": {
+        "typography": {
+          "fontSize": {
+            "body": 16
+          },
+          "fontWeight": {
+            "regular": 400
+          }
+        }
+      },
+      "meta": {
+        "collection": "global"
+      }
+    }
+  }
+}

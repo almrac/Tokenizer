@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con valuesByMode y selector local que no existe en el contenedor.",
+  "covers": [
+    "figma-values-by-mode-explicit-selector-missing",
+    "figma-heterogeneous-error"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

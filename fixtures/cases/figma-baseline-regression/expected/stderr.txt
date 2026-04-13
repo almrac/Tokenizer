@@ -1,0 +1,3 @@
+Info: Import summary: root "top-level", grupos detectados: colors, spacing.
+Info: Root used: top-level
+Info: Supported groups detected: colors, spacing

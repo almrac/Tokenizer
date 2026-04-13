@@ -1,0 +1,6 @@
+Info: Se usó la variante explícita "projectB" en "collection".
+Info: Import summary: root "collection", grupos detectados: colors.
+Info: Root used: collection
+Info: Source pattern: flatVariantCollection
+Info: explicit variant selected: "projectB"
+Info: Supported groups detected: colors

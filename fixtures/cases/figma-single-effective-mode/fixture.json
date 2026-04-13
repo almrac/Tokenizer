@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con valuesByMode y un único modo efectivo.",
+  "covers": [
+    "figma-single-effective-mode",
+    "figma-heterogeneous"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

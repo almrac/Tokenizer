@@ -1,0 +1,13 @@
+{
+  "description": "Bootstrap v4 deja trazado el perfil activo en el summary.",
+  "covers": [
+    "bootstrap-target-profile-v4-summary",
+    "target-profile",
+    "bootstrap-v4-summary"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"],
+  "args": {
+    "target-profile": "v4"
+  }
+}

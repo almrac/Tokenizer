@@ -1,0 +1,9 @@
+{
+  "description": "Dump Figma con dos roots fuertes tras extracción segura de valores.",
+  "covers": [
+    "figma-dual-root-ambiguous",
+    "figma-heterogeneous-error"
+  ],
+  "expect": "error",
+  "targets": ["css"]
+}

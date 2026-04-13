@@ -1,0 +1,18 @@
+Info: Using token root from "theme.global" (2 grupos canónicos, 0 aliases).
+Info: Import summary: root "theme.global", grupos detectados: colors, spacing.
+Info: Root used: theme.global
+Info: Supported groups detected: colors, spacing
+Warning [css]: Se detectó una rama alternativa en "collections", pero se priorizó la estructura canónica de nivel principal.
+Warning [css]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [css]: Se omitió meta por grupo no soportado.
+Info: Ignored groups: meta
+Warning [ionic]: Se detectó una rama alternativa en "collections", pero se priorizó la estructura canónica de nivel principal.
+Warning [ionic]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [ionic]: Se omitió meta por grupo no soportado.
+Warning [bootstrap]: Se detectó una rama alternativa en "collections", pero se priorizó la estructura canónica de nivel principal.
+Warning [bootstrap]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [bootstrap]: Se omitió meta por grupo no soportado.
+Warning [tailwind]: Se detectó una rama alternativa en "collections", pero se priorizó la estructura canónica de nivel principal.
+Warning [tailwind]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [tailwind]: Se omitió meta por grupo no soportado.
+Info: Warnings emitted: 8

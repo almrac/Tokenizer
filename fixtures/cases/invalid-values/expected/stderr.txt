@@ -1,0 +1,10 @@
+Info: Import summary: root "top-level", grupos detectados: colors, spacing, shadows.
+Info: Se omiten tokens inválidos en "colors": "colors.broken".
+Info: Se omiten tokens inválidos en "spacing": "spacing.broken".
+Info: Se omiten tokens inválidos en "shadows": "shadows.broken".
+Omisión: Se omitió colors.broken por valor de color inválido.
+Omisión: Se omitió spacing.broken por valor de spacing inválido.
+Omisión: Se omitió shadows.broken por formato de shadow inválido.
+Info: Root used: top-level
+Info: Supported groups detected: colors, spacing, shadows
+Info: Normalization applied: 3 ajuste(s)

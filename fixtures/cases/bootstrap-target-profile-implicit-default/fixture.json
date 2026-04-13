@@ -1,0 +1,9 @@
+{
+  "description": "Bootstrap sin target profile explícito usa internamente default sin cambiar la salida.",
+  "covers": [
+    "bootstrap-target-profile-implicit-default",
+    "target-profile"
+  ],
+  "expect": "success",
+  "targets": ["bootstrap"]
+}

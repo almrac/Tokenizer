@@ -1,0 +1,14 @@
+{
+  "colors": {
+    "primary": {
+      "modes": {
+        "light": {
+          "resolvedValue": "#ffffff"
+        },
+        "dark": {
+          "resolvedValue": "#000000"
+        }
+      }
+    }
+  }
+}

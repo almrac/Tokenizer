@@ -1,0 +1,16 @@
+{
+  "collection": {
+    "primary": {
+      "light": "#f8fbff",
+      "dark": "#0f172a"
+    },
+    "secondary": {
+      "light": "#dbeafe",
+      "dark": "#1d4ed8"
+    },
+    "surface": {
+      "light": "#ffffff",
+      "dark": "#020617"
+    }
+  }
+}

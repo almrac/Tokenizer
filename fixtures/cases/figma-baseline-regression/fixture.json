@@ -1,0 +1,9 @@
+{
+  "description": "Regresión baseline sin estructura Figma especial para asegurar que no cambia el comportamiento estable.",
+  "covers": [
+    "figma-baseline-regression",
+    "figma-heterogeneous-regression"
+  ],
+  "expect": "success",
+  "targets": ["css", "ionic", "bootstrap", "tailwind"]
+}

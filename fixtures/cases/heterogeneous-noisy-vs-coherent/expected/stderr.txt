@@ -1,0 +1,14 @@
+Info: Detected multiple candidates; selected "theme.brand" because it has stronger token-group signals (score 11 vs 6).
+Info: Import summary: root "theme.brand", grupos detectados: colors.
+Info: Root used: theme.brand
+Info: Supported groups detected: colors
+Warning [css]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [css]: Se omitió meta por grupo no soportado.
+Info: Ignored groups: meta
+Warning [ionic]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [ionic]: Se omitió meta por grupo no soportado.
+Warning [bootstrap]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [bootstrap]: Se omitió meta por grupo no soportado.
+Warning [tailwind]: Grupos no soportados: "meta". Se ignorarán en la generación.
+Omisión [tailwind]: Se omitió meta por grupo no soportado.
+Info: Warnings emitted: 4

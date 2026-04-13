@@ -1,0 +1,4 @@
+Info: Import summary: root "top-level", grupos detectados: colors, spacing, typography.
+Info: Root used: top-level
+Info: Target profile used: v5.3
+Info: Supported groups detected: colors, spacing, typography

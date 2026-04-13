@@ -1,0 +1,33 @@
+/* Colors */
+$primary: #1b84ff;
+$body-color: #232a31;
+
+/* Spacing */
+$spacers: (
+  "sm": 8px,
+  "xl": 32px,
+);
+
+/* Typography */
+$font-family-base: System UI;
+$font-size-base: 15px;
+$font-weight-base: 500;
+$line-height-base: normal;
+
+$font-sizes: (
+  "body": 15px,
+);
+$font-weights: (
+  "regular": 500,
+);
+$line-heights: (
+  "body": normal,
+);
+
+$tk-letter-spacing-tight: -0.01em;
+
+/* Radius */
+$border-radius: 6px;
+
+/* Shadows */
+$tk-shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.12);

@@ -1,0 +1,14 @@
+Info: Import summary: root "top-level", grupos detectados: colors, spacing, typography, radius, shadows.
+Info: Grupo top-level normalizado de "color" a "colors".
+Info: Grupo top-level normalizado de "space" a "spacing".
+Info: Clave de typography normalizada de "font-family" a "fontFamily".
+Info: Clave de typography normalizada de "font-size" a "fontSize".
+Info: Clave de typography normalizada de "font-weight" a "fontWeight".
+Info: Clave de typography normalizada de "line-height" a "lineHeight".
+Info: Clave de typography normalizada de "letter-spacing" a "letterSpacing".
+Info: Grupo top-level normalizado de "type" a "typography".
+Info: Grupo top-level normalizado de "borderRadius" a "radius".
+Info: Grupo top-level normalizado de "boxShadow" a "shadows".
+Info: Root used: top-level
+Info: Supported groups detected: colors, spacing, typography, radius, shadows
+Info: Normalization applied: 10 ajuste(s)

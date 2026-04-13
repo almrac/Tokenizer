@@ -1,0 +1,28 @@
+{
+  "colors": {
+    "primary": "#111827",
+    "surface": "#f9fafb"
+  },
+  "spacing": {
+    "md": 20
+  },
+  "theme": {
+    "global": {
+      "brand": {
+        "colors": {
+          "primary": "#ef4444"
+        }
+      },
+      "layout": {
+        "spacing": {
+          "md": 99
+        },
+        "typography": {
+          "fontSize": {
+            "body": 18
+          }
+        }
+      }
+    }
+  }
+}

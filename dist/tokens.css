@@ -1,11 +1,33 @@
 :root {
-  --nb-color-primary: #0d6efd;
-  --nb-color-secondary: #6c757d;
-  --nb-color-success: #198754;
-  --nb-color-danger: #dc3545;
-  --nb-color-brand: #7c4dff;
-  --nb-spacing-xs: 0.25rem;
-  --nb-spacing-sm: 0.5rem;
-  --nb-spacing-md: 1rem;
-  --nb-spacing-lg: 1.5rem;
+  /* Colors */
+  --tk-color-brand: #7c4dff;
+  --tk-color-danger: #dc3545;
+  --tk-color-primary: #0d6efd;
+  --tk-color-secondary: #6c757d;
+  --tk-color-success: #198754;
+
+  /* Spacing */
+  --tk-spacing-xs: 0.25rem;
+  --tk-spacing-sm: 0.5rem;
+  --tk-spacing-md: 1rem;
+  --tk-spacing-lg: 1.5rem;
+
+  /* Typography */
+  --tk-font-family-base: Inter, sans-serif;
+  --tk-font-family-mono: "Fira Code", monospace;
+  --tk-font-size-body: 0.875rem;
+  --tk-font-size-title: 1.25rem;
+  --tk-font-weight-regular: 400;
+  --tk-font-weight-semibold: 600;
+  --tk-line-height-body: 1.5px;
+  --tk-line-height-title: 1.2px;
+
+  /* Radius */
+  --tk-radius-sm: 4px;
+  --tk-radius-md: 8px;
+  --tk-radius-lg: 12px;
+
+  /* Shadows */
+  --tk-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --tk-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.16);
 }

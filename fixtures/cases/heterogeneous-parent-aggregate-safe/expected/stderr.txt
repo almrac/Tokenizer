@@ -1,0 +1,4 @@
+Info: Detected multiple candidates; selected "theme.global" because it has stronger token-group signals (score 56 vs 14).
+Info: Import summary: root "theme.global", grupos detectados: colors, spacing, typography.
+Info: Root used: theme.global
+Info: Supported groups detected: colors, spacing, typography

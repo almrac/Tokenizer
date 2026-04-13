@@ -1,0 +1,1 @@
+Error: El selector local "defaultModeId" con valor "brand" no existe en "colors.primary.valuesByMode" o no apunta a un valor compatible. No hay un modo seguro para extraer.
