@@ -283,6 +283,9 @@
   var targetProfileField = document.querySelector('[data-ui="target-profile-field"]');
   var targetProfileSelect = document.querySelector('[data-ui="target-profile-select"]');
   var targetProfileHint = document.querySelector('[data-ui="target-profile-hint"]');
+  var themeToggle = document.querySelector('[data-ui="theme-toggle"]');
+  var themeToggleIcon = document.querySelector('[data-ui="theme-toggle-icon"]');
+  var themeColorMeta = document.querySelector('meta[name="theme-color"]');
   var versionLabel = document.querySelector('[data-ui="version-label"]');
   var filename = document.querySelector('[data-ui="filename"]');
   var resultContext = document.querySelector('[data-ui="result-context"]');
@@ -308,6 +311,27 @@
   var exampleButton = document.querySelector('[data-ui="example-button"]');
   var clearButton = document.querySelector('[data-ui="clear-button"]');
   var emptyState = document.querySelector('[data-ui="empty-state"]');
+  var THEME_STORAGE_KEY = 'tokenizer-theme';
+  var themeMetaColors = {
+    dark: '#0b1118',
+    light: '#f5f7fb'
+  };
+  var themeIcons = {
+    sun: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.25"></circle><path d="M12 2.75v2.5M12 18.75v2.5M21.25 12h-2.5M5.25 12h-2.5M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77M18.54 18.54l-1.77-1.77M7.23 7.23L5.46 5.46"></path></svg>',
+    moon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.8 3.25a8.75 8.75 0 1 0 5.95 15.17 9.5 9.5 0 1 1-5.95-15.17Z"></path></svg>'
+  };
+  var themeToggleState = {
+    dark: {
+      nextTheme: 'light',
+      icon: themeIcons.sun,
+      label: 'Cambiar a modo claro'
+    },
+    light: {
+      nextTheme: 'dark',
+      icon: themeIcons.moon,
+      label: 'Cambiar a modo oscuro'
+    }
+  };
   var defaultCopyLabel = 'Copiar';
   var copyResetTimer = 0;
   var generatedOutputs = {};
@@ -3991,6 +4015,44 @@
     renderOutput();
   }
 
+  function normalizeTheme(theme) {
+    return theme === 'light' ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme, persistPreference) {
+    var resolvedTheme = normalizeTheme(theme);
+    var toggleState = themeToggleState[resolvedTheme];
+
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    if (themeToggle) {
+      themeToggle.setAttribute('data-theme', resolvedTheme);
+      themeToggle.setAttribute('aria-label', toggleState.label);
+      themeToggle.setAttribute('title', toggleState.label);
+    }
+    if (themeToggleIcon) {
+      themeToggleIcon.innerHTML = toggleState.icon;
+    }
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', themeMetaColors[resolvedTheme]);
+    }
+
+    if (persistPreference) {
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
+      } catch (error) {}
+    }
+  }
+
+  function loadThemePreference() {
+    var storedTheme = 'dark';
+
+    try {
+      storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+    } catch (error) {}
+
+    applyTheme(storedTheme, false);
+  }
+
   tokensInput.value = '';
   hideInspector();
   if (targetSelect) {
@@ -4003,6 +4065,7 @@
   updateMultiExportVisibility();
   updateTargetProfileField();
   updateActionState('', targetSelect && targetSelect.value ? targetSelect.value : 'css');
+  loadThemePreference();
 
   tokensInput.addEventListener('input', renderOutput);
   if (targetSelect) {
@@ -4055,6 +4118,12 @@
   variantSelect.addEventListener('change', renderOutput);
   if (targetProfileSelect) {
     targetProfileSelect.addEventListener('change', renderOutput);
+  }
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function () {
+      var currentTheme = normalizeTheme(document.documentElement.getAttribute('data-theme'));
+      applyTheme(themeToggleState[currentTheme].nextTheme, true);
+    });
   }
   fileInput.addEventListener('change', handleFileUpload);
   copyButton.addEventListener('click', copyOutput);

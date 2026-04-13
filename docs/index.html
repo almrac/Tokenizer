@@ -7,18 +7,35 @@
   <meta name="description" content="Herramienta estática para convertir tokens.json en archivos listos para css, ionic, bootstrap y tailwind desde el navegador o la CLI.">
   <meta name="theme-color" content="#3658df">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script>
+    (function () {
+      var theme = 'dark';
+      try {
+        theme = localStorage.getItem('tokenizer-theme') || 'dark';
+      } catch (error) {}
+      document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+    }());
+  </script>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
   <div class="app-shell">
     <header class="topbar">
-      <div class="topbar-brand">
-        <div class="topbar-heading">
-          <h1>Tokenizer</h1>
-          <span class="version-label" data-ui="version-label" aria-label="Versión actual">v...</span>
+      <div class="topbar-inner">
+        <div class="topbar-brand">
+          <div class="topbar-heading">
+            <h1>Tokenizer</h1>
+            <span class="version-label" data-ui="version-label" aria-label="Versión actual">v...</span>
+          </div>
+          <p>Herramienta de conversión de tokens de diseño para desarrolladores</p>
         </div>
-        <p>Herramienta de conversión de tokens de diseño para desarrolladores</p>
+
+        <div class="topbar-tools">
+          <button class="theme-toggle" data-ui="theme-toggle" type="button" aria-label="Cambiar a modo claro" title="Cambiar tema">
+            <span class="theme-toggle-icon" data-ui="theme-toggle-icon" aria-hidden="true"></span>
+          </button>
+        </div>
       </div>
     </header>
 
