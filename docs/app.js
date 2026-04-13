@@ -318,7 +318,7 @@
   };
   var themeIcons = {
     sun: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.25"></circle><path d="M12 2.75v2.5M12 18.75v2.5M21.25 12h-2.5M5.25 12h-2.5M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77M18.54 18.54l-1.77-1.77M7.23 7.23L5.46 5.46"></path></svg>',
-    moon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.8 3.25a8.75 8.75 0 1 0 5.95 15.17 9.5 9.5 0 1 1-5.95-15.17Z"></path></svg>'
+    moon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.4 3.7c-1.12.2-2.19.64-3.14 1.3a8.25 8.25 0 1 0 6.74 14.98 8.85 8.85 0 0 1-3.66-16.28Z"></path></svg>'
   };
   var themeToggleState = {
     dark: {

@@ -101,13 +101,13 @@ input,
 select,
 textarea {
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease,
-    fill 0.2s ease,
-    stroke 0.2s ease;
+    color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.24s ease,
+    fill 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .skip-link {
@@ -287,6 +287,10 @@ textarea {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition:
+    opacity 0.22s ease,
+    fill 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .workspace {
