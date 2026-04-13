@@ -13,6 +13,8 @@
 - Primer perfil funcional real `bootstrap.v4` con divergencia acotada y verificable
 - La web mantiene `importNotes` separadas de las advertencias reales
 - La web resuelve el perfil de Bootstrap sobre los targets activos reales en multi-export
+- Fase visual de la web cerrada:
+  jerarquía del sidebar, cabecera de resultado, adaptación estructural inspirada en Figma, compactación vertical desktop, dark mode por defecto, toggle de tema persistente, transición suave entre temas e iconografía final del toggle
 - Flat variant collection (base)
 - Selección explícita de variante en CLI
 - Selección explícita de variante en UI
@@ -44,6 +46,9 @@ Nota de criterio para `targetProfile`:
 - No abrir perfiles nuevos por simetría; solo avanzar si aparece una diferencia clara de mappings, compatibilidad o salida generada con valor real y cobertura verificable
 - Mantener `bootstrap` como único target con perfiles activos hasta que Tailwind o Ionic presenten un caso pequeño, útil y verificable comparable a `bootstrap.v4`
 - Mantener `bootstrap.v5.3` como baseline visible y `default` solo como alias técnico interno y retrocompatible
+
+Nota de criterio para la web:
+- No reabrir la línea visual por inercia; futuros ajustes de UI solo deben abrirse si aparece una fricción real, pequeña y verificable
 
 Nota de criterio para Figma heterogéneo:
 - El subconjunto actual ya soporta pruning cerrado de metadata, extracción segura de una única ruta de valor y unwrap de modo único; siguen abiertos solo los casos que exigen inferencia adicional o estructuras arbitrarias

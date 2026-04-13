@@ -283,8 +283,12 @@
   var targetProfileField = document.querySelector('[data-ui="target-profile-field"]');
   var targetProfileSelect = document.querySelector('[data-ui="target-profile-select"]');
   var targetProfileHint = document.querySelector('[data-ui="target-profile-hint"]');
+  var themeToggle = document.querySelector('[data-ui="theme-toggle"]');
+  var themeToggleIcon = document.querySelector('[data-ui="theme-toggle-icon"]');
+  var themeColorMeta = document.querySelector('meta[name="theme-color"]');
   var versionLabel = document.querySelector('[data-ui="version-label"]');
   var filename = document.querySelector('[data-ui="filename"]');
+  var resultContext = document.querySelector('[data-ui="result-context"]');
   var outputPreview = document.querySelector('[data-ui="output-preview"]');
   var errorMessage = document.querySelector('[data-ui="error-message"]');
   var warningMessage = document.querySelector('[data-ui="warning-message"]');
@@ -307,11 +311,38 @@
   var exampleButton = document.querySelector('[data-ui="example-button"]');
   var clearButton = document.querySelector('[data-ui="clear-button"]');
   var emptyState = document.querySelector('[data-ui="empty-state"]');
+  var THEME_STORAGE_KEY = 'tokenizer-theme';
+  var themeMetaColors = {
+    dark: '#0b1118',
+    light: '#f5f7fb'
+  };
+  var themeIcons = {
+    appearance: '<svg viewBox="0 0 24 24" data-icon="appearance" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.25"></circle><path d="M12 3.75a8.25 8.25 0 0 1 0 16.5Z"></path><path d="M12 3.75v16.5"></path></svg>'
+  };
+  var themeToggleState = {
+    dark: {
+      nextTheme: 'light',
+      icon: themeIcons.appearance,
+      label: 'Cambiar a modo claro'
+    },
+    light: {
+      nextTheme: 'dark',
+      icon: themeIcons.appearance,
+      label: 'Cambiar a modo oscuro'
+    }
+  };
   var defaultCopyLabel = 'Copiar';
   var copyResetTimer = 0;
   var generatedOutputs = {};
   var activePreviewTarget = 'css';
   var preferredPreviewTarget = '';
+  var currentResultState = {
+    status: 'Sin advertencias',
+    stateKey: 'ok',
+    selectedVariant: '',
+    targetProfileUsed: null,
+    hasError: false
+  };
 
   function loadVisibleVersion() {
     if (!versionLabel || typeof fetch !== 'function') {
@@ -3521,6 +3552,41 @@
     updateActionState(output, activePreviewTarget);
   }
 
+  function getResultStateKey(status, hasError) {
+    if (hasError) {
+      return 'error';
+    }
+
+    if (status === 'Con omisiones') {
+      return 'omission';
+    }
+
+    if (status === 'Con advertencias') {
+      return 'warning';
+    }
+
+    return 'ok';
+  }
+
+  function buildResultContext(target) {
+    var parts = [];
+    var activeTarget = target || activePreviewTarget;
+
+    if (activeTarget) {
+      parts.push('Target activo: ' + activeTarget);
+    }
+
+    if (activeTarget === 'bootstrap' && currentResultState.targetProfileUsed) {
+      parts.push('Perfil: ' + currentResultState.targetProfileUsed);
+    }
+
+    if (currentResultState.selectedVariant) {
+      parts.push('Variante: ' + currentResultState.selectedVariant);
+    }
+
+    return parts.join(' · ');
+  }
+
   function setCopyButtonLabel(label) {
     if (copyResetTimer) {
       window.clearTimeout(copyResetTimer);
@@ -3539,15 +3605,24 @@
 
   function updateActionState(output, target) {
     var hasOutput = !!output;
+    var showHeaderState = hasOutput || currentResultState.hasError;
+    var contextText = buildResultContext(target);
 
     copyButton.disabled = !hasOutput;
     downloadButton.disabled = !hasOutput;
     updateEmptyState(output);
-    statusBadge.hidden = !hasOutput;
-    filename.textContent = hasOutput ? getCurrentFileName(target || activePreviewTarget) : '';
+    statusBadge.hidden = !showHeaderState;
+    statusBadge.textContent = currentResultState.status;
+    statusBadge.setAttribute('data-state', currentResultState.stateKey);
+    resultContext.hidden = !showHeaderState || !contextText;
+    resultContext.textContent = showHeaderState ? contextText : '';
+    filename.textContent = showHeaderState ? getCurrentFileName(target || activePreviewTarget) : '';
 
     if (!hasOutput) {
       setCopyButtonLabel(defaultCopyLabel);
+      if (!currentResultState.hasError) {
+        statusBadge.removeAttribute('data-state');
+      }
     }
   }
 
@@ -3578,6 +3653,7 @@
     var explicitVariant;
     var targetProfile;
     var targetProfileResolution;
+    var statusLabel = 'Sin advertencias';
 
     updateMultiExportVisibility();
     ensureAtLeastOneTarget();
@@ -3603,6 +3679,13 @@
       setWarning('');
       setOmission('');
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: '',
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       if (tokensInput.value.trim()) {
@@ -3642,6 +3725,13 @@
       setWarning('');
       setOmission('');
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3663,6 +3753,13 @@
       setWarning('');
       setOmission('');
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3750,6 +3847,13 @@
       setWarning(warnings.join('\n'));
       setOmission(omissions.join('\n'));
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3764,6 +3868,12 @@
         warningCount: warningCount
       });
       return;
+    }
+
+    if (omissions.length > 0) {
+      statusLabel = 'Con omisiones';
+    } else if (warningCount > 0) {
+      statusLabel = 'Con advertencias';
     }
 
     try {
@@ -3784,6 +3894,13 @@
       setWarning(warnings.join('\n'));
       setOmission(omissions.join('\n'));
       generatedOutputs = {};
+      currentResultState = {
+        status: 'Error',
+        stateKey: 'error',
+        selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+        targetProfileUsed: targetProfileResolution.targetProfileUsed,
+        hasError: true
+      };
       updatePreviewSelector();
       renderActivePreview();
       updateInspector({
@@ -3801,6 +3918,13 @@
     }
 
     generatedOutputs = newOutputs;
+    currentResultState = {
+      status: statusLabel,
+      stateKey: getResultStateKey(statusLabel, false),
+      selectedVariant: normalization.summary && normalization.summary.selectedVariant,
+      targetProfileUsed: targetProfileResolution.targetProfileUsed,
+      hasError: false
+    };
     updatePreviewSelector();
     renderActivePreview();
     if (tokensInput.value.trim()) {
@@ -3890,6 +4014,44 @@
     renderOutput();
   }
 
+  function normalizeTheme(theme) {
+    return theme === 'light' ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme, persistPreference) {
+    var resolvedTheme = normalizeTheme(theme);
+    var toggleState = themeToggleState[resolvedTheme];
+
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    if (themeToggle) {
+      themeToggle.setAttribute('data-theme', resolvedTheme);
+      themeToggle.setAttribute('aria-label', toggleState.label);
+      themeToggle.setAttribute('title', toggleState.label);
+    }
+    if (themeToggleIcon) {
+      themeToggleIcon.innerHTML = toggleState.icon;
+    }
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', themeMetaColors[resolvedTheme]);
+    }
+
+    if (persistPreference) {
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
+      } catch (error) {}
+    }
+  }
+
+  function loadThemePreference() {
+    var storedTheme = 'dark';
+
+    try {
+      storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+    } catch (error) {}
+
+    applyTheme(storedTheme, false);
+  }
+
   tokensInput.value = '';
   hideInspector();
   if (targetSelect) {
@@ -3902,6 +4064,7 @@
   updateMultiExportVisibility();
   updateTargetProfileField();
   updateActionState('', targetSelect && targetSelect.value ? targetSelect.value : 'css');
+  loadThemePreference();
 
   tokensInput.addEventListener('input', renderOutput);
   if (targetSelect) {
@@ -3954,6 +4117,12 @@
   variantSelect.addEventListener('change', renderOutput);
   if (targetProfileSelect) {
     targetProfileSelect.addEventListener('change', renderOutput);
+  }
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function () {
+      var currentTheme = normalizeTheme(document.documentElement.getAttribute('data-theme'));
+      applyTheme(themeToggleState[currentTheme].nextTheme, true);
+    });
   }
   fileInput.addEventListener('change', handleFileUpload);
   copyButton.addEventListener('click', copyOutput);
