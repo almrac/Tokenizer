@@ -317,18 +317,17 @@
     light: '#f5f7fb'
   };
   var themeIcons = {
-    sun: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.25"></circle><path d="M12 2.75v2.5M12 18.75v2.5M21.25 12h-2.5M5.25 12h-2.5M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77M18.54 18.54l-1.77-1.77M7.23 7.23L5.46 5.46"></path></svg>',
-    moon: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.4 3.7c-1.12.2-2.19.64-3.14 1.3a8.25 8.25 0 1 0 6.74 14.98 8.85 8.85 0 0 1-3.66-16.28Z"></path></svg>'
+    appearance: '<svg viewBox="0 0 24 24" data-icon="appearance" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.25"></circle><path d="M12 3.75a8.25 8.25 0 0 1 0 16.5Z"></path><path d="M12 3.75v16.5"></path></svg>'
   };
   var themeToggleState = {
     dark: {
       nextTheme: 'light',
-      icon: themeIcons.sun,
+      icon: themeIcons.appearance,
       label: 'Cambiar a modo claro'
     },
     light: {
       nextTheme: 'dark',
-      icon: themeIcons.moon,
+      icon: themeIcons.appearance,
       label: 'Cambiar a modo oscuro'
     }
   };

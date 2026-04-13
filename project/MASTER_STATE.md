@@ -43,6 +43,8 @@
 - `bootstrap.v4` como primer perfil funcional real: verificado con divergencia acotada en `radius.lg`
 - La web mantiene `importNotes` como información de importación y no las eleva a advertencias reales
 - La web resuelve el perfil de Bootstrap sobre los targets activos reales, también en multi-export
+- La fase visual de la web queda cerrada por ahora:
+  jerarquía del sidebar, cabecera de resultado, adaptación estructural inspirada en Figma, compactación vertical desktop, dark mode por defecto, toggle de tema persistente, transición suave entre temas e iconografía final del toggle
 - Conflicto top-level vs root anidado: resuelto
 - Flat collection multi-variante no trivial: bloquea correctamente
 - Root mixto con aliases y variantes: funcional
@@ -58,6 +60,7 @@
 - Prefijo configurable aplica a css y fallbacks de ionic/bootstrap
 - No ampliar `targetProfile` por simetría o anticipación; un perfil nuevo solo se abre si cambia de forma clara mappings, compatibilidad o salida generada y ese cambio se puede verificar con fixtures
 - Bootstrap es el único target con perfiles activos por ahora; Tailwind e Ionic no se abren mientras no exista una divergencia pequeña, útil y verificable comparable a `bootstrap.v4`
+- No reabrir la fase visual de la web mientras no aparezca una necesidad real, pequeña y verificable; por ahora queda cerrada como bloque operativo
 
 ## Problemas abiertos
 - Compatibilidad más profunda con dumps complejos y heterogéneos de Figma
@@ -96,6 +99,7 @@
 - Las combinaciones inválidas de target/perfil devuelven error claro y el summary o inspector expone `targetProfileUsed` con el perfil real resuelto
 - En web, `importNotes` siguen visibles en `Importación`, pero no cuentan como warnings reales ni activan el estado `Con advertencias`
 - En multi-export, si `bootstrap` participa, el perfil aplicado ya no depende solo del target principal visible
+- El sistema visual actual de la web se considera cerrado: tema dark por defecto, light alternativo persistente, transición suave entre temas y toggle final de apariencia/contraste
 - No existen perfiles funcionales adicionales fuera de `bootstrap.v5.3` y `bootstrap.v4`, ni soporte para otros targets
 - No está previsto abrir perfiles nuevos mientras no aparezca una divergencia real, útil y verificable del mismo nivel que `bootstrap.v4`
 - Tailwind no se abre por ahora porque su primer caso real implicaría un cambio de shape o artefacto demasiado grande para este bloque

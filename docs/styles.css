@@ -293,6 +293,24 @@ textarea {
     stroke 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.theme-toggle-icon svg[data-icon="appearance"] path:first-of-type {
+  fill: currentColor;
+  fill-opacity: 0.22;
+  stroke: none;
+}
+
+.theme-toggle[data-theme="dark"] .theme-toggle-icon svg[data-icon="appearance"] {
+  transform: scaleX(-1);
+}
+
+.theme-toggle[data-theme="dark"] .theme-toggle-icon svg[data-icon="appearance"] path:first-of-type {
+  fill-opacity: 0.28;
+}
+
+.theme-toggle[data-theme="light"] .theme-toggle-icon svg[data-icon="appearance"] path:first-of-type {
+  fill-opacity: 0.18;
+}
+
 .workspace {
   width: min(1480px, 100%);
   flex: 1 1 auto;
